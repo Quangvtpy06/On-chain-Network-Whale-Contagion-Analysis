@@ -1,0 +1,19 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+venv/
+env/
+.env
+
+# Google Cloud credentials (Never commit keys)
+credentials.json
+*credential*.json
+*service_account*.json
+
+# OS specific
+.DS_Store
+Thumbs.db
