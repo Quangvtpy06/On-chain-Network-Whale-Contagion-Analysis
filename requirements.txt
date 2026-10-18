@@ -1,0 +1,23 @@
+# dữ liệu
+pandas
+numpy
+pyarrow
+requests
+tqdm
+pyyaml
+python-dotenv
+google-cloud-bigquery
+db-dtypes
+# đồ thị và thống kê
+networkx
+scipy
+statsmodels
+# trực quan hóa và dashboard
+matplotlib
+plotly
+pyvis
+streamlit
+# phát triển
+jupyter
+ipykernel
+pytest
