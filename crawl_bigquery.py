@@ -4,11 +4,12 @@ from google.cloud import bigquery
 from google.auth.exceptions import DefaultCredentialsError
 
 # 1. Config
-PROJECT_ID = "nimble-nexus-512008-d7"
-CREDENTIALS_FILE = "credentials.json"
+# Lấy Project ID từ biến môi trường hoặc để None để BigQuery tự nhận diện từ `gcloud config set project`
+PROJECT_ID = os.getenv("GCP_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT") or None
+CREDENTIALS_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "credentials.json")
 
 def get_bigquery_client(project_id: str = PROJECT_ID):
-    if os.path.exists(CREDENTIALS_FILE):
+    if CREDENTIALS_FILE and os.path.exists(CREDENTIALS_FILE):
         print(f"[*] Using service account file: {CREDENTIALS_FILE}")
         return bigquery.Client.from_service_account_json(CREDENTIALS_FILE, project=project_id)
     
@@ -17,6 +18,8 @@ def get_bigquery_client(project_id: str = PROJECT_ID):
         return bigquery.Client(project=project_id)
     except DefaultCredentialsError:
         print("\n[!] AUTH ERROR: Application Default Credentials not found.")
+        print("    Vui lòng chạy: gcloud auth application-default login")
+        print("    Hoặc đặt biến môi trường GCP_PROJECT_ID trong file .env")
         sys.exit(1)
 
 # 2. Time range: from 2025-01-01 to present (~22 months)

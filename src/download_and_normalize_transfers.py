@@ -11,8 +11,9 @@ import pandas as pd
 from google.cloud import bigquery
 from google.auth.exceptions import DefaultCredentialsError
 
-PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "nimble-nexus-512008-d7")
-CREDENTIALS_FILE = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "credentials.json")
+# Lấy Project ID từ biến môi trường GCP_PROJECT_ID, nếu không có thì để None để BigQuery tự lấy từ gcloud CLI config
+PROJECT_ID = os.getenv("GCP_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT") or None
+CREDENTIALS_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "credentials.json")
 
 # Định nghĩa token: USDT (Tether)
 TOKEN_ADDRESS = "0xdac17f958d2ee523a2206206994597c13d831ec7"
@@ -31,12 +32,15 @@ os.makedirs(INTERIM_DIR, exist_ok=True)
 
 
 def get_client(project_id: str = PROJECT_ID):
-    if os.path.exists(CREDENTIALS_FILE):
+    if CREDENTIALS_FILE and os.path.exists(CREDENTIALS_FILE):
         return bigquery.Client.from_service_account_json(CREDENTIALS_FILE, project=project_id)
     try:
+        # Nếu project_id là None, Client sẽ tự động phát hiện project cấu hình trong `gcloud config set project`
         return bigquery.Client(project=project_id)
     except DefaultCredentialsError:
-        print("[!] Auth error: ADC not configured.")
+        print("[!] Auth error: Application Default Credentials not configured.")
+        print("    Vui lòng chạy: gcloud auth application-default login")
+        print("    Hoặc đặt biến môi trường GCP_PROJECT_ID trong file .env")
         sys.exit(1)
 
 
