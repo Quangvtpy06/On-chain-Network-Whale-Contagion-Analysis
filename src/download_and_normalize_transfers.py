@@ -11,8 +11,8 @@ import pandas as pd
 from google.cloud import bigquery
 from google.auth.exceptions import DefaultCredentialsError
 
-PROJECT_ID = "nimble-nexus-512008-d7"
-CREDENTIALS_FILE = "credentials.json"
+PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "nimble-nexus-512008-d7")
+CREDENTIALS_FILE = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "credentials.json")
 
 # Định nghĩa token: USDT (Tether)
 TOKEN_ADDRESS = "0xdac17f958d2ee523a2206206994597c13d831ec7"
