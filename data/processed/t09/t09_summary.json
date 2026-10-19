@@ -1,0 +1,28 @@
+{
+  "task": "T09",
+  "metrics": [
+    "degree",
+    "weighted_degree_usdt",
+    "weighted_degree_tx",
+    "pagerank"
+  ],
+  "pagerank_alpha": 0.85,
+  "pagerank_weight": "total_value",
+  "generated_at": "2026-10-19T17:02:40.417380+00:00",
+  "results": {
+    "daily": {
+      "snapshots": 655,
+      "node_metric_rows": 717704,
+      "output_file": "D:\\Gói 1\\On-chain-Network-Whale-Contagion-Analysis-main\\On-chain-Network-Whale-Contagion-Analysis-main\\data\\processed\\t09\\node_metrics_daily.parquet",
+      "snapshot_metrics_file": "D:\\Gói 1\\On-chain-Network-Whale-Contagion-Analysis-main\\On-chain-Network-Whale-Contagion-Analysis-main\\data\\processed\\t09\\snapshot_metrics_daily.csv",
+      "pagerank_retry_snapshots": 0
+    },
+    "weekly": {
+      "snapshots": 94,
+      "node_metric_rows": 389763,
+      "output_file": "D:\\Gói 1\\On-chain-Network-Whale-Contagion-Analysis-main\\On-chain-Network-Whale-Contagion-Analysis-main\\data\\processed\\t09\\node_metrics_weekly.parquet",
+      "snapshot_metrics_file": "D:\\Gói 1\\On-chain-Network-Whale-Contagion-Analysis-main\\On-chain-Network-Whale-Contagion-Analysis-main\\data\\processed\\t09\\snapshot_metrics_weekly.csv",
+      "pagerank_retry_snapshots": 0
+    }
+  }
+}
