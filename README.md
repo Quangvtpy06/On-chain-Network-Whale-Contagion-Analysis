@@ -79,6 +79,7 @@ pip install -r requirements.txt
 ### 1. Phân hệ Đồ thị Động (Task T08)
 *Không yêu cầu tài khoản GCP hay API Key, chạy trực tiếp trên dữ liệu nội bộ:*
 
+**A. Chạy xây dựng toàn bộ chuỗi đồ thị động:**
 ```bash
 python T08_Dynamic_Transaction_Graph.py
 ```
@@ -86,6 +87,22 @@ python T08_Dynamic_Transaction_Graph.py
 - Gán trọng số cạnh: `total_value` (tổng volume), `transaction_count` (số lượt chuyển), `mean_value`.
 - Tính toán toàn bộ chỉ số topology mạng lưới: Density, Reciprocity, SCC, WCC, Top Degree.
 - Kết quả xuất tại: `data/processed/graphs/`.
+
+**B. Hiển thị trực quan đồ thị động $G_t$ (Mở ngay trên Trình duyệt Web & GUI):**
+*Sử dụng cờ `--show-only` để xem nhanh đồ thị trong 1-2 giây từ dữ liệu đã có:*
+
+```bash
+# Xem toàn bộ các cạnh của ngày bất kỳ (cờ --all-edges):
+python T08_Dynamic_Transaction_Graph.py --show-only --date 2025-01-01 --all-edges
+
+# Tùy chỉnh số lượng cạnh lớn nhất hiển thị (Top-K edges):
+python T08_Dynamic_Transaction_Graph.py --show-only --date 2025-06-15 --top-k 500
+
+# Xem đồ thị theo snapshot Tuần (Weekly):
+python T08_Dynamic_Transaction_Graph.py --show-only --date 2025-W10 --top-k 300
+```
+- Tự động mở file HTML tương tác trên trình duyệt Web (cho phép kéo thả từng ví, phóng to, thu nhỏ, rê chuột xem địa chỉ và volume).
+- Tự động bật cửa sổ hình ảnh NetworkX Matplotlib.
 
 ### 2. Phân hệ Gán Nhãn Ví (Task T07)
 ```bash
