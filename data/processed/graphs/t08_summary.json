@@ -1,21 +1,27 @@
 {
   "task": "T08 - Build Dynamic Transaction Graph",
-  "input_file": "data\\interim\\usdt_whale_transfers_interim.parquet",
+  "description": "Đồ thị G_t theo cửa sổ daily hoặc weekly, cạnh có trọng số theo value và số giao dịch",
+  "input_file": "D:\\On-chain-Network-Whale-Contagion-Analysis\\data\\interim\\usdt_whale_transfers_interim.parquet",
   "total_transfers_processed": 2113146,
   "time_range": {
     "start_date": "2025-01-01",
     "end_date": "2026-10-17",
     "total_days": 655
   },
+  "edge_weights": {
+    "total_value": "Tổng khối lượng token USDT chuyển giữa cặp ví u -> v trong cửa sổ thời gian t",
+    "transaction_count": "Số lượng giao dịch chuyển nhượng giữa cặp ví u -> v trong cửa sổ thời gian t",
+    "mean_value": "Giá trị trung bình trên mỗi giao dịch"
+  },
+  "generated_at": "2026-10-19T19:47:12.372599",
   "daily_graph": {
     "total_snapshots": 655,
     "total_weighted_edges": 1017003,
     "avg_nodes_per_day": 1095.73,
     "avg_edges_per_day": 1552.68,
     "max_daily_volume_usdt": 167885534987.65497,
-    "output_edges_parquet": "data\\processed\\graphs\\dynamic_edges_daily.parquet",
-    "output_metrics_parquet": "data\\processed\\graphs\\graph_metrics_daily.parquet",
-    "output_metrics_csv": "data\\processed\\graphs\\graph_metrics_daily.csv"
+    "output_edges_parquet": "dynamic_edges_daily.parquet",
+    "output_metrics_csv": "graph_metrics_daily.csv"
   },
   "weekly_graph": {
     "total_snapshots": 94,
@@ -23,23 +29,7 @@
     "avg_nodes_per_week": 4146.41,
     "avg_edges_per_week": 6815.39,
     "max_weekly_volume_usdt": 373005952661.67316,
-    "output_edges_parquet": "data\\processed\\graphs\\dynamic_edges_weekly.parquet",
-    "output_metrics_parquet": "data\\processed\\graphs\\graph_metrics_weekly.parquet",
-    "output_metrics_csv": "data\\processed\\graphs\\graph_metrics_weekly.csv"
-  },
-  "edge_attributes": [
-    {
-      "name": "total_value",
-      "description": "Tổng khối lượng token USDT chuyển giữa u -> v trong cửa sổ t"
-    },
-    {
-      "name": "transaction_count",
-      "description": "Số lượng giao dịch giữa u -> v trong cửa sổ t"
-    },
-    {
-      "name": "mean_value",
-      "description": "Giá trị giao dịch trung bình"
-    }
-  ],
-  "generated_at": "2026-10-19T18:01:32.119360"
+    "output_edges_parquet": "dynamic_edges_weekly.parquet",
+    "output_metrics_csv": "graph_metrics_weekly.csv"
+  }
 }
