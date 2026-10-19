@@ -247,7 +247,14 @@ def show_dynamic_graph_snapshot(
     
     print(f"[+] Snapshot G_t ({time_window}) có: {G.number_of_nodes()} ví cá voi, {G.number_of_edges()} luồng giao dịch.")
     
-    edges_sorted = sorted(G.edges(data=True), key=lambda x: x[2].get("weight", 0), reverse=True)[:top_k_edges]
+    total_snapshot_edges = G.number_of_edges()
+    if top_k_edges and top_k_edges > 0 and top_k_edges < total_snapshot_edges:
+        edges_sorted = sorted(G.edges(data=True), key=lambda x: x[2].get("weight", 0), reverse=True)[:top_k_edges]
+        is_sub = True
+    else:
+        edges_sorted = list(G.edges(data=True))
+        is_sub = False
+        
     subG = nx.DiGraph()
     for u, v, d in edges_sorted:
         subG.add_edge(u, v, **d)
@@ -256,6 +263,14 @@ def show_dynamic_graph_snapshot(
     degrees = dict(subG.degree())
     total_val_m = sum(d.get("weight", 0) for _, _, d in edges_sorted) / 1e6
     
+    if is_sub:
+        title_label = f"Mạng lưới Giao dịch Động G_t - Snapshot {time_window} (Top {len(subG.edges())}/{total_snapshot_edges} Cạnh | ${total_val_m:,.1f}M Volume)"
+        plt_subtitle = f"(Top {len(subG.edges())}/{total_snapshot_edges} Cạnh | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)"
+    else:
+        title_label = f"Mạng lưới Giao dịch Động G_t - Snapshot {time_window} (Toàn bộ {len(subG.edges())} Cạnh | ${total_val_m:,.1f}M Volume)"
+        plt_subtitle = f"(Toàn bộ {len(subG.edges())} Cạnh | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)"
+        
+    # --- A. Tạo file đồ thị tương tác HTML (Plotly) ---
     edge_x, edge_y = [], []
     for edge in subG.edges():
         x0, y0 = pos[edge[0]]
@@ -304,7 +319,7 @@ def show_dynamic_graph_snapshot(
         data=[edge_trace, node_trace],
         layout=go.Layout(
             title=dict(
-                text=f"Mạng lưới Giao dịch Động G_t - Snapshot {time_window} (Top {len(subG.edges())} Cạnh | ${total_val_m:,.1f}M Volume)",
+                text=title_label,
                 font=dict(size=16, color='#2d3748')
             ),
             showlegend=False,
@@ -361,8 +376,7 @@ def show_dynamic_graph_snapshot(
     cbar = plt.colorbar(nodes_draw, ax=ax, shrink=0.7, pad=0.02)
     cbar.set_label("Bậc kết nối (Degree)", fontsize=10, fontweight="bold")
     ax.set_title(
-        f"DYNAMIC TRANSACTION GRAPH G_t - SNAPSHOT {time_window}\n"
-        f"(Top {len(subG.edges())} Cạnh lớn nhất | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)",
+        f"DYNAMIC TRANSACTION GRAPH G_t - SNAPSHOT {time_window}\n{plt_subtitle}",
         fontsize=13, fontweight="bold", pad=15, color="#1a202c"
     )
     ax.axis("off")

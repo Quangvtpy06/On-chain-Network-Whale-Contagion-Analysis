@@ -357,8 +357,10 @@ def show_dynamic_graph_snapshot(
     
     if is_sub:
         title_label = f"Mạng lưới Giao dịch Động G_t - Snapshot {time_window} (Top {len(subG.edges())}/{total_snapshot_edges} Cạnh | ${total_val_m:,.1f}M Volume)"
+        plt_subtitle = f"(Top {len(subG.edges())}/{total_snapshot_edges} Cạnh | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)"
     else:
-        title_label = f"Mạng lưới Giao dịch Động G_t - Snapshot {time_window} (Toàn bộ 100% {len(subG.edges())} Cạnh | ${total_val_m:,.1f}M Volume)"
+        title_label = f"Mạng lưới Giao dịch Động G_t - Snapshot {time_window} (Toàn bộ {len(subG.edges())} Cạnh | ${total_val_m:,.1f}M Volume)"
+        plt_subtitle = f"(Toàn bộ {len(subG.edges())} Cạnh | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)"
         
     # --- A. Tạo file đồ thị tương tác HTML (Plotly) ---
     edge_x, edge_y = [], []
@@ -467,8 +469,7 @@ def show_dynamic_graph_snapshot(
     cbar = plt.colorbar(nodes_draw, ax=ax, shrink=0.7, pad=0.02)
     cbar.set_label("Bậc kết nối (Degree)", fontsize=10, fontweight="bold")
     ax.set_title(
-        f"DYNAMIC TRANSACTION GRAPH G_t - SNAPSHOT {time_window}\n"
-        f"(Top {len(subG.edges())} Cạnh lớn nhất | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)",
+        f"DYNAMIC TRANSACTION GRAPH G_t - SNAPSHOT {time_window}\n{plt_subtitle}",
         fontsize=13, fontweight="bold", pad=15, color="#1a202c"
     )
     ax.axis("off")

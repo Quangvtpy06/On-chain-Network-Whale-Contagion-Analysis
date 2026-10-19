@@ -22,3 +22,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Generated graph figures & interactive html (on-demand)
+data/processed/graphs/*.png
+data/processed/graphs/*.html
