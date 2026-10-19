@@ -1,0 +1,17 @@
+{
+  "task": "T06",
+  "symbol": "ETHUSDT",
+  "market": "Binance Spot",
+  "source": "Binance Vision",
+  "start_date": "2025-01-01",
+  "end_date": "2026-10-17",
+  "timezone": "UTC",
+  "expected_days": 655,
+  "available_days": 655,
+  "missing_days": 0,
+  "invalid_files_metadata": 0,
+  "total_trades": 2435744778,
+  "parquet_size_gib": 24.33,
+  "validation_level": "metadata_only",
+  "created_at_utc": "2026-10-18T13:52:38.156495+00:00"
+}

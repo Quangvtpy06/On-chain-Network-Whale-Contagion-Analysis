@@ -1,0 +1,30 @@
+{
+  "task": "T06",
+  "status": "aggregation_completed",
+  "source": "Binance Vision - Spot Trades",
+  "symbol": "ETHUSDT",
+  "timezone": "UTC",
+  "date_start": "2025-01-01",
+  "date_end": "2026-10-17",
+  "days": 655,
+  "raw_trades": 2435744778,
+  "raw_parquet_gib": 24.33,
+  "ohlcv": {
+    "1m_rows": 943200,
+    "1h_rows": 15720,
+    "1d_rows": 655
+  },
+  "checks": {
+    "missing_daily_files": 0,
+    "metadata_errors": 0,
+    "trade_count_consistent": true,
+    "full_trade_level_quality_check": false
+  },
+  "paths": {
+    "raw": "data/market/trades/",
+    "1m": "data/market/processed/ohlcv_1m/",
+    "1h": "data/market/processed/ohlcv_1h/",
+    "1d": "data/market/processed/ohlcv_1d/"
+  },
+  "created_at_utc": "2026-10-18T15:39:56.778213+00:00"
+}
