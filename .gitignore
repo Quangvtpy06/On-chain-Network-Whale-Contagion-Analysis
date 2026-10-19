@@ -13,7 +13,12 @@ env/
 credentials.json
 *credential*.json
 *service_account*.json
+whale-network*.json
 
 # OS specific
 .DS_Store
 Thumbs.db
+
+# IDE
+.vscode/
+.idea/

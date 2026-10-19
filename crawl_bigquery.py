@@ -4,9 +4,9 @@ from google.cloud import bigquery
 from google.auth.exceptions import DefaultCredentialsError
 
 # 1. Config
-# Lấy Project ID từ biến môi trường hoặc để None để BigQuery tự nhận diện từ `gcloud config set project`
-PROJECT_ID = os.getenv("GCP_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT") or None
-CREDENTIALS_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "credentials.json")
+# Lấy Project ID từ biến môi trường hoặc mặc định 'whale-network'
+PROJECT_ID = os.getenv("GCP_PROJECT_ID") or "whale-network"
+CREDENTIALS_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "whale-network-4a41a91fd701.json")
 
 def get_bigquery_client(project_id: str = PROJECT_ID):
     if CREDENTIALS_FILE and os.path.exists(CREDENTIALS_FILE):
@@ -22,9 +22,9 @@ def get_bigquery_client(project_id: str = PROJECT_ID):
         print("    Hoặc đặt biến môi trường GCP_PROJECT_ID trong file .env")
         sys.exit(1)
 
-# 2. Time range: from 2025-01-01 to present (~22 months)
+# 2. Time range: from 2025-01-01 to 2026-10-17 (Chốt dữ liệu nghiên cứu)
 START_DATE = "2025-01-01"
-END_DATE = "2026-10-18"
+END_DATE = "2026-10-17"
 
 # 3. Query daily transactions aggregation (Partition optimized)
 # Note: In BigQuery SQL, `hash` is a reserved keyword, so it should be backticked: `hash`
@@ -37,8 +37,9 @@ QUERY_AGGREGATED = f"""
     FROM
         `bigquery-public-data.crypto_ethereum.transactions`
     WHERE
-        block_timestamp >= TIMESTAMP('{START_DATE}')
-        AND block_timestamp <= TIMESTAMP('{END_DATE}')
+        block_timestamp >= TIMESTAMP('2025-01-01')
+        AND block_timestamp <= TIMESTAMP("2026-10-18")
+        AND receipt_status = 1
     GROUP BY
         tx_date
     ORDER BY
