@@ -197,12 +197,13 @@ class DynamicGraphLoader:
                     }
                     
     def get_time_windows(self) -> list:
-        """Lấy danh sách các mốc thời gian có trong đồ thị."""
-        return sorted(self.df_edges["time_window"].unique().tolist())
+        """Lấy danh sách các mốc thời gian có trong đồ thị (chuỗi format YYYY-MM-DD hoặc YYYY-Www)."""
+        return sorted([str(x) for x in self.df_edges["time_window"].unique().tolist()])
         
-    def build_snapshot_graph(self, time_window: str) -> nx.DiGraph:
+    def build_snapshot_graph(self, time_window) -> nx.DiGraph:
         """Tạo đối tượng nx.DiGraph cho 1 snapshot thời gian cụ thể."""
-        sub = self.df_edges[self.df_edges["time_window"] == time_window]
+        target_str = str(time_window)
+        sub = self.df_edges[self.df_edges["time_window"].astype(str) == target_str]
         if sub.empty:
             raise ValueError(f"Không có dữ liệu cho mốc thời gian: {time_window}")
             
