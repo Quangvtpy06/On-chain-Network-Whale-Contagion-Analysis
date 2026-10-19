@@ -1,0 +1,22 @@
+{
+  "total_addresses": 115167,
+  "public_addresses_matched": 1119,
+  "newly_labeled": 928,
+  "existing_labeled_preserved": 6,
+  "conflicts_needing_review": 1,
+  "counts": {
+    "CEX": 465,
+    "DEX": 54,
+    "DeFi": 43,
+    "Bridge": 32,
+    "Custodian": 0,
+    "Contract": 1,
+    "Protocol": 0,
+    "Issuer": 0,
+    "Other": 339,
+    "Unknown": 114233
+  },
+  "source_dataset": "https://github.com/prettydeath/wallet-attribution",
+  "retrieved_utc": "2026-10-19T06:34:20.267511+00:00",
+  "note": "Unknown means no supported classification; classifications reflect upstream public labels and require verification for high-stakes use."
+}
