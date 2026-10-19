@@ -1,0 +1,20 @@
+{
+  "input_file": "data\\interim\\usdt_whale_transfers_interim.parquet",
+  "input_transfer_events": 20000,
+  "unique_wallet_addresses": 388,
+  "unique_directed_pairs": 450,
+  "duplicate_events": 0,
+  "start_utc": "2026-10-17T07:56:23+00:00",
+  "end_utc": "2026-10-17T23:56:47+00:00",
+  "whale_transfer_threshold_usdt": 1000000,
+  "whale_events_in_sample": 19697,
+  "labeled_addresses": 6,
+  "unverified_addresses": 382,
+  "label_file_present": true,
+  "verified_matches": 6,
+  "limitations": [
+    "Input is a sampled/filtered transfer dataset, not a complete ledger.",
+    "Activity labels do not establish identity, current balance, or whale ownership.",
+    "A transfer is an ERC-20 event and need not represent an independent economic movement."
+  ]
+}
