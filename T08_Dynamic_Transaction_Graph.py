@@ -320,7 +320,7 @@ class DynamicGraphLoader:
 def show_dynamic_graph_snapshot(
     edges_parquet_path: Path,
     time_window: str = "2025-01-01",
-    top_k_edges: int = 120,
+    top_k_edges: int = 0,
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     auto_open: bool = True
 ):
@@ -351,7 +351,9 @@ def show_dynamic_graph_snapshot(
     for u, v, d in edges_sorted:
         subG.add_edge(u, v, **d)
         
-    pos = nx.spring_layout(subG, k=0.55, iterations=80, seed=42)
+    num_nodes = subG.number_of_nodes()
+    iters = 20 if num_nodes > 2000 else (35 if num_nodes > 800 else 60)
+    pos = nx.spring_layout(subG, k=0.55, iterations=iters, seed=42)
     degrees = dict(subG.degree())
     total_val_m = sum(d.get("weight", 0) for _, _, d in edges_sorted) / 1e6
     
@@ -363,20 +365,69 @@ def show_dynamic_graph_snapshot(
         plt_subtitle = f"(Toàn bộ {len(subG.edges())} Cạnh | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)"
         
     # --- A. Tạo file đồ thị tương tác HTML (Plotly) ---
-    edge_x, edge_y = [], []
-    for edge in subG.edges():
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
-        
-    edge_trace = go.Scatter(
-        x=edge_x, y=edge_y,
-        line=dict(width=1.2, color='#a0aec0'),
+    val_list = [d.get('weight', d.get('total_value', 0)) for _, _, d in subG.edges(data=True)]
+    top_thresh = float(np.percentile(val_list, 80)) if len(val_list) > 5 else 0.0
+
+    edge_norm_x, edge_norm_y = [], []
+    edge_high_x, edge_high_y = [], []
+    edge_mid_x, edge_mid_y, edge_hover_text = [], [], []
+
+    for u, v, d in subG.edges(data=True):
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        val = float(d.get('weight', d.get('total_value', 0)))
+        txs = int(d.get('transaction_count', d.get('tx_count', 1)))
+        avg_val = val / txs if txs > 0 else 0.0
+
+        if val >= top_thresh and len(val_list) > 5:
+            edge_high_x.extend([x0, x1, None])
+            edge_high_y.extend([y0, y1, None])
+        else:
+            edge_norm_x.extend([x0, x1, None])
+            edge_norm_y.extend([y0, y1, None])
+
+        edge_mid_x.append(x0 * 0.45 + x1 * 0.55)
+        edge_mid_y.append(y0 * 0.45 + y1 * 0.55)
+        edge_hover_text.append(
+            f"<b>━━ TRỌNG SỐ CẠNH (EDGE WEIGHTS) ━━</b><br>"
+            f"📤 <b>Ví gửi (Source):</b> {u}<br>"
+            f"📥 <b>Ví nhận (Target):</b> {v}<br>"
+            f"─────────────────────────────<br>"
+            f"💰 <b>Trọng số 1 (Value/Volume):</b> ${val:,.2f} USDT<br>"
+            f"🔄 <b>Trọng số 2 (Số giao dịch):</b> {txs:,} transfers<br>"
+            f"📊 <b>Giá trị TB mỗi lệnh:</b> ${avg_val:,.2f} USDT"
+        )
+
+    edge_norm_trace = go.Scatter(
+        x=edge_norm_x, y=edge_norm_y,
+        line=dict(width=1.2, color='#cbd5e1'),
         hoverinfo='none',
-        mode='lines'
+        mode='lines',
+        name='Cạnh chuẩn'
     )
-    
+    edge_high_trace = go.Scatter(
+        x=edge_high_x, y=edge_high_y,
+        line=dict(width=2.8, color='#334155'),
+        hoverinfo='none',
+        mode='lines',
+        name='Cạnh giá trị cao (Top 20% Volume)'
+    )
+    edge_mid_trace = go.Scatter(
+        x=edge_mid_x, y=edge_mid_y,
+        mode='markers',
+        marker=dict(
+            symbol='diamond',
+            size=8,
+            color='#2563eb',
+            opacity=0.85,
+            line=dict(width=1, color='#ffffff')
+        ),
+        hoverinfo='text',
+        text=edge_hover_text,
+        name='Trọng số Cạnh (Edge)',
+        hoverlabel=dict(bgcolor='#0f172a', font_color='#ffffff', font_size=12)
+    )
+
     node_x, node_y, node_text, node_sizes = [], [], [], []
     in_degrees = dict(subG.in_degree())
     out_degrees = dict(subG.out_degree())
@@ -386,12 +437,16 @@ def show_dynamic_graph_snapshot(
         node_y.append(y)
         deg = degrees[node]
         node_sizes.append(min(deg * 5 + 10, 42))
+        in_vol = sum(d.get('weight', 0) for _, _, d in subG.in_edges(node, data=True)) / 1e6
+        out_vol = sum(d.get('weight', 0) for _, _, d in subG.out_edges(node, data=True)) / 1e6
         node_text.append(
-            f"<b>Ví cá voi:</b> {node}<br>"
-            f"<b>Tổng bậc kết nối:</b> {deg}<br>"
-            f"<b>In-degree:</b> {in_degrees[node]} | <b>Out-degree:</b> {out_degrees[node]}"
+            f"<b>━━ ĐỈNH MẠNG LƯỚI (VÍ CÁ VOI) ━━</b><br>"
+            f"👛 <b>Địa chỉ ví:</b> {node}<br>"
+            f"🔗 <b>Tổng bậc kết nối:</b> {deg} (Nhận vào: {in_degrees[node]}, Gửi đi: {out_degrees[node]})<br>"
+            f"📥 <b>Tổng tiền nhận (In-vol):</b> ${in_vol:,.2f}M USDT<br>"
+            f"📤 <b>Tổng tiền gửi (Out-vol):</b> ${out_vol:,.2f}M USDT"
         )
-        
+
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode='markers',
@@ -406,9 +461,9 @@ def show_dynamic_graph_snapshot(
             line=dict(width=1.5, color='#2d3748')
         )
     )
-    
+
     fig_plotly = go.Figure(
-        data=[edge_trace, node_trace],
+        data=[edge_norm_trace, edge_high_trace, edge_mid_trace, node_trace],
         layout=go.Layout(
             title=dict(
                 text=title_label,
@@ -472,6 +527,21 @@ def show_dynamic_graph_snapshot(
         f"DYNAMIC TRANSACTION GRAPH G_t - SNAPSHOT {time_window}\n{plt_subtitle}",
         fontsize=13, fontweight="bold", pad=15, color="#1a202c"
     )
+    info_text = (
+        "TRỌNG SỐ CẠNH (EDGE WEIGHTS):\n"
+        "• Độ dày nét vẽ: Tỷ lệ theo Trọng số Value ($ USDT)\n"
+        "• Chiều mũi tên: Hướng dòng tiền (Gửi -> Nhận)\n"
+        "• File HTML tương tác: Rê chuột vào viên kim cương xanh để xem\n"
+        "  chi tiết Trọng số Value ($) và Trọng số Số giao dịch (lượt)."
+    )
+    ax.text(
+        0.02, 0.02, info_text,
+        transform=ax.transAxes,
+        fontsize=8,
+        verticalalignment='bottom',
+        bbox=dict(boxstyle='round,pad=0.5', facecolor='#ffffff', edgecolor='#cbd5e0', alpha=0.92)
+    )
+
     ax.axis("off")
     plt.tight_layout()
     
@@ -630,8 +700,8 @@ def main():
                         help="Chỉ mở hiển thị đồ thị ngay lập tức từ dữ liệu đã có (không chạy lại pipeline)")
     parser.add_argument("--no-show", action="store_true",
                         help="Không tự động mở cửa sổ đồ thị (chế độ headless/chạy ngầm)")
-    parser.add_argument("--top-k", type=int, default=120,
-                        help="Số cạnh lớn nhất muốn hiển thị trên biểu đồ (mặc định: 120)")
+    parser.add_argument("--top-k", type=int, default=0,
+                        help="Số cạnh lớn nhất muốn hiển thị trên biểu đồ (mặc định: 0 - hiển thị toàn bộ cạnh)")
     parser.add_argument("--all-edges", action="store_true",
                         help="Hiển thị toàn bộ 100%% tất cả các cạnh trong snapshot")
     args = parser.parse_args()
