@@ -12,3 +12,4 @@ from build_dynamic_graph import main
 
 if __name__ == "__main__":
     main()
+

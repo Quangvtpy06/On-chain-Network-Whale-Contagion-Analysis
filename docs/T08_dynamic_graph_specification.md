@@ -120,3 +120,4 @@ print(f"Số Edges: {G_snap.number_of_edges()}")
 for u, v, data in list(G_snap.edges(data=True))[:5]:
     print(f"{u} -> {v} | Value: {data['weight']:,.2f} USDT | Txs: {data['transaction_count']}")
 ```
+

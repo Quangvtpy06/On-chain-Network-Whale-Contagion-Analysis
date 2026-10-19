@@ -67,3 +67,4 @@ python T08_Dynamic_Transaction_Graph.py
 ```
 
 Kết quả đã sẵn sàng 100% để chuyển sang các Task tiếp theo của giai đoạn 2 (Tính toán chỉ số trung tâm và Mô hình lan truyền).
+
