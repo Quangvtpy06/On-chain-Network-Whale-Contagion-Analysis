@@ -35,7 +35,7 @@ def main():
         't07_all_wallet_labels.parquet','t07_public_enriched_wallet_labels.parquet',
         't07_complete_wallet_labels.parquet','t07_contract_status.parquet',
         't07_complete_summary.json','t07_public_enrichment_summary.json']],
-      't08': ['data/interim/usdt_transfers_netted.parquet']+['data/processed/graphs/'+name for name in [
+      't08': [config['data']['interim_raw_transfers'],'data/interim/usdt_transfers_netted.parquet']+['data/processed/graphs/'+name for name in [
         'dynamic_edges_daily.parquet','dynamic_edges_weekly.parquet',
         'graph_metrics_daily.parquet','graph_metrics_weekly.parquet','t08_validation.parquet',
         't08_acceptance_checks.parquet','t08_topology_comparison.parquet','t08_monthly_retention.parquet',
@@ -58,6 +58,10 @@ def main():
         (ROOT/'data/processed/graphs'/name).is_file() and
         file_hash(ROOT/'data/processed/graphs'/name)==hashes['run1']==hashes['run2']
         for name,hashes in t08_hashes.items()))
+    raw_path=ROOT/config['data']['interim_raw_transfers']
+    raw_sha256=t08.get('netting_results',{}).get('raw_sha256')
+    accepted['t08']=bool(accepted['t08'] and raw_path.is_file() and raw_sha256 and
+        file_hash(raw_path)==raw_sha256)
     t09_summary=read_json(ROOT/'data/processed/t09/t09_summary.json')
     t09_repro=read_json(ROOT/'data/processed/t09/t09_reproducibility.json')
     accepted['t09']=bool(accepted['t09'] and accepted['t08'] and
@@ -111,8 +115,7 @@ def main():
     summary=dict(repo_id=config['huggingface']['repo_id'],repo_type='dataset',
         tasks_accepted=accepted,manifest_file='data/hf_release_manifest.json',
         upload_files=upload,blocked_upload_files=blocked,missing_files=missing,
-        raw_input_already_on_remote=dict(path=config['data']['interim_raw_transfers'],
-            sha256=t08.get('netting_results',{}).get('raw_sha256')),
+        raw_input=dict(path=config['data']['interim_raw_transfers'],sha256=raw_sha256),
         excluded=['.cache/**','**/__pycache__/**','**/test_tmp*/**','**/repro_run*/**',
                   '**/*.csv except eth_stats_from_2025.csv','generated graph HTML/PNG'],
         upload_performed=False,

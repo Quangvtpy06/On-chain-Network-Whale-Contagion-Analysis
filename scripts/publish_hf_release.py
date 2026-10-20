@@ -49,8 +49,8 @@ def main():
     api.whoami()  # fail before upload if no authentication is configured
     repo = manifest['repo_id']; kind = manifest['repo_type']
     parent = api.repo_info(repo, repo_type=kind).sha
-    raw = manifest.get('raw_input_already_on_remote', {})
-    if raw.get('path') and raw.get('sha256'):
+    raw = manifest.get('raw_input', manifest.get('raw_input_already_on_remote', {}))
+    if raw.get('path') and raw.get('sha256') and raw['path'] not in seen:
         found = api.get_paths_info(repo, [raw['path']], repo_type=kind, revision=parent)
         if not found or not found[0].lfs:
             raise ValueError('Cannot verify the raw input already stored on Hugging Face.')

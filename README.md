@@ -89,7 +89,7 @@ revision = HfApi().repo_info(repo, repo_type='dataset').sha
 manifest = json.load(open(hf_hub_download(repo, 'data/hf_release_manifest.json',
     repo_type='dataset', revision=revision), encoding='utf-8'))
 paths = [row['path'] for row in manifest['upload_files']]
-paths += ['data/hf_release_manifest.json', manifest['raw_input_already_on_remote']['path']]
+paths += ['data/hf_release_manifest.json']
 snapshot_download(repo, repo_type='dataset', revision=revision,
     allow_patterns=paths, local_dir='.')
 ```

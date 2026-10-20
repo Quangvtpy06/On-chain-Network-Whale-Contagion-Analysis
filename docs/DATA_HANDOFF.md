@@ -62,3 +62,5 @@ Khi được yêu cầu xuất bản: đăng nhập `hf auth login`, chạy
 Publisher chỉ upload allowlist, kiểm tra hash trên remote và lưu receipt tại
 `.release/hf_publish_receipt.json`; không xóa các file remote khác.
 GitHub chỉ lưu code/config/tài liệu; dữ liệu và receipt được `.gitignore` loại bỏ.
+File nguồn raw Parquet thật cũng nằm trong allowlist và phải khớp hash nguồn T08;
+không coi con trỏ Git LFS 134 byte là dữ liệu nguồn hợp lệ.
