@@ -1,7 +1,0 @@
-﻿address,entity_name,entity_type,source_url,confidence
-0x28c6c06298d514db089934071355e5743bf21d60,Binance 14,CEX,https://etherscan.io/tx/0x791ddfce7ce7e4ebbdda663fcc9b35eb87e11f7ff3a7a586088b5145e033e763,High
-0x23878914efe38d27c4d67ab83ed1b93a74d4086a,Aave Ethereum USDT,DeFi,https://etherscan.io/tx/0x1b51ba276452fbe3e0b6623570fc097a2c2ddd0f87ddc43c7b6a91a458e31b85,High
-0x1111111254eeb25477b68fb85ed929f73a960582,1inch Aggregation Router V5,DEX,https://blockscan.com/Address/0x1111111254eeb25477b68fb85ed929f73a960582,High
-0x00e2e97ebd3d7a67910c7f487ee7532b274ff8fe,Unidentified Proxy Contract,Contract,https://etherscan.io/address/0x00e2e97ebd3d7a67910c7f487ee7532b274ff8fe,High
-0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb,Morpho,DeFi,https://blockscan.com/Address/0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb,Medium
-0x00000f91109c4d0007e90000d9facad5298a0cac,MEV Bot,Other,https://etherscan.io/tx/0x583ee4a11d5abe786b38524a550fcb6d6c8fe75527e905284d15816c26b2d711,High
