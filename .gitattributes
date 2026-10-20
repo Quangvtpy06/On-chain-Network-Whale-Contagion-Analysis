@@ -1,1 +1,4 @@
-*.parquet filter=lfs diff=lfs merge=lfs -text
+# Datasets are published to Hugging Face; see docs/DATA_HANDOFF.md.
+# Keep code/config bytes stable for the accepted SHA-256 provenance.
+*.py -text
+*.yaml -text

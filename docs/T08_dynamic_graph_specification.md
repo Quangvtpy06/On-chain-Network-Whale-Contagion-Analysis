@@ -1,123 +1,150 @@
-# Đặc Tả Kỹ Thuật Đồ Thị Giao Dịch Động (Dynamic Transaction Graph Specification - T08)
+# T08 — Đặc tả đồ thị giao dịch động
 
-**Dự án:** On-chain Network Whale Contagion Analysis  
-**Mã nhiệm vụ:** T08 (Giai đoạn 2: Đồ thị và chỉ số mạng)  
-**Người thực hiện:** TV1 - Yến Vy  
-**Reviewer:** TV4 / Hương  
-**Trạng thái:** ✅ **Hoàn thành (Done)**  
+## Đầu vào và cấu hình
 
----
+Mọi đường dẫn artifact tính tương đối từ thư mục `crypto`, đọc từ `config/config.yaml`.
+`src/graph_config.py` tìm bản transfer gốc trong dự án hoặc cache Hugging Face có sẵn.
+Không sửa file gốc. Pipeline ghi SHA-256 của file gốc để đối soát sau khi chạy.
 
-## 1. Cơ sở Lý thuyết & Định nghĩa Toán học
+T07 được hoàn thiện bằng `python T07_Complete_Wallet_Labels.py`. Đầu ra chuẩn là
+`data/processed/t07/t07_complete_wallet_labels.parquet`.
+Mỗi địa chỉ xuất hiện đúng một lần, có nhãn thực thể, bằng chứng gốc, `is_contract`,
+`contract_status_source`, `contract_status_checked_at`, `contract_status_as_of`.
+`is_contract` lấy từ bảng `bigquery-public-data.crypto_ethereum.contracts` trước
+mốc kết thúc nghiên cứu, độc lập với `entity_type`. Chưa xác minh là null, không
+mặc định False. Có bản ghi tạo contract không bảo đảm bytecode còn tồn tại ở mọi
+thời điểm trong kỳ, và không xác minh danh tính kinh tế của tổ chức.
+Nhãn Unknown và Contract không có danh tính tổ chức vẫn được ghi rõ là chưa quy thuộc.
 
-Mạng lưới giao dịch cá voi on-chain được mô hình hóa dưới dạng một **chuỗi đồ thị có hướng theo thời gian (Dynamic Directed Temporal Graph Sequence)**:
+## Phép gộp dòng tiền
 
-$$\mathcal{G} = \{ G_t \}_{t=1}^T = \{ (V_t, E_t, W_t) \}_{t=1}^T$$
+Với mỗi `transaction_hash` và cặp ví vô hướng `{A,B}`, đặt A < B theo thứ tự địa chỉ:
 
-Trong đó, mỗi lát cắt đồ thị (graph snapshot) $G_t$ tại cửa sổ thời gian $t$ được định nghĩa:
+`net(A,B,tx) = sum(amount A→B trong tx) - sum(amount B→A trong tx)`.
 
-1. **Tập đỉnh (Nodes $V_t$):**  
-   Tập hợp tất cả các địa chỉ ví (EOA hoặc Smart Contract) có tham gia vào ít nhất một giao dịch gửi hoặc nhận trong cửa sổ thời gian $t$:
-   $$V_t = \{ u \in \mathcal{A} \mid \exists v \in \mathcal{A}: (u, v) \in E_t \lor (v, u) \in E_t \}$$
-   - *Thuộc tính đỉnh (Node Attributes):* `in_degree`, `out_degree`, `in_volume`, `out_volume`, cùng nhãn phân loại thực thể (`entity_type`: CEX, DEX, DeFi, Custodian,...) được kế thừa từ Task T07.
+Tính bằng micro-USDT (6 chữ số thập phân). Nếu net > 0 giữ A→B, nếu net < 0 giữ B→A
+với amount = abs(net). Bỏ net = 0, rồi áp lại ngưỡng amount ≥ 500.000 USDT.
+Không gộp qua các transaction khác nhau. Bỏ from = to trước khi netting và thống kê
+số sự kiện/volume bị bỏ theo ngày. Địa chỉ zero được giữ và gắn cờ `is_zero_address`.
+Khóa `(transaction_hash, log_index)` phải duy nhất trên dữ liệu thô; dữ liệu netted
+không còn log_index đại diện cho một sự kiện, mà có khóa transaction/cặp ví.
 
-2. **Tập cạnh (Directed Edges $E_t$):**  
-   Một cạnh có hướng $e = (u, v) \in E_t$ biểu diễn luồng chuyển dịch token USDT từ ví nguồn $u$ sang ví đích $v$ trong khoảng thời gian $t$.
+File gộp: `data/interim/usdt_transfers_netted.parquet`.
 
-3. **Trọng số cạnh (Edge Weights $W_t$) theo yêu cầu T08:**  
-   Để phản ánh đầy đủ cả **quy mô dòng vốn** lẫn **tần suất tương tác**, mỗi cạnh $e = (u, v)$ được gán đa trọng số:
-   - **`total_value` (Volume Weight):** Tổng khối lượng USDT chuyển giao giữa $u \to v$ trong $t$:
-     $$w_{\text{val}}(u, v, t) = \sum_{k \in \text{Transfers}(u \to v, t)} \text{amount}_k$$
-   - **`transaction_count` (Frequency Weight):** Số lượng sự kiện chuyển token (transfer events) giữa $u \to v$ trong $t$:
-     $$w_{\text{freq}}(u, v, t) = |\text{Transfers}(u \to v, t)|$$
-   - **`mean_value`:** Giá trị trung bình trên mỗi lượt chuyển: $\frac{w_{\text{val}}}{w_{\text{freq}}}$.
-   - **`min_value`, `max_value`, `first_timestamp`, `last_timestamp`:** Thống kê biên độ và chuỗi thời gian nội bộ cửa sổ.
+## Cạnh và thuộc tính nút
 
----
+G_t là DiGraph có hướng trên một cửa sổ UTC. Mỗi cặp có hướng xuất hiện một lần:
 
-## 2. Cửa sổ Thời gian (Time Windows)
+| Thuộc tính cạnh | Định nghĩa |
+|---|---|
+| total_value | Tổng amount netted của cặp trong cửa sổ |
+| transaction_count | Số transaction_hash khác nhau của cặp trong cửa sổ |
+| mean_value | total_value / transaction_count |
+| min_value, max_value | Amount netted nhỏ nhất, lớn nhất của một transaction/cặp |
+| gross_value | Tổng amount thô của **cả hai chiều** thuộc các cặp transaction còn được giữ |
+| event_count | Số sự kiện thô của cả hai chiều thuộc các cặp transaction còn được giữ |
+| first_timestamp, last_timestamp | Timestamp UTC đầu/cuối |
+| is_zero_address | Ít nhất một đầu mút là địa chỉ zero |
+| days_in_window, is_partial_week | Metadata cửa sổ |
+| eligible_for_regression | False với tuần thiếu ngày |
 
-Hệ thống hỗ trợ 2 độ phân giải thời gian (temporal granularities) phục vụ các mục tiêu nghiên cứu khác nhau:
+Gross của các cặp bị triệt tiêu hoặc rơi dưới ngưỡng không có cạnh để gán; do đó tổng
+gross_value trên cạnh không bằng tổng volume thô. Dùng raw_volume trong summary và
+bảng monthly retention để so sánh toàn bộ trước/sau netting.
 
-| Tiêu chí | Cửa sổ Ngày (Daily Snapshot) | Cửa sổ Tuần (Weekly Snapshot) |
-|---|---|---|
-| **Ký hiệu** | $G_{t, \text{daily}}$ | $G_{t, \text{weekly}}$ |
-| **Độ dài cửa sổ** | 24 giờ UTC (`00:00:00` đến `23:59:59`) | 7 ngày UTC (ISO Week: Thứ 2 đến Chủ nhật) |
-| **Tổng số snapshots** | **655 ngày** (từ `2025-01-01` đến `2026-10-17`) | **94 tuần** |
-| **Tổng số cạnh có trọng số** | **1.017.003** cạnh | **640.647** cạnh |
-| **Số đỉnh trung bình / snapshot** | ~1.096 ví / ngày | ~4.146 ví / tuần |
-| **Số cạnh trung bình / snapshot** | ~1.553 cạnh / ngày | ~6.815 cạnh / tuần |
-| **Mục đích sử dụng** | Bắt trọn các cú sốc thanh khoản tức thời, contagion shock hàng ngày, phân tích sự kiện ngắn hạn | Nghiên cứu cấu trúc vĩ mô, độ bền vững của mạng lưới, centrality evolution theo tuần |
+Nút có entity_name, entity_type, class từ T07; is_contract và nguồn xác minh;
+is_zero_address; in/out degree và in/out volume. Loader giữ tất cả thuộc tính cạnh,
+đồng thời cung cấp weight = total_value.
 
----
+## Cửa sổ thời gian và snapshot rỗng
 
-## 3. Cấu trúc Tệp và Dữ liệu Đầu ra
+Ngày UTC theo khoảng nửa mở `[00:00:00, 00:00:00 ngày sau)`.
+Tuần ISO bắt đầu thứ Hai 00:00 UTC; dùng `%G-W%V` (ISO year/week).
+Trong 2025-01-01–2026-10-17 có 655 ngày và 94 tuần:
 
-Toàn bộ kết quả được lưu trữ chuẩn hóa tại thư mục `data/processed/graphs/`:
+- 2025-W01: 5 ngày; is_partial_week=True.
+- 2026-W42: 6 ngày; is_partial_week=True.
+- 92 tuần còn lại đủ 7 ngày, eligible_for_regression=True.
 
-```text
-data/processed/graphs/
-├── dynamic_edges_daily.parquet        # 1,017,003 cạnh có trọng số theo ngày (79.1 MB)
-├── dynamic_edges_weekly.parquet       # 640,647 cạnh có trọng số theo tuần (53.7 MB)
-├── graph_metrics_daily.parquet        # Chỉ số topology 655 ngày (43 KB)
-├── graph_metrics_daily.csv            # Chỉ số topology 655 ngày bản CSV (105 KB)
-├── graph_metrics_weekly.parquet       # Chỉ số topology 94 tuần (8 KB)
-├── graph_metrics_weekly.csv           # Chỉ số topology 94 tuần bản CSV (15 KB)
-└── t08_summary.json                   # Báo cáo JSON tổng hợp toàn bộ thông số
+Bảng metrics và loader liệt kê đủ 655 ngày/94 tuần kể cả ngày rỗng. Edge parquet là
+bảng cạnh thưa: không thêm cạnh giả cho ngày không giao dịch. Snapshot rỗng có 0 nút,
+0 cạnh, 0 volume và được loader trả về như DiGraph rỗng trong phạm vi cấu hình.
+Các task hồi quy phải lọc `eligible_for_regression == True` khi dùng chuỗi tuần.
+
+## Chỉ số và kiểm định
+
+Density, reciprocity, SCC, WCC tính trên đồ thị có hướng đơn sau khi gộp cạnh.
+Node volume = incoming + outgoing; tổng volume nút = 2 × volume cạnh.
+`top10_volume_share`, Gini và HHI dùng phân phối này. Không làm tròn giá trị trước khi kiểm định.
+
+`t08_validation.parquet` có một dòng mỗi ngày: date, n_events_in (số sự kiện nguồn
+thuộc cặp netted còn giữ), n_netted_rows, n_tx_in (unique tx ngày), n_edges, n_nodes,
+value_in, value_edges, diff_value (edges − input), self_loops (sự kiện raw bị bỏ),
+zero_addr (dòng netted có zero), edge_transaction_count, status.
+Đối soát volume dùng atol=0,0001 USDT, rtol=1e-12 để cho phép sai số cộng float.
+Theo yêu cầu người dùng, không đối chiếu tổng transaction_count trên cạnh với số tx
+unique toàn ngày: một tx có thể đóng góp nhiều cạnh.
+
+`t08_acceptance_checks.parquet` lưu B.1–B.9. B.6 chọn ngẫu nhiên 5 transaction với seed=8,
+đối chiếu tổng hai chiều thô với chiều netted và sự tồn tại trong cạnh ngày.
+`t08_topology_comparison.parquet` lưu trước/sau từng cửa sổ; không giả định reciprocity
+nhất thiết phải giảm vì các transaction hai chiều độc lập vẫn được giữ.
+
+B.7 gồm monthly retention, top 10 ngày và tác nhân đo được (top transaction, top node),
+top 20 nút kèm trạng thái contract/nhãn, tỷ trọng top10 nút toàn kỳ.
+Giải thích tác nhân đo được không phải xác minh nguyên nhân kinh tế bên ngoài.
+`residual_top10_review_threshold` trong config là ngưỡng sàng lọc của nghiên cứu,
+không phải kết luận tự động về dòng tiền giả.
+
+Audit đa bước: `t08_multistep_cycle_audit.parquet` trừ bottleneck của chu trình có hướng
+trong từng transaction, theo thứ tự địa chỉ xác định. Kiểm tra tổng phần bị trừ đi/đến
+của mỗi nút/transaction bằng nhau. Cách phân rã chu trình có thể không duy nhất; đây
+là phép tính độ nhạy, không là bằng chứng rằng mọi vòng đều phi kinh tế. Không tự thay
+đồ thị chính khi chưa có quyết định của nhóm. Nếu tập trung vượt ngưỡng, B.7 là
+REVIEW_REQUIRED và ready_for_t09_t12=False.
+
+## Tái lập và review
+
+Từ thư mục crypto chạy bằng Python có đủ requirements (môi trường hiện tại: `.venv`
+ở thư mục cha):
+
+```powershell
+& '../.venv/Scripts/python.exe' T07_Complete_Wallet_Labels.py
+& '../.venv/Scripts/python.exe' T08_Dynamic_Transaction_Graph.py
 ```
 
-### Chi tiết các cột trong bảng cạnh (`dynamic_edges_*.parquet`):
-1. `time_window`: Ngày (`YYYY-MM-DD`) hoặc Tuần (`YYYY-Www`).
-2. `from_address`: Địa chỉ ví gửi (lowercase).
-3. `to_address`: Địa chỉ ví nhận (lowercase).
-4. `total_value`: Tổng khối lượng USDT chuyển giao trong cửa sổ.
-5. `transaction_count`: Số giao dịch cá voi giữa 2 ví.
-6. `mean_value`: Giá trị trung bình mỗi giao dịch.
-7. `min_value` / `max_value`: Giao dịch nhỏ nhất / lớn nhất.
-8. `first_timestamp` / `last_timestamp`: Thời điểm giao dịch đầu / cuối trong cửa sổ.
-9. `window_type`: `daily` hoặc `weekly`.
-
-### Chi tiết các cột trong bảng chỉ số mạng lưới (`graph_metrics_*.csv`):
-1. `time_window`: Nhãn thời gian.
-2. `num_nodes` ($|V_t|$): Số lượng ví hoạt động trong snapshot.
-3. `num_edges` ($|E_t|$): Số lượng luồng chuyển tiền độc lập giữa các cặp ví.
-4. `total_volume_usdt`: Tổng khối lượng USDT luân chuyển trong snapshot.
-5. `total_transactions`: Tổng số lượt giao dịch cá voi.
-6. `density`: Mật độ liên kết của đồ thị: $D = \frac{|E|}{|V|(|V|-1)}$.
-7. `reciprocity`: Tỷ lệ dòng tiền hai chiều tương hỗ giữa các cặp ví.
-8. `num_weakly_connected_components`: Số cụm liên thông yếu (WCC).
-9. `num_strongly_connected_components`: Số cụm liên thông mạnh (SCC).
-10. `max_in_degree` & `max_in_address`: Đỉnh hút dòng tiền mạnh nhất (thường là CEX hot wallet hoặc router hợp đồng).
-11. `max_out_degree` & `max_out_address`: Đỉnh phân phối dòng tiền mạnh nhất.
-
----
-
-## 4. Hướng dẫn Sử dụng Thư viện Lớp `DynamicGraphLoader`
-
-Các thành viên phụ trách các task tiếp theo (T09, T10, Contagion Simulation) có thể trích xuất đồ thị NetworkX trực tiếp cực kỳ đơn giản:
+Mặc định T08 tính hai lần từ raw, lưu lần hai vào `.cache/t08_repro_*`, so SHA-256 của 11
+artifact rồi dọn thư mục tạm, xác nhận input netted không đổi. Summary không chứa timestamp chạy dễ
+làm thay đổi hash. `src/t08_review.py` chạy ở tiến trình riêng, không import
+production; đối chiếu netting bằng bảng tổng chiều thuận ghép bảng đảo chiều,
+đối chiếu mọi cạnh, dùng SciPy sparse kiểm tra topology độc lập với NetworkX.
+Đây là review tính toán độc lập, không thay chữ ký reviewer trong nhóm.
 
 ```python
-from pathlib import Path
 from src.build_dynamic_graph import DynamicGraphLoader
-
-# 1. Khởi tạo loader (tự động tích hợp nhãn thực thể T07 nếu có)
-loader = DynamicGraphLoader(
-    edges_parquet_path="data/processed/graphs/dynamic_edges_daily.parquet",
-    labels_csv_path="data/external/t07_verified_labels.csv"
-)
-
-# 2. Xem danh sách các ngày có sẵn (655 ngày)
-available_dates = loader.get_time_windows()
-print("Ngày đầu:", available_dates[0], "Ngày cuối:", available_dates[-1])
-
-# 3. Trích xuất đồ thị NetworkX DiGraph của một ngày bất kỳ
-G_snap = loader.build_snapshot_graph("2025-01-01")
-
-print(f"Số Nodes: {G_snap.number_of_nodes()}")
-print(f"Số Edges: {G_snap.number_of_edges()}")
-
-# 4. Duyệt các cạnh và trọng số
-for u, v, data in list(G_snap.edges(data=True))[:5]:
-    print(f"{u} -> {v} | Value: {data['weight']:,.2f} USDT | Txs: {data['transaction_count']}")
+loader = DynamicGraphLoader('data/processed/graphs/dynamic_edges_daily.parquet')
+graph = loader.build_snapshot_graph('2025-01-01')
 ```
 
+`--single-run` chỉ phục vụ phát triển: B.9 giữ PENDING, không đạt nghiệm thu.
+`--show-only --date 2025-01-01 --top-k 100` xuất HTML tương tác từ kết quả có sẵn.
+HTML nhúng Plotly để xem offline; `scrollZoom=True`, kéo để pan, nhấp đúp để reset.
+Màu mặc định biểu diễn log(1 + in_degree + out_degree), thanh màu ghi bậc gốc;
+kích thước nút cũng theo độ kết nối. Có lựa chọn màu theo entity_type T07,
+ký hiệu hình thoi cho contract và hình tròn cho địa chỉ khác. Mũi tên giữa cạnh
+biểu diễn chiều u→v và có tooltip volume ròng, số transaction khác nhau, mean,
+gross và số event nguồn. Các giá trị node trong chế độ top-k được tính trên đồ thị
+đang hiển thị; metadata nhãn lấy từ T07. Chọn top-k chỉ lọc hiển thị, không đổi dữ liệu.
+Ô tìm địa chỉ và nút reset hỗ trợ khám phá. `--no-open` xuất HTML mà không mở browser.
+
+## Giới hạn đã biết
+
+Một sự kiện ERC-20 không nhất thiết là một dòng tiền kinh tế độc lập. Net theo cặp chỉ
+loại vòng trực tiếp nội transaction; vòng qua nhiều transaction, trung gian và các
+hoạt động hợp đồng khác vẫn có thể còn. Dữ liệu raw đầu vào vốn đã lọc từng event
+≥500.000 USDT, nên không khôi phục được counterflow nhỏ hơn ngưỡng đã bị bỏ ở T05.
+Kết quả netting vì thế chỉ là net trên tập sự kiện được quan sát.
+
+Đồ thị chỉ chứa transfer ròng ≥500.000 USDT. Bậc nút bị cắt xén; centrality mô tả mạng
+con cá voi, không phải toàn mạng Ethereum/USDT. Không suy quan hệ sở hữu hay dòng vốn
+kinh tế độc lập chỉ từ cạnh, volume hoặc vòng chuyển token.

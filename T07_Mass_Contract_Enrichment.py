@@ -9,9 +9,9 @@ INPUT:
 OUTPUT:
     data/processed/t07/t07_mass_enriched_wallet_labels.parquet
     data/processed/t07/t07_mass_enrichment_summary.json
-    data/processed/t07/t07_rpc_cache.csv
+    data/processed/t07/t07_rpc_cache.parquet
     data/processed/t07/t07_blockscout_cache.jsonl
-    data/processed/t07/t07_deep_review.csv
+    data/processed/t07/t07_deep_review.parquet
 
 FEATURES:
     1. Preserve existing entity labels
@@ -66,12 +66,12 @@ LABELS = (
     "Unknown",
 )
 
-RPC_CACHE = DIR / "t07_rpc_cache.csv"
+RPC_CACHE = DIR / "t07_rpc_cache.parquet"
 BLOCKSCOUT_CACHE = DIR / "t07_blockscout_cache.jsonl"
 
 OUTPUT = DIR / "t07_mass_enriched_wallet_labels.parquet"
 SUMMARY = DIR / "t07_mass_enrichment_summary.json"
-REVIEW = DIR / "t07_deep_review.csv"
+REVIEW = DIR / "t07_deep_review.parquet"
 
 CURATED = EXTERNAL / "t07_curated_entity_evidence.csv"
 
@@ -147,9 +147,9 @@ def normalize_tag(value):
     return value
 
 
-def atomic_write_csv(df, path):
+def atomic_write_table(df, path):
     temp = path.with_name(path.name + ".tmp")
-    df.to_csv(temp, index=False, encoding="utf-8-sig")
+    df.to_parquet(temp, index=False)
     os.replace(temp, path)
 
 
@@ -234,9 +234,7 @@ def load_rpc_cache():
     if not RPC_CACHE.exists():
         return pd.DataFrame(columns=CACHE_COLUMNS)
 
-    cache = pd.read_csv(
-        RPC_CACHE, dtype=str
-    ).fillna("")
+    cache = pd.read_parquet(RPC_CACHE).fillna("")
 
     if not set(CACHE_COLUMNS).issubset(cache.columns):
         raise ValueError("Invalid RPC cache columns")
@@ -333,7 +331,7 @@ def identify_contracts(df, args):
                 ignore_index=True,
             )
 
-            atomic_write_csv(current, RPC_CACHE)
+            atomic_write_table(current, RPC_CACHE)
 
             print(
                 "RPC checked:",
@@ -356,7 +354,7 @@ def identify_contracts(df, args):
             "address", keep="last"
         )
 
-        atomic_write_csv(cache, RPC_CACHE)
+        atomic_write_table(cache, RPC_CACHE)
 
     code_map = dict(zip(cache.address, cache.status))
 
@@ -933,7 +931,7 @@ def generate_report(df, reviews, rpc_errors, rpc_new, deep_stats,
         reviews, columns=review_columns
     )
 
-    atomic_write_csv(review_df, REVIEW)
+    atomic_write_table(review_df, REVIEW)
 
     print("\n===== T07 MASS + DEEP RESULTS =====")
 

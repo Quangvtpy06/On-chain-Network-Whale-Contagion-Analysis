@@ -1,0 +1,55 @@
+# Configuration for On-chain Network Whale Contagion Analysis
+# All paths are relative to the project root directory.
+# Tabular outputs use Parquet only. The only retained CSV is eth_stats_from_2025.csv.
+
+project:
+  name: "On-chain Network Whale Contagion Analysis"
+  token: "USDT"
+  token_address: "0xdac17f958d2ee523a2206206994597c13d831ec7"
+  token_decimals: 6
+  whale_threshold_usdt: 500000.0
+  start_date: "2025-01-01"
+  end_date: "2026-10-17"
+  total_days: 655
+  total_weeks: 94
+
+data:
+  raw_daily_dir: "data/raw/daily"
+  interim_raw_transfers: "data/interim/usdt_whale_transfers_interim.parquet"
+  interim_netted_transfers: "data/interim/usdt_transfers_netted.parquet"
+  external_labels_csv: "data/external/t07_verified_labels.csv"
+  public_labels_parquet: "data/processed/t07/t07_public_enriched_wallet_labels.parquet"
+  processed_labels_parquet: "data/processed/t07/t07_complete_wallet_labels.parquet"
+  contract_status_parquet: "data/processed/t07/t07_contract_status.parquet"
+  processed_graphs_dir: "data/processed/graphs"
+  processed_t09_dir: "data/processed/t09"
+  daily_edges_parquet: "data/processed/graphs/dynamic_edges_daily.parquet"
+  weekly_edges_parquet: "data/processed/graphs/dynamic_edges_weekly.parquet"
+  daily_metrics_parquet: "data/processed/graphs/graph_metrics_daily.parquet"
+  weekly_metrics_parquet: "data/processed/graphs/graph_metrics_weekly.parquet"
+  validation_parquet: "data/processed/graphs/t08_validation.parquet"
+  summary_json: "data/processed/graphs/t08_summary.json"
+
+huggingface:
+  repo_id: "team-crypto/Market-data-crypto-project"
+  repo_type: "dataset"
+
+graph:
+  daily_window_hours: 24
+  weekly_iso: true
+  min_edge_threshold_usdt: 500000.0
+  # Ngưỡng sàng lọc nghiên cứu, không phải bằng chứng tự động về vòng chuyển tiền.
+  residual_top10_review_threshold: 0.5
+
+centrality:
+  pagerank_alpha: 0.85
+  # Cùng sai số L1 toàn mạng cho mọi snapshot; retry không nới tolerance.
+  pagerank_l1_tolerance: 0.00000000001
+  pagerank_max_iter: 500
+  pagerank_retry_max_iter: 2000
+
+bigquery:
+  project_id: "whale-network"
+  contracts_table: "bigquery-public-data.crypto_ethereum.contracts"
+  maximum_bytes_billed: 20000000000
+  credentials_file: "whale-network-4a41a91fd701.json"

@@ -94,7 +94,8 @@ def apply_verified_labels(wallets: pd.DataFrame, labels_path: Path) -> tuple[pd.
     stats = {"label_file_present": labels_path.is_file(), "verified_matches": 0}
     if not labels_path.is_file():
         return wallets, stats
-    labels = pd.read_csv(labels_path, dtype="string").fillna("")
+    labels = (pd.read_parquet(labels_path).astype('string') if labels_path.suffix == '.parquet'
+              else pd.read_csv(labels_path, dtype="string")).fillna("")
     required = {"address", "entity_name", "entity_type", "source_url", "confidence"}
     if not required.issubset(labels.columns):
         raise ValueError(f"Verified labels CSV requires: {sorted(required)}")
@@ -137,13 +138,11 @@ def main() -> None:
     wallets, label_stats = apply_verified_labels(wallets, args.labels)
     args.output.mkdir(parents=True, exist_ok=True)
     pq_path = args.output / "wallet_labels.parquet"
-    csv_path = args.output / "wallet_labels.csv"
     wallets.to_parquet(pq_path, index=False)
-    wallets.to_csv(csv_path, index=False, encoding="utf-8-sig")
     # Empty editable evidence template: no unsupported identity claims.
-    template_path = args.output / "verified_labels_template.csv"
+    template_path = args.output / "verified_labels_template.parquet"
     if not template_path.exists():
-        pd.DataFrame(columns=["address", "entity_name", "entity_type", "source_url", "confidence"]).to_csv(template_path, index=False)
+        pd.DataFrame(columns=["address", "entity_name", "entity_type", "source_url", "confidence"]).to_parquet(template_path, index=False)
     summary = {
         "input_file": str(args.input),
         "input_transfer_events": int(len(df)),
@@ -169,7 +168,7 @@ def main() -> None:
     for k, v in summary.items():
         if k != "limitations":
             print(f"{k}: {v}")
-    print("Outputs:", pq_path, csv_path, summary_path, template_path, sep="\n  ")
+    print("Outputs:", pq_path, summary_path, template_path, sep="\n  ")
 
 
 if __name__ == "__main__":

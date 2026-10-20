@@ -8,6 +8,13 @@ __pycache__/
 venv/
 env/
 .env
+.env.*
+!.env.example
+
+# Shared datasets live on Hugging Face, not in the GitHub code repository.
+/data/
+/eth_stats_from_2025.csv
+/.release/
 
 # Google Cloud credentials (Never commit keys)
 credentials.json
@@ -22,6 +29,12 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Test/download cache is never part of a dataset release.
+.cache/
+.pytest_cache/
+data/processed/test_tmp*/
+data/processed/graphs/repro_run*/
 
 # Generated graph figures & interactive html (on-demand)
 data/processed/graphs/*.png

@@ -1,3 +1,12 @@
+"""
+T07 Full Wallet Labeling
+========================
+Aggregates wallet activity across all whale transfers and assigns
+verified entity labels (CEX, DEX, DeFi, Bridge, Contract, etc.).
+
+Integrated with central data_loader for automatic Hugging Face
+selective download and local caching.
+"""
 
 from pathlib import Path
 from collections import defaultdict
@@ -7,10 +16,13 @@ import json
 import pandas as pd
 import pyarrow.parquet as pq
 
+from src.data_loader import get_data_path
+
 ROOT = Path(__file__).resolve().parent
 
-INPUT = ROOT / "data/interim/usdt_whale_transfers_interim.parquet"
-LABELS = ROOT / "data/external/t07_verified_labels.csv"
+# Tự động tải từ Hugging Face Hub (hoặc dùng local cache)
+INPUT = get_data_path("data/interim/usdt_whale_transfers_interim.parquet")
+LABELS = get_data_path("data/external/t07_verified_labels.csv")
 OUTPUT = ROOT / "data/processed/t07"
 
 ALLOWED_TYPES = {
@@ -54,6 +66,7 @@ wallets = defaultdict(lambda: {
 pf = pq.ParquetFile(INPUT)
 
 print("===== T07 FULL WALLET LABELING =====")
+print("Input file:", INPUT)
 print("Input transfer rows:", f"{pf.metadata.num_rows:,}")
 
 columns = [
@@ -109,11 +122,12 @@ for batch_id, batch in enumerate(
     total_rows += len(df)
     total_usdt += float(df["amount"].sum())
 
-    print(
-        f"Batch {batch_id}: "
-        f"{total_rows:,} transfers processed",
-        flush=True
-    )
+    if batch_id % 5 == 0 or batch_id == 1 or total_rows >= pf.metadata.num_rows:
+        print(
+            f"Batch {batch_id}: "
+            f"{total_rows:,} / {pf.metadata.num_rows:,} transfers processed",
+            flush=True
+        )
 
 # 3. Build one row per unique address
 results = []
@@ -162,16 +176,13 @@ result = pd.DataFrame(results).sort_values(
 )
 
 # 4. Save output
+output_parquet = OUTPUT / "t07_all_wallet_labels.parquet"
+
 result.to_parquet(
-    OUTPUT / "t07_all_wallet_labels.parquet",
+    output_parquet,
     index=False
 )
 
-result.to_csv(
-    OUTPUT / "t07_all_wallet_labels.csv",
-    index=False,
-    encoding="utf-8-sig"
-)
 
 # 5. Summary
 counts = {
@@ -198,7 +209,8 @@ summary = {
     )
 }
 
-(OUTPUT / "t07_full_summary.json").write_text(
+summary_json = OUTPUT / "t07_full_summary.json"
+summary_json.write_text(
     json.dumps(summary, indent=2, ensure_ascii=False),
     encoding="utf-8"
 )
@@ -213,6 +225,5 @@ for category, count in counts.items():
     print(f"{category}: {count:,}")
 
 print("\nOutputs:")
-print(OUTPUT / "t07_all_wallet_labels.parquet")
-print(OUTPUT / "t07_all_wallet_labels.csv")
-print(OUTPUT / "t07_full_summary.json")
+print(output_parquet)
+print(summary_json)

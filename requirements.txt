@@ -8,6 +8,8 @@ pyyaml
 python-dotenv
 google-cloud-bigquery
 db-dtypes
+huggingface_hub>=0.20.0
+fsspec
 # đồ thị và thống kê
 networkx
 scipy

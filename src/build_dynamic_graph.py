@@ -1,634 +1,192 @@
+﻿"""Đồ thị cá voi USDT trên dòng tiền đã net theo giao dịch và cặp ví.
+
+Cửa sổ ngày và tuần ISO bắt đầu thứ Hai theo UTC, bao gồm snapshot rỗng.
 """
-Task T08: Xây dựng Dynamic Transaction Graph (G_t)
-==================================================
-- Tên nhiệm vụ (WBS): Xây dynamic transaction graph
-- Mô tả: Đồ thị G_t theo cửa sổ daily hoặc weekly, cạnh có trọng số theo value và số giao dịch
-- Thực hiện: TV1 - Yến Vy
-- Reviewer: TV4 / Hương
-- Tiền đề phụ thuộc: T05 (data/interim/usdt_whale_transfers_interim.parquet)
-
-Đặc tả kỹ thuật:
-----------------
-1. Chuỗi đồ thị có hướng G_t = (V_t, E_t, W_t) theo cửa sổ thời gian t:
-   - Daily: G_{t, daily} (24 giờ UTC, 655 ngày)
-   - Weekly: G_{t, weekly} (7 ngày ISO Week, 94 tuần)
-2. Cạnh có hướng (u -> v) biểu diễn dòng tiền USDT từ ví nguồn u sang ví đích v.
-3. Trọng số cạnh (Edge Weights):
-   - total_value (Value Weight): Tổng giá trị token USDT chuyển giao giữa u -> v trong cửa sổ t.
-   - transaction_count (Frequency Weight): Số lượng giao dịch chuyển giao giữa u -> v trong cửa sổ t.
-   - mean_value: Giá trị trung bình mỗi giao dịch.
-   - min_value, max_value: Giá trị giao dịch nhỏ nhất và lớn nhất.
-   - first_timestamp, last_timestamp: Thời gian giao dịch đầu tiên và cuối cùng trong cửa sổ.
-4. Lớp DynamicGraphLoader:
-   - Cung cấp phương thức build_snapshot_graph(t) trích xuất trực tiếp đối tượng networkx.DiGraph.
-   - Tự động gán thuộc tính trọng số (weight, transaction_count) cho từng cạnh.
-   - Tích hợp nhãn thực thể từ Task T07 (nếu có).
-5. Trực quan hóa tự động:
-   - Tự động hiển thị đồ thị động G_t của snapshot mẫu ngay trên màn hình (trình duyệt & GUI) sau khi chạy.
-"""
-
-from __future__ import annotations
-
-import os
-import sys
-import json
-import argparse
-import webbrowser
+from datetime import date, timedelta
 from pathlib import Path
-from datetime import datetime, date
-from typing import Union, List, Dict, Any
-
-import pandas as pd
+import webbrowser
 import numpy as np
+import pandas as pd
 import networkx as nx
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
+from src.graph_config import ROOT, read_config, project_path
+from src.net_transfers import normalize_transfers, ZERO_ADDRESS
 
-# Fix UTF-8 encoding cho Windows console
-if sys.platform.startswith('win'):
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
-    except Exception:
-        pass
-
-# Cấu hình đường dẫn mặc định
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_INPUT_PARQUET = PROJECT_ROOT / "data" / "interim" / "usdt_whale_transfers_interim.parquet"
-DEFAULT_LABELS_CSV = PROJECT_ROOT / "data" / "external" / "t07_verified_labels.csv"
-DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "processed" / "graphs"
+PROJECT_ROOT = ROOT
+CONFIG = read_config()
+DEFAULT_INPUT_PARQUET = project_path(CONFIG['data']['interim_netted_transfers'])
+DEFAULT_OUTPUT_DIR = project_path(CONFIG['data']['processed_graphs_dir'])
+DEFAULT_LABELS_PARQUET = project_path(CONFIG['data']['processed_labels_parquet'])
 
 
-def load_whale_transfers(path: Path) -> pd.DataFrame:
-    """Nạp dữ liệu giao dịch cá voi USDT đã được chuẩn hóa từ Task T05."""
-    if not path.is_file():
-        raise FileNotFoundError(f"[-] Không tìm thấy file dữ liệu: {path.resolve()}")
-    
-    print(f"[*] Đang nạp dữ liệu giao dịch cá voi từ: {path.name}...")
-    df = pd.read_parquet(path)
-    
-    required_cols = {"from_address", "to_address", "amount", "block_timestamp"}
-    missing = required_cols - set(df.columns)
-    if missing:
-        raise ValueError(f"[-] Dữ liệu thiếu các cột bắt buộc: {missing}")
-    
-    df["from_address"] = df["from_address"].astype(str).str.lower().str.strip()
-    df["to_address"] = df["to_address"].astype(str).str.lower().str.strip()
-    df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
-    df["block_timestamp"] = pd.to_datetime(df["block_timestamp"], utc=True)
-    
-    if "tx_date" not in df.columns:
-        df["tx_date"] = df["block_timestamp"].dt.date
-    else:
-        df["tx_date"] = pd.to_datetime(df["tx_date"]).dt.date
-        
-    df["tx_week"] = df["block_timestamp"].dt.strftime("%G-W%V")
-    
-    print(f"[+] Nạp thành công {len(df):,} giao dịch cá voi.")
-    print(f"    Khoảng thời gian: từ {df['tx_date'].min()} đến {df['tx_date'].max()} ({df['tx_date'].nunique()} ngày liên tục)")
-    return df
+def load_netted_transfers(path):
+    data = normalize_transfers(pd.read_parquet(path))
+    for col in ['gross_amount', 'event_count']:
+        if col not in data:
+            raise ValueError(f'Thiếu provenance netting: {col}')
+    if data.duplicated(['transaction_hash', 'from_address', 'to_address']).any():
+        raise ValueError('Netted transfers trùng khóa transaction/cặp có hướng')
+    if data.from_address.eq(data.to_address).any():
+        raise ValueError('Netted transfers vẫn còn self-loop')
+    return data
 
 
-def build_dynamic_edges(df: pd.DataFrame, window: str = "daily") -> pd.DataFrame:
-    """Gom nhóm các giao dịch thành danh sách cạnh có hướng cho từng snapshot G_t."""
-    time_col = "tx_date" if window == "daily" else "tx_week"
-    print(f"\n[*] Đang xây dựng đồ thị động G_t theo cửa sổ: {window.upper()} ({time_col})...")
-    
-    grouped = df.groupby([time_col, "from_address", "to_address"], as_index=False).agg(
-        total_value=("amount", "sum"),
-        transaction_count=("amount", "count"),
-        mean_value=("amount", "mean"),
-        min_value=("amount", "min"),
-        max_value=("amount", "max"),
-        first_timestamp=("block_timestamp", "min"),
-        last_timestamp=("block_timestamp", "max")
-    )
-    
-    grouped = grouped.rename(columns={time_col: "time_window"})
-    grouped["window_type"] = window
-    grouped = grouped.sort_values(by=["time_window", "total_value"], ascending=[True, False]).reset_index(drop=True)
-    
-    num_snapshots = grouped["time_window"].nunique()
-    total_edges = len(grouped)
-    total_volume = grouped["total_value"].sum()
-    print(f"[+] Hoàn thành đồ thị {window.upper()}:")
-    print(f"    - Số snapshot thời gian (t): {num_snapshots}")
-    print(f"    - Tổng số cạnh có hướng có trọng số: {total_edges:,}")
-    print(f"    - Tổng khối lượng USDT luân chuyển: ${total_volume:,.2f}")
-    return grouped
+def calculate_iso_week_metadata(start_date, end_date):
+    weeks = {}
+    for d in pd.date_range(start_date, end_date):
+        weeks.setdefault(d.strftime('%G-W%V'), []).append(d.date())
+    return {w: dict(days_in_window=len(days), is_partial_week=len(days) < 7,
+                    start_date=str(days[0]), end_date=str(days[-1])) for w, days in weeks.items()}
 
 
-def compute_graph_metrics(edges_df: pd.DataFrame, window_type: str) -> pd.DataFrame:
-    """Tính toán chỉ số topology cho từng snapshot đồ thị G_t."""
-    print(f"[*] Đang tính toán chỉ số mạng lưới cho {window_type}...")
-    metrics_list = []
-    
-    windows = edges_df["time_window"].unique()
-    total_w = len(windows)
-    
-    for idx, w in enumerate(windows, 1):
-        if idx % 50 == 0 or idx == total_w:
-            print(f"    Tiến độ: [{idx}/{total_w}] snapshot ({w})...")
-            
-        sub = edges_df[edges_df["time_window"] == w]
-        
-        G = nx.DiGraph()
-        for _, row in sub.iterrows():
-            G.add_edge(
-                row["from_address"],
-                row["to_address"],
-                weight=float(row["total_value"]),
-                tx_count=int(row["transaction_count"])
-            )
-            
-        num_nodes = G.number_of_nodes()
-        num_edges = G.number_of_edges()
-        total_vol = float(sub["total_value"].sum())
-        total_tx = int(sub["transaction_count"].sum())
-        
-        density = nx.density(G) if num_nodes > 1 else 0.0
-        reciprocity = nx.reciprocity(G) if num_edges > 0 else 0.0
-        num_wcc = nx.number_weakly_connected_components(G)
-        num_scc = nx.number_strongly_connected_components(G)
-        
-        in_degrees = dict(G.in_degree())
-        out_degrees = dict(G.out_degree())
-        max_in_node = max(in_degrees, key=in_degrees.get) if in_degrees else None
-        max_out_node = max(out_degrees, key=out_degrees.get) if out_degrees else None
-        
-        metrics_list.append({
-            "time_window": str(w),
-            "num_nodes": num_nodes,
-            "num_edges": num_edges,
-            "total_volume_usdt": total_vol,
-            "total_transactions": total_tx,
-            "density": round(density, 6),
-            "reciprocity": round(reciprocity, 4),
-            "num_weakly_connected_components": num_wcc,
-            "num_strongly_connected_components": num_scc,
-            "max_in_degree": in_degrees.get(max_in_node, 0) if max_in_node else 0,
-            "max_in_address": max_in_node,
-            "max_out_degree": out_degrees.get(max_out_node, 0) if max_out_node else 0,
-            "max_out_address": max_out_node,
-        })
-        
-    return pd.DataFrame(metrics_list)
+def build_dynamic_edges(df, window='daily', start_date=None, end_date=None):
+    if window not in ('daily', 'weekly'):
+        raise ValueError('window phải là daily hoặc weekly')
+    start_date = start_date or date.fromisoformat(CONFIG['project']['start_date'])
+    end_date = end_date or date.fromisoformat(CONFIG['project']['end_date'])
+    time_col = 'tx_date' if window == 'daily' else 'tx_week'
+    edges = df.groupby([time_col, 'from_address', 'to_address'], as_index=False, sort=True).agg(
+        total_value=('amount', 'sum'), transaction_count=('transaction_hash', 'nunique'),
+        min_value=('amount', 'min'), max_value=('amount', 'max'),
+        gross_value=('gross_amount', 'sum'), event_count=('event_count', 'sum'),
+        first_timestamp=('block_timestamp', 'min'), last_timestamp=('block_timestamp', 'max'),
+        is_zero_address=('is_zero_address', 'any'))
+    edges['mean_value'] = edges.total_value / edges.transaction_count
+    edges = edges.rename(columns={time_col: 'time_window'})
+    edges['time_window'] = edges.time_window.astype(str)
+    edges['window_type'] = window
+    meta = calculate_iso_week_metadata(start_date, end_date)
+    edges['days_in_window'] = edges.time_window.map({w: m['days_in_window'] for w, m in meta.items()}) if window == 'weekly' else 1
+    edges['is_partial_week'] = edges.days_in_window.lt(7) if window == 'weekly' else False
+    edges['eligible_for_regression'] = ~edges.is_partial_week
+    return edges.sort_values(['time_window', 'from_address', 'to_address']).reset_index(drop=True)
+
+
+def compute_gini(values):
+    values = np.sort(np.asarray(values, dtype=float))
+    n = len(values)
+    if n < 2 or values.sum() <= 0:
+        return 0.0
+    return float(2 * np.dot(np.arange(1, n+1), values) / (n * values.sum()) - (n+1)/n)
+
+
+def compute_graph_metrics(edges_df, window_type, all_time_windows=None, week_meta=None):
+    windows = all_time_windows if all_time_windows is not None else sorted(edges_df.time_window.unique())
+    groups = dict(tuple(edges_df.groupby('time_window', sort=True)))
+    rows = []
+    for i, w in enumerate(windows, 1):
+        sub = groups.get(w, edges_df.iloc[:0])
+        graph = nx.DiGraph()
+        graph.add_edges_from(sub[['from_address', 'to_address']].itertuples(index=False, name=None))
+        node_vol = sub.groupby('from_address').total_value.sum().add(sub.groupby('to_address').total_value.sum(), fill_value=0)
+        shares = node_vol / node_vol.sum() if node_vol.sum() else node_vol
+        ins, outs = dict(graph.in_degree()), dict(graph.out_degree())
+        max_in = min(ins, key=lambda n: (-ins[n], n)) if ins else None
+        max_out = min(outs, key=lambda n: (-outs[n], n)) if outs else None
+        metadata = week_meta.get(w, {}) if week_meta else {}
+        partial = metadata.get('is_partial_week', False)
+        rows.append(dict(time_window=str(w), num_nodes=len(graph), num_edges=graph.number_of_edges(),
+            total_volume_usdt=float(sub.total_value.sum()), total_transactions=int(sub.transaction_count.sum()),
+            gross_volume_usdt=float(sub.gross_value.sum()), total_events=int(sub.event_count.sum()),
+            density=nx.density(graph), reciprocity=float(nx.reciprocity(graph) or 0) if graph.number_of_edges() else 0.0,
+            num_weakly_connected_components=nx.number_weakly_connected_components(graph),
+            num_strongly_connected_components=nx.number_strongly_connected_components(graph),
+            max_in_degree=ins.get(max_in, 0), max_in_address=max_in,
+            max_out_degree=outs.get(max_out, 0), max_out_address=max_out,
+            top10_volume_share=float(shares.nlargest(10).sum()), gini_volume=compute_gini(node_vol.to_numpy()),
+            hhi_volume=float((shares**2).sum()), is_partial_week=partial,
+            days_in_window=metadata.get('days_in_window', 1), eligible_for_regression=not partial))
+        if i % 100 == 0 or i == len(windows):
+            print(f'{window_type}: {i}/{len(windows)} snapshots', flush=True)
+    return pd.DataFrame(rows)
+
+
+def generate_validation_table(df_netted, df_edges_daily, metrics_daily, self_loops_by_date, all_dates):
+    incoming = df_netted.groupby('tx_date').agg(n_events_in=('event_count', 'sum'),
+        n_netted_rows=('amount', 'size'), n_tx_in=('transaction_hash', 'nunique'),
+        value_in=('amount', 'sum'), zero_addr=('is_zero_address', 'sum'))
+    edges = df_edges_daily.groupby('time_window').agg(n_edges=('total_value', 'size'),
+        value_edges=('total_value', 'sum'), edge_transaction_count=('transaction_count', 'sum'))
+    incoming.index = incoming.index.astype(str)
+    incoming = incoming.reindex([str(d) for d in all_dates], fill_value=0)
+    result = incoming.join(edges).fillna(0)
+    result['n_nodes'] = metrics_daily.set_index('time_window').num_nodes
+    result['diff_value'] = result.value_edges - result.value_in
+    result['self_loops'] = [self_loops_by_date.get(d, 0) for d in all_dates]
+    result['status'] = np.where(np.isclose(result.value_in, result.value_edges, rtol=1e-12, atol=1e-4), 'PASS', 'FAIL')
+    result.index.name = 'date'
+    return result.reset_index()
 
 
 class DynamicGraphLoader:
-    """Lớp tiện ích phục vụ nạp và trích xuất đồ thị động G_t."""
-    def __init__(self, edges_parquet_path: Union[Path, str], labels_csv_path: Union[Path, str, None] = None):
+    def __init__(self, edges_parquet_path, labels_parquet_path=DEFAULT_LABELS_PARQUET):
         self.edges_path = Path(edges_parquet_path)
-        if not self.edges_path.is_file():
-            raise FileNotFoundError(f"[-] Không tìm thấy file đồ thị: {self.edges_path}")
-            
         self.df_edges = pd.read_parquet(self.edges_path)
         self.labels = {}
-        
-        if labels_csv_path and Path(labels_csv_path).is_file():
-            df_lbl = pd.read_csv(labels_csv_path)
-            if "address" in df_lbl.columns and "entity_type" in df_lbl.columns:
-                df_lbl["address"] = df_lbl["address"].astype(str).str.lower().str.strip()
-                for _, r in df_lbl.iterrows():
-                    self.labels[r["address"]] = {
-                        "entity_name": r.get("entity_name", "Unknown"),
-                        "entity_type": r.get("entity_type", "Unknown")
-                    }
-                    
-    def get_time_windows(self) -> List[str]:
-        return sorted([str(x) for x in self.df_edges["time_window"].unique().tolist()])
-        
-    def build_snapshot_graph(self, time_window: Union[str, date]) -> nx.DiGraph:
-        target_str = str(time_window)
-        sub = self.df_edges[self.df_edges["time_window"].astype(str) == target_str]
-        if sub.empty:
-            raise ValueError(f"[-] Không có dữ liệu cho mốc thời gian: {time_window}")
-            
-        G = nx.DiGraph(time_window=target_str, window_type=sub["window_type"].iloc[0])
-        
-        for _, row in sub.iterrows():
-            u = row["from_address"]
-            v = row["to_address"]
-            G.add_edge(
-                u, v,
-                weight=float(row["total_value"]),
-                total_value=float(row["total_value"]),
-                transaction_count=int(row["transaction_count"]),
-                tx_count=int(row["transaction_count"]),
-                mean_value=float(row["mean_value"])
-            )
-            
-        if self.labels:
-            for node in G.nodes():
-                if node in self.labels:
-                    G.nodes[node]["entity_name"] = self.labels[node]["entity_name"]
-                    G.nodes[node]["entity_type"] = self.labels[node]["entity_type"]
-                else:
-                    G.nodes[node]["entity_name"] = "Unknown"
-                    G.nodes[node]["entity_type"] = "Unknown"
-                    
-        return G
+        if labels_parquet_path:
+            path = Path(labels_parquet_path)
+            labels = pd.read_parquet(path) if path.suffix == '.parquet' else pd.read_csv(path)
+            if labels.address.duplicated().any():
+                raise ValueError('Trùng địa chỉ trong T07')
+            if 'is_contract' not in labels:
+                raise ValueError('Cần bảng T07 hoàn chỉnh có is_contract')
+            self.labels = labels.set_index('address').to_dict('index')
+        self.window = self.df_edges.window_type.iloc[0] if not self.df_edges.empty else ('weekly' if 'weekly' in self.edges_path.name else 'daily')
+        config = read_config()
+        self.week_meta = calculate_iso_week_metadata(date.fromisoformat(config['project']['start_date']), date.fromisoformat(config['project']['end_date']))
+        self.dates = pd.date_range(config['project']['start_date'], config['project']['end_date']).strftime('%Y-%m-%d').tolist()
+
+    def get_time_windows(self):
+        return sorted(self.week_meta) if self.window == 'weekly' else self.dates
+
+    def build_snapshot_graph(self, time_window):
+        key = str(time_window)
+        if key not in self.get_time_windows():
+            raise ValueError(f'Cửa sổ ngoài phạm vi nghiên cứu: {key}')
+        metadata = self.week_meta[key] if self.window == 'weekly' else dict(is_partial_week=False, days_in_window=1)
+        graph = nx.DiGraph(time_window=key, window_type=self.window, **metadata)
+        graph.graph['eligible_for_regression'] = not metadata['is_partial_week']
+        sub = self.df_edges.loc[self.df_edges.time_window.eq(key)]
+        for row in sub.to_dict('records'):
+            u, v = row.pop('from_address'), row.pop('to_address')
+            graph.add_edge(u, v, weight=row['total_value'], **row)
+        for node in graph:
+            label = self.labels.get(node, {})
+            value = label.get('is_contract')
+            graph.nodes[node].update(entity_name=label.get('entity_name', 'Unknown'),
+                entity_type=label.get('entity_type', 'Unknown'),
+                **{'class': label.get('class', '')},
+                is_contract=None if pd.isna(value) else bool(value),
+                contract_status_source=label.get('contract_status_source', 'Not verified'),
+                is_zero_address=node == ZERO_ADDRESS,
+                in_degree=graph.in_degree(node), out_degree=graph.out_degree(node),
+                in_volume=graph.in_degree(node, weight='weight'), out_volume=graph.out_degree(node, weight='weight'))
+        return graph
 
 
-def show_dynamic_graph_snapshot(
-    edges_parquet_path: Path,
-    time_window: str = "2025-01-01",
-    top_k_edges: int = 0,
-    output_dir: Path = DEFAULT_OUTPUT_DIR,
-    auto_open: bool = True
-):
-    """Trích xuất snapshot G_t và hiển thị trực quan trực tiếp."""
-    print(f"\n" + "-" * 70)
-    print(f"[*] ĐANG HIỂN THỊ ĐỒ THỊ ĐỘNG G_t (SNAPSHOT: {time_window})...")
-    print("-" * 70)
-    
-    loader = DynamicGraphLoader(edges_parquet_path)
-    G = loader.build_snapshot_graph(time_window)
-    
-    print(f"[+] Snapshot G_t ({time_window}) có: {G.number_of_nodes()} ví cá voi, {G.number_of_edges()} luồng giao dịch.")
-    
-    total_snapshot_edges = G.number_of_edges()
-    if top_k_edges and top_k_edges > 0 and top_k_edges < total_snapshot_edges:
-        edges_sorted = sorted(G.edges(data=True), key=lambda x: x[2].get("weight", 0), reverse=True)[:top_k_edges]
-        is_sub = True
-    else:
-        edges_sorted = list(G.edges(data=True))
-        is_sub = False
-        
-    subG = nx.DiGraph()
-    for u, v, d in edges_sorted:
-        subG.add_edge(u, v, **d)
-        
-    num_nodes = subG.number_of_nodes()
-    iters = 20 if num_nodes > 2000 else (35 if num_nodes > 800 else 60)
-    pos = nx.spring_layout(subG, k=0.55, iterations=iters, seed=42)
-    degrees = dict(subG.degree())
-    total_val_m = sum(d.get("weight", 0) for _, _, d in edges_sorted) / 1e6
-    
-    if is_sub:
-        title_label = f"Mạng lưới Giao dịch Động G_t - Snapshot {time_window} (Top {len(subG.edges())}/{total_snapshot_edges} Cạnh | ${total_val_m:,.1f}M Volume)"
-        plt_subtitle = f"(Top {len(subG.edges())}/{total_snapshot_edges} Cạnh | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)"
-    else:
-        title_label = f"Mạng lưới Giao dịch Động G_t - Snapshot {time_window} (Toàn bộ {len(subG.edges())} Cạnh | ${total_val_m:,.1f}M Volume)"
-        plt_subtitle = f"(Toàn bộ {len(subG.edges())} Cạnh | {subG.number_of_nodes()} Ví Cá Voi | Volume: ${total_val_m:,.1f}M USDT)"
-        
-    # --- A. Tạo file đồ thị tương tác HTML (Plotly) ---
-    val_list = [d.get('weight', d.get('total_value', 0)) for _, _, d in subG.edges(data=True)]
-    top_thresh = float(np.percentile(val_list, 80)) if len(val_list) > 5 else 0.0
-
-    edge_norm_x, edge_norm_y = [], []
-    edge_high_x, edge_high_y = [], []
-    edge_mid_x, edge_mid_y, edge_hover_text = [], [], []
-
-    for u, v, d in subG.edges(data=True):
-        x0, y0 = pos[u]
-        x1, y1 = pos[v]
-        val = float(d.get('weight', d.get('total_value', 0)))
-        txs = int(d.get('transaction_count', d.get('tx_count', 1)))
-        avg_val = val / txs if txs > 0 else 0.0
-
-        if val >= top_thresh and len(val_list) > 5:
-            edge_high_x.extend([x0, x1, None])
-            edge_high_y.extend([y0, y1, None])
-        else:
-            edge_norm_x.extend([x0, x1, None])
-            edge_norm_y.extend([y0, y1, None])
-
-        edge_mid_x.append(x0 * 0.45 + x1 * 0.55)
-        edge_mid_y.append(y0 * 0.45 + y1 * 0.55)
-        edge_hover_text.append(
-            f"<b>━━ TRỌNG SỐ CẠNH (EDGE WEIGHTS) ━━</b><br>"
-            f"📤 <b>Ví gửi (Source):</b> {u}<br>"
-            f"📥 <b>Ví nhận (Target):</b> {v}<br>"
-            f"─────────────────────────────<br>"
-            f"💰 <b>Trọng số 1 (Value/Volume):</b> ${val:,.2f} USDT<br>"
-            f"🔄 <b>Trọng số 2 (Số giao dịch):</b> {txs:,} transfers<br>"
-            f"📊 <b>Giá trị TB mỗi lệnh:</b> ${avg_val:,.2f} USDT"
-        )
-
-    edge_norm_trace = go.Scatter(
-        x=edge_norm_x, y=edge_norm_y,
-        line=dict(width=1.2, color='#cbd5e1'),
-        hoverinfo='none',
-        mode='lines',
-        name='Cạnh chuẩn'
-    )
-    edge_high_trace = go.Scatter(
-        x=edge_high_x, y=edge_high_y,
-        line=dict(width=2.8, color='#334155'),
-        hoverinfo='none',
-        mode='lines',
-        name='Cạnh giá trị cao (Top 20% Volume)'
-    )
-    edge_mid_trace = go.Scatter(
-        x=edge_mid_x, y=edge_mid_y,
-        mode='markers',
-        marker=dict(
-            symbol='diamond',
-            size=8,
-            color='#2563eb',
-            opacity=0.85,
-            line=dict(width=1, color='#ffffff')
-        ),
-        hoverinfo='text',
-        text=edge_hover_text,
-        name='Trọng số Cạnh (Edge)',
-        hoverlabel=dict(bgcolor='#0f172a', font_color='#ffffff', font_size=12)
-    )
-
-    node_x, node_y, node_text, node_sizes = [], [], [], []
-    in_degrees = dict(subG.in_degree())
-    out_degrees = dict(subG.out_degree())
-    for node in subG.nodes():
-        x, y = pos[node]
-        node_x.append(x)
-        node_y.append(y)
-        deg = degrees[node]
-        node_sizes.append(min(deg * 5 + 10, 42))
-        in_vol = sum(d.get('weight', 0) for _, _, d in subG.in_edges(node, data=True)) / 1e6
-        out_vol = sum(d.get('weight', 0) for _, _, d in subG.out_edges(node, data=True)) / 1e6
-        node_text.append(
-            f"<b>━━ ĐỈNH MẠNG LƯỚI (VÍ CÁ VOI) ━━</b><br>"
-            f"👛 <b>Địa chỉ ví:</b> {node}<br>"
-            f"🔗 <b>Tổng bậc kết nối:</b> {deg} (Nhận vào: {in_degrees[node]}, Gửi đi: {out_degrees[node]})<br>"
-            f"📥 <b>Tổng tiền nhận (In-vol):</b> ${in_vol:,.2f}M USDT<br>"
-            f"📤 <b>Tổng tiền gửi (Out-vol):</b> ${out_vol:,.2f}M USDT"
-        )
-
-    node_trace = go.Scatter(
-        x=node_x, y=node_y,
-        mode='markers',
-        hoverinfo='text',
-        text=node_text,
-        marker=dict(
-            showscale=True,
-            colorscale='Plasma',
-            color=list(degrees.values()),
-            size=node_sizes,
-            colorbar=dict(thickness=15, title=dict(text='Bậc (Degree)', side='right')),
-            line=dict(width=1.5, color='#2d3748')
-        )
-    )
-
-    fig_plotly = go.Figure(
-        data=[edge_norm_trace, edge_high_trace, edge_mid_trace, node_trace],
-        layout=go.Layout(
-            title=dict(
-                text=title_label,
-                font=dict(size=16, color='#2d3748')
-            ),
-            showlegend=False,
-            hovermode='closest',
-            margin=dict(b=20, l=10, r=10, t=50),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='#f8f9fa',
-            paper_bgcolor='#ffffff'
-        )
-    )
-    
-    html_path = output_dir / f"dynamic_graph_interactive_{time_window}.html"
-    fig_plotly.write_html(str(html_path))
-    print(f"[+] Đã tạo file đồ thị tương tác HTML: {html_path.name}")
-    
-    fig_plt, ax = plt.subplots(figsize=(14, 11), facecolor="#f8f9fa")
-    ax.set_facecolor("#f8f9fa")
-    weights = [subG[u][v]["weight"] for u, v in subG.edges()]
-    max_w = max(weights) if weights else 1.0
-    widths = [0.8 + 2.2 * (w / max_w) for w in weights]
-    
-    nx.draw_networkx_edges(
-        subG, pos,
-        arrowstyle="-|>",
-        arrowsize=13,
-        edge_color="#718096",
-        alpha=0.5,
-        width=widths,
-        connectionstyle="arc3,rad=0.08",
-        ax=ax
-    )
-    
-    nodes_draw = nx.draw_networkx_nodes(
-        subG, pos,
-        node_size=[degrees[n] * 65 + 70 for n in subG.nodes()],
-        node_color=[degrees[n] for n in subG.nodes()],
-        cmap=plt.cm.plasma,
-        alpha=0.92,
-        edgecolors="#2d3748",
-        linewidths=1.2,
-        ax=ax
-    )
-    
-    top_hubs = sorted(degrees, key=degrees.get, reverse=True)[:12]
-    labels = {n: n[:6] + "..." + n[-4:] for n in top_hubs}
-    nx.draw_networkx_labels(
-        subG, pos, labels=labels,
-        font_size=7.5, font_family="sans-serif", font_weight="bold", font_color="#1a202c",
-        bbox=dict(boxstyle="round,pad=0.2", facecolor="#ffffff", edgecolor="#cbd5e0", alpha=0.85),
-        ax=ax
-    )
-    
-    cbar = plt.colorbar(nodes_draw, ax=ax, shrink=0.7, pad=0.02)
-    cbar.set_label("Bậc kết nối (Degree)", fontsize=10, fontweight="bold")
-    ax.set_title(
-        f"DYNAMIC TRANSACTION GRAPH G_t - SNAPSHOT {time_window}\n{plt_subtitle}",
-        fontsize=13, fontweight="bold", pad=15, color="#1a202c"
-    )
-    info_text = (
-        "TRỌNG SỐ CẠNH (EDGE WEIGHTS):\n"
-        "• Độ dày nét vẽ: Tỷ lệ theo Trọng số Value ($ USDT)\n"
-        "• Chiều mũi tên: Hướng dòng tiền (Gửi -> Nhận)\n"
-        "• File HTML tương tác: Rê chuột vào viên kim cương xanh để xem\n"
-        "  chi tiết Trọng số Value ($) và Trọng số Số giao dịch (lượt)."
-    )
-    ax.text(
-        0.02, 0.02, info_text,
-        transform=ax.transAxes,
-        fontsize=8,
-        verticalalignment='bottom',
-        bbox=dict(boxstyle='round,pad=0.5', facecolor='#ffffff', edgecolor='#cbd5e0', alpha=0.92)
-    )
-
-    ax.axis("off")
-    plt.tight_layout()
-    
-    png_path = output_dir / f"dynamic_graph_snapshot_{time_window}.png"
-    plt.savefig(png_path, dpi=300, bbox_inches="tight")
-    print(f"[+] Đã lưu ảnh đồ thị tĩnh: {png_path.name}")
-    
+def show_dynamic_graph_snapshot(edges_parquet_path, time_window, top_k_edges=0, output_dir=DEFAULT_OUTPUT_DIR, auto_open=True, labels_parquet_path=DEFAULT_LABELS_PARQUET):
+    """Xuất biểu đồ HTML có zoom con lăn; chọn top-k chỉ ảnh hưởng hiển thị."""
+    from src.graph_visualization import write_graph_html
+    loader = DynamicGraphLoader(edges_parquet_path, labels_parquet_path)
+    graph = loader.build_snapshot_graph(time_window)
+    total_edges = graph.number_of_edges()
+    total_volume = sum(d['weight'] for _, _, d in graph.edges(data=True))
+    if top_k_edges < 0:
+        raise ValueError('top_k_edges phải không âm')
+    if top_k_edges > 0:
+        selected = sorted(graph.edges(data=True), key=lambda edge: (-edge[2]['weight'], edge[0], edge[1]))[:top_k_edges]
+        graph = graph.edge_subgraph([(u, v) for u, v, _ in selected]).copy()
+    path = Path(output_dir) / f'graph_{time_window}.html'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_graph_html(graph, path, time_window, total_edges, total_volume)
     if auto_open:
-        print(f"\n[>>>] ĐANG MỞ ĐỒ THỊ TRÊN MÀN HÌNH CỦA BẠN...")
-        try:
-            os.startfile(str(html_path.resolve()))
-            print(f"[+] Đã tự động mở đồ thị tương tác HTML trong trình duyệt Web!")
-        except Exception:
-            try:
-                webbrowser.open(html_path.resolve().as_uri())
-                print(f"[+] Đã mở đồ thị tương tác HTML qua trình duyệt Web.")
-            except Exception as e:
-                print(f"[-] Không thể tự mở trình duyệt: {e}")
-                
-        try:
-            plt.show()
-        except Exception:
-            pass
-            
-    plt.close()
+        webbrowser.open(path.resolve().as_uri())
+    return path
 
 
-def execute_t08_pipeline(
-    input_path: Path, 
-    output_dir: Path, 
-    window_mode: str = "both", 
-    labels_path: Path = None,
-    auto_visualize: bool = True,
-    snapshot_date: str = "2025-01-01"
-):
-    print("=" * 70)
-    print("  TASK T08: XÂY DỰNG DYNAMIC TRANSACTION GRAPH (G_t)")
-    print("  Cửa sổ: Daily / Weekly | Trọng số: total_value & transaction_count")
-    print("=" * 70)
-    
-    output_dir.mkdir(parents=True, exist_ok=True)
-    df_transfers = load_whale_transfers(input_path)
-    
-    summary_data: Dict[str, Any] = {
-        "task": "T08 - Build Dynamic Transaction Graph",
-        "description": "Đồ thị G_t theo cửa sổ daily hoặc weekly, cạnh có trọng số theo value và số giao dịch",
-        "input_file": str(input_path.resolve()),
-        "total_transfers_processed": int(len(df_transfers)),
-        "time_range": {
-            "start_date": str(df_transfers["tx_date"].min()),
-            "end_date": str(df_transfers["tx_date"].max()),
-            "total_days": int(df_transfers["tx_date"].nunique())
-        },
-        "edge_weights": {
-            "total_value": "Tổng khối lượng token USDT chuyển giữa cặp ví u -> v trong cửa sổ thời gian t",
-            "transaction_count": "Số lượng giao dịch chuyển nhượng giữa cặp ví u -> v trong cửa sổ thời gian t",
-            "mean_value": "Giá trị trung bình trên mỗi giao dịch"
-        },
-        "generated_at": datetime.now().isoformat()
-    }
-    
-    daily_edges_path = output_dir / "dynamic_edges_daily.parquet"
-    
-    if window_mode in ("both", "daily"):
-        daily_edges = build_dynamic_edges(df_transfers, window="daily")
-        daily_edges.to_parquet(daily_edges_path, index=False)
-        print(f"[+] Đã lưu danh sách cạnh Daily: {daily_edges_path.name}")
-        
-        metrics_daily = compute_graph_metrics(daily_edges, window_type="DAILY SNAPSHOTS")
-        metrics_daily_csv = output_dir / "graph_metrics_daily.csv"
-        metrics_daily.to_csv(metrics_daily_csv, index=False, encoding="utf-8-sig")
-        print(f"[+] Đã lưu chỉ số mạng lưới Daily: {metrics_daily_csv.name}")
-        
-        summary_data["daily_graph"] = {
-            "total_snapshots": int(len(metrics_daily)),
-            "total_weighted_edges": int(len(daily_edges)),
-            "avg_nodes_per_day": round(float(metrics_daily["num_nodes"].mean()), 2),
-            "avg_edges_per_day": round(float(metrics_daily["num_edges"].mean()), 2),
-            "max_daily_volume_usdt": float(metrics_daily["total_volume_usdt"].max()),
-            "output_edges_parquet": str(daily_edges_path.name),
-            "output_metrics_csv": str(metrics_daily_csv.name)
-        }
-        
-    if window_mode in ("both", "weekly"):
-        weekly_edges = build_dynamic_edges(df_transfers, window="weekly")
-        weekly_edges_path = output_dir / "dynamic_edges_weekly.parquet"
-        weekly_edges.to_parquet(weekly_edges_path, index=False)
-        print(f"[+] Đã lưu danh sách cạnh Weekly: {weekly_edges_path.name}")
-        
-        metrics_weekly = compute_graph_metrics(weekly_edges, window_type="WEEKLY SNAPSHOTS")
-        metrics_weekly_csv = output_dir / "graph_metrics_weekly.csv"
-        metrics_weekly.to_csv(metrics_weekly_csv, index=False, encoding="utf-8-sig")
-        print(f"[+] Đã lưu chỉ số mạng lưới Weekly: {metrics_weekly_csv.name}")
-        
-        summary_data["weekly_graph"] = {
-            "total_snapshots": int(len(metrics_weekly)),
-            "total_weighted_edges": int(len(weekly_edges)),
-            "avg_nodes_per_week": round(float(metrics_weekly["num_nodes"].mean()), 2),
-            "avg_edges_per_week": round(float(metrics_weekly["num_edges"].mean()), 2),
-            "max_weekly_volume_usdt": float(metrics_weekly["total_volume_usdt"].max()),
-            "output_edges_parquet": str(weekly_edges_path.name),
-            "output_metrics_csv": str(metrics_weekly_csv.name)
-        }
-        
-    summary_path = output_dir / "t08_summary.json"
-    summary_path.write_text(json.dumps(summary_data, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"\n[+] Đã lưu file tóm tắt nghiệm thu: {summary_path.name}")
-    
-    print("\n" + "=" * 70)
-    print("      ĐÃ HOÀN TẤT XÂY DỰNG DYNAMIC TRANSACTION GRAPH G_t!")
-    print("=" * 70)
-    
-    if auto_visualize and daily_edges_path.exists():
-        show_dynamic_graph_snapshot(
-            edges_parquet_path=daily_edges_path,
-            time_window=snapshot_date,
-            output_dir=output_dir,
-            auto_open=True
-        )
+def execute_t08_pipeline(input_parquet=DEFAULT_INPUT_PARQUET, output_dir=DEFAULT_OUTPUT_DIR, labels_path=DEFAULT_LABELS_PARQUET, **kwargs):
+    from src.t08_pipeline import run_pipeline
+    return run_pipeline(input_parquet=input_parquet, output_dir=output_dir, labels_path=labels_path, **kwargs)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Task T08: Xây dynamic transaction graph G_t theo cửa sổ daily/weekly, cạnh có trọng số theo value và số giao dịch"
-    )
-    parser.add_argument("--window", type=str, choices=["both", "daily", "weekly"], default="both",
-                        help="Chế độ cửa sổ thời gian: 'both' (cả hai), 'daily', hoặc 'weekly'")
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT_PARQUET,
-                        help="Đường dẫn file interim giao dịch cá voi (.parquet)")
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR,
-                        help="Thư mục xuất các đồ thị kết quả")
-    parser.add_argument("--labels", type=Path, default=DEFAULT_LABELS_CSV,
-                        help="File nhãn ví T07 (tùy chọn)")
-    parser.add_argument("--date", type=str, default="2025-01-01",
-                        help="Mốc ngày snapshot muốn hiển thị (mặc định: 2025-01-01)")
-    parser.add_argument("--show-only", action="store_true",
-                        help="Chỉ mở hiển thị đồ thị ngay lập tức từ dữ liệu đã có (không chạy lại pipeline)")
-    parser.add_argument("--no-show", action="store_true",
-                        help="Không tự động mở cửa sổ đồ thị (chế độ headless/chạy ngầm)")
-    parser.add_argument("--top-k", type=int, default=0,
-                        help="Số cạnh lớn nhất muốn hiển thị trên biểu đồ (mặc định: 0 - hiển thị toàn bộ cạnh)")
-    parser.add_argument("--all-edges", action="store_true",
-                        help="Hiển thị toàn bộ 100%% tất cả các cạnh trong snapshot")
-    args = parser.parse_args()
-    
-    effective_top_k = 0 if args.all_edges else args.top_k
-    
-    # Lựa chọn file đồ thị theo cửa sổ daily hoặc weekly
-    is_weekly = (args.window == "weekly") or ("-W" in args.date)
-    edges_path = args.output / ("dynamic_edges_weekly.parquet" if is_weekly else "dynamic_edges_daily.parquet")
-    
-    if args.show_only:
-        if not edges_path.exists():
-            print(f"[-] Chưa tìm thấy file dữ liệu: {edges_path}. Đang tiến hành chạy pipeline trước...")
-            execute_t08_pipeline(
-                input_path=args.input,
-                output_dir=args.output,
-                window_mode=args.window,
-                labels_path=args.labels,
-                auto_visualize=not args.no_show,
-                snapshot_date=args.date
-            )
-        else:
-            show_dynamic_graph_snapshot(
-                edges_parquet_path=edges_path,
-                time_window=args.date,
-                top_k_edges=effective_top_k,
-                output_dir=args.output,
-                auto_open=not args.no_show
-            )
-    else:
-        execute_t08_pipeline(
-            input_path=args.input,
-            output_dir=args.output,
-            window_mode=args.window,
-            labels_path=args.labels,
-            auto_visualize=not args.no_show,
-            snapshot_date=args.date
-        )
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    execute_t08_pipeline()

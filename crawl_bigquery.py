@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from google.cloud import bigquery
 from google.auth.exceptions import DefaultCredentialsError
 
@@ -7,6 +8,7 @@ from google.auth.exceptions import DefaultCredentialsError
 # Lấy Project ID từ biến môi trường hoặc mặc định 'whale-network'
 PROJECT_ID = os.getenv("GCP_PROJECT_ID") or "whale-network"
 CREDENTIALS_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "whale-network-4a41a91fd701.json")
+STATS_CSV = Path(__file__).resolve().parent / 'eth_stats_from_2025.csv'
 
 def get_bigquery_client(project_id: str = PROJECT_ID):
     if CREDENTIALS_FILE and os.path.exists(CREDENTIALS_FILE):
@@ -54,7 +56,7 @@ def estimate_query_cost(client: bigquery.Client, query: str):
     print(f"[*] Estimated bytes scanned: {gb_scanned:.2f} GB")
     return gb_scanned
 
-def fetch_data(client: bigquery.Client, query: str, output_csv="ethereum_data.csv"):
+def fetch_data(client: bigquery.Client, query: str, output_csv=STATS_CSV):
     gb_scanned = estimate_query_cost(client, query)
 
     if gb_scanned > 200:
@@ -72,5 +74,5 @@ def fetch_data(client: bigquery.Client, query: str, output_csv="ethereum_data.cs
 if __name__ == "__main__":
     client = get_bigquery_client(PROJECT_ID)
     print(f"[*] Querying from {START_DATE} to {END_DATE}...")
-    df = fetch_data(client, QUERY_AGGREGATED, output_csv="eth_stats_from_2025.csv")
+    df = fetch_data(client, QUERY_AGGREGATED, output_csv=STATS_CSV)
     print(df.head())

@@ -1,0 +1,8 @@
+# T10-specific settings; shared paths/calendar remain in config.yaml.
+output_dir: data/processed/t10
+betweenness_exact_max_nodes: 500
+betweenness_pivots: 128
+seed: 20261021
+eigenvector_tolerance: 0.00000001
+eigenvector_max_iter: 10000
+quality_windows_per_scale: 3
