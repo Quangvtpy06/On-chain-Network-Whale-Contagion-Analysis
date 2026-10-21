@@ -94,6 +94,27 @@ def main():
         len(t10.get('inputs',{}))==4 and all(
             (ROOT/item['path']).is_file() and file_hash(ROOT/item['path'])==item['sha256']
             for item in t10.get('inputs',{}).values()))
+    t11_settings_path=ROOT/'config/t11.yaml'
+    if t11_settings_path.is_file():
+        t11_settings=yaml.safe_load(t11_settings_path.read_text(encoding='utf-8'))
+        t11_dir=ROOT/t11_settings['output_dir']
+        t11=read_json(t11_dir/'t11_summary.json')
+        t11_repro=read_json(t11_dir/'t11_reproducibility.json')
+        standard['t11']=[(t11_dir/name).relative_to(ROOT).as_posix() for name in [
+            'community_nodes_daily.parquet','community_nodes_weekly.parquet',
+            'snapshot_metrics_daily.parquet','snapshot_metrics_weekly.parquet',
+            't11_validation.parquet','t11_summary.json','t11_reproducibility.json']]
+        accepted['t11']=bool(t08.get('ready_for_t09_t12') and t11.get('ready_for_downstream') and
+            t11_repro.get('all_match') and
+            t11.get('config_sha256')==file_hash(ROOT/'config/config.yaml') and
+            t11.get('settings_sha256')==file_hash(t11_settings_path) and
+            t11.get('code_sha256')==file_hash(ROOT/'src/community_concentration.py') and
+            len(t11_repro.get('hashes',{}))==5 and all(
+                (t11_dir/name).is_file() and file_hash(t11_dir/name)==proof.get('run1')==proof.get('run2')
+                for name,proof in t11_repro.get('hashes',{}).items()) and
+            len(t11.get('inputs',{}))==4 and all(
+                (ROOT/item['path']).is_file() and file_hash(ROOT/item['path'])==item['sha256']
+                for item in t11.get('inputs',{}).values()))
     t12_settings_path=ROOT/'config/t12.yaml'
     if t12_settings_path.is_file():
         t12_settings=yaml.safe_load(t12_settings_path.read_text(encoding='utf-8'))
@@ -166,7 +187,7 @@ def main():
                 missing.append(dict(task=task,path=rel));continue
             row=dict(task=task,path=rel,bytes=path.stat().st_size,sha256=file_hash(path))
             (upload if accepted[task] else blocked).append(row)
-    for rel in ['config/config.yaml','config/t10.yaml','config/t12.yaml','config/t12_audit.yaml','config/t12_design.yaml','eth_stats_from_2025.csv']:
+    for rel in ['config/config.yaml','config/t10.yaml','config/t11.yaml','config/t12.yaml','config/t12_audit.yaml','config/t12_design.yaml','eth_stats_from_2025.csv']:
         path=ROOT/rel
         if path.is_file():
             upload.append(dict(task='shared',path=rel,bytes=path.stat().st_size,sha256=file_hash(path)))

@@ -109,6 +109,8 @@ snapshot_download(repo, repo_type='dataset', revision=revision,
 T09: `python T09_Network_Centrality.py`, sau đó chạy các lệnh nghiệm thu trong
 `docs/T09_centrality_specification.md`. T10: `python T10_Heavy_Graph_Metrics.py`
 tự tính hai lượt, so hash và kiểm định; xem `docs/T10_heavy_metrics_specification.md`.
+T11: `python T11_Community_Concentration.py` phát hiện cộng đồng Louvain, tính modularity
+và chỉ số tập trung mạng lưới (HHI, Gini, CR-k, CCI) phục vụ RQ4; xem `docs/T11_community_concentration_specification.md`.
 T12: `python T12_Whale_Score.py` tính WhaleScore từ T07/T09, gắn cờ hạ tầng
 và tạo ranking qua bộ lọc; xem `docs/T12_whale_score_specification.md`.
 High-centrality hoặc score cao không xác nhận nhà đầu tư cá nhân.

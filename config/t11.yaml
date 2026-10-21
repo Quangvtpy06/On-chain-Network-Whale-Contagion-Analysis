@@ -1,0 +1,7 @@
+# T11: Community detection và network concentration (RQ4)
+output_dir: data/processed/t11
+seed: 20261021
+louvain_resolution: 1.0
+louvain_threshold: 0.0000001
+min_community_size_for_stats: 2
+
