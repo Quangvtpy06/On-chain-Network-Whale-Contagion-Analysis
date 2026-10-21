@@ -19,11 +19,13 @@ import matplotlib.dates as mdates
 import networkx as nx
 import numpy as np
 import pandas as pd
-from scipy import stats
+from src.graph_config import read_config,project_path
+from src.t11_reporting import REGIMES
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT_DIR = ROOT / "outputs/figures/t11"
+OUTPUT_DIR = ROOT / "data/figures/t11"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+DATA_DIR=project_path(read_config(ROOT/'config/t11.yaml')['output_dir'])
 
 # Cấu hình thẩm mỹ đồ thị
 plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
@@ -130,22 +132,10 @@ def plot_concentration_timeseries(daily_df: pd.DataFrame):
 
 
 def plot_rq4_stress_comparison(daily_df: pd.DataFrame):
-    """Vẽ so sánh kiểm định giả thuyết RQ4: Baseline vs Pre-Stress (t-1..t-3) vs Peak Stress."""
-    daily_df = daily_df.copy()
-    daily_df["date"] = pd.to_datetime(daily_df["time_window"])
-    daily_df = daily_df.sort_values("date")
-
-    p90 = daily_df["total_volume_usdt"].quantile(0.90)
-    daily_df["is_stress"] = daily_df["total_volume_usdt"] >= p90
-    daily_df["pre_stress"] = (daily_df["is_stress"].shift(-1) | daily_df["is_stress"].shift(-2) | daily_df["is_stress"].shift(-3)).fillna(False)
-
-    conditions = [
-        daily_df["is_stress"],
-        daily_df["pre_stress"] & (~daily_df["is_stress"]),
-        (~daily_df["is_stress"]) & (~daily_df["pre_stress"])
-    ]
-    choices = ["3. Peak Stress (Top 10% Vol)", "2. Pre-Stress (t-1 đến t-3)", "1. Baseline (Bình thường)"]
-    daily_df["regime"] = np.select(conditions, choices, default="1. Baseline (Bình thường)")
+    """Đối chiếu mô tả đúng nhóm; không xác nhận stress thị trường."""
+    regimes=pd.read_parquet(DATA_DIR/'rq4_daily_regimes.parquet')
+    comparisons=pd.read_parquet(DATA_DIR/'rq4_comparison.parquet').set_index('metric')
+    daily_df=daily_df.merge(regimes[['time_window','regime']],on='time_window',validate='one_to_one')
 
     metrics_to_plot = [
         ("gini_volume", "Gini Volume", "#6d28d9"),
@@ -159,9 +149,11 @@ def plot_rq4_stress_comparison(daily_df: pd.DataFrame):
 
     for idx, (col, title, color) in enumerate(metrics_to_plot):
         ax = axes[idx]
-        regime_data = [daily_df[daily_df["regime"] == r][col].dropna() for r in choices]
+        regime_data = [daily_df[daily_df["regime"] == r][col].dropna() for r in REGIMES]
+        display=['Baseline','Pre high-volume','High-volume']
+        labels=[f'{name}\n(N={len(values)})' for name,values in zip(display,regime_data)]
 
-        bp = ax.boxplot(regime_data, tick_labels=["Baseline\n(N=493)", "Pre-Stress\n(N=96)", "Peak Stress\n(N=66)"],
+        bp = ax.boxplot(regime_data, tick_labels=labels,
                         patch_artist=True, medianprops=dict(color="#1a202c", linewidth=2.0), showmeans=True,
                         meanprops=dict(marker="o", markeredgecolor="#b91c1c", markerfacecolor="#b91c1c", markersize=5))
 
@@ -169,18 +161,13 @@ def plot_rq4_stress_comparison(daily_df: pd.DataFrame):
             patch.set_facecolor(color)
             patch.set_alpha(0.35)
 
-        # Tính t-test giữa Pre-Stress và Baseline
-        t_stat, p_val = stats.ttest_ind(regime_data[1], regime_data[0], equal_var=False)
-        m_base = regime_data[0].mean()
-        m_pre = regime_data[1].mean()
-        diff = (m_pre - m_base) / m_base * 100
-
-        ax.set_title(f"{title}\nPre-Stress vs Base: {diff:+.2f}% (p={p_val:.2e})", fontsize=10.5, fontweight="bold", pad=8)
+        row=comparisons.loc[col]
+        ax.set_title(f"{title}\nPre vs Baseline: {row.relative_change_pct:+.2f}%\np Welch (IID)={row.p_welch_iid_exploratory:.2e}; Holm={row.p_holm_exploratory:.2e}", fontsize=9.5, fontweight="bold", pad=8)
         ax.set_ylabel(title, fontsize=9.5)
 
-    plt.suptitle("KIỂM ĐỊNH GIẢ THUYẾT RQ4: MỨC ĐỘ TẬP TRUNG MẠNG LƯỚI TRƯỚC VÀ TRONG STRESS EVENTS",
-                 fontsize=12.5, fontweight="bold", y=1.02)
-    plt.tight_layout()
+    fig.suptitle('RQ4: SO SÁNH MÔ TẢ QUANH NGÀY VOLUME CAO — KHÔNG PHẢI STRESS THỊ TRƯỜNG',fontsize=11,fontweight='bold')
+    fig.text(.5,.01,'Welch: thăm dò với giả định độc lập; Holm không xử lý phụ thuộc thời gian. Loại ba ngày cuối thiếu cửa sổ tương lai.',ha='center',fontsize=8)
+    plt.tight_layout(rect=[0,.035,1,.95])
     out_path = OUTPUT_DIR / "t11_rq4_stress_comparison.png"
     plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
@@ -189,8 +176,8 @@ def plot_rq4_stress_comparison(daily_df: pd.DataFrame):
 
 def plot_community_map_sample(sample_date: str = "2026-10-17"):
     """Vẽ bản đồ mạng lưới cộng đồng Louvain đại diện (Community Map phục vụ T27)."""
-    edges_path = ROOT / "data/processed/graphs/dynamic_edges_daily.parquet"
-    nodes_path = ROOT / "data/processed/t11/community_nodes_daily.parquet"
+    edges_path = project_path(read_config()['data']['daily_edges_parquet'])
+    nodes_path = DATA_DIR / "community_nodes_daily.parquet"
 
     df_edges = pd.read_parquet(edges_path)
     df_nodes = pd.read_parquet(nodes_path)
@@ -267,8 +254,8 @@ def main():
     print("      ĐANG XUẤT CÁC BIỂU ĐỒ TRỰC QUAN T11 CHO BÁO CÁO & RQ4...")
     print("=" * 70)
 
-    daily_path = ROOT / "data/processed/t11/snapshot_metrics_daily.parquet"
-    weekly_path = ROOT / "data/processed/t11/snapshot_metrics_weekly.parquet"
+    daily_path = DATA_DIR / "snapshot_metrics_daily.parquet"
+    weekly_path = DATA_DIR / "snapshot_metrics_weekly.parquet"
 
     daily_df = pd.read_parquet(daily_path)
     weekly_df = pd.read_parquet(weekly_path)
@@ -278,9 +265,8 @@ def main():
     plot_rq4_stress_comparison(daily_df)
     plot_community_map_sample("2026-10-17")
 
-    print("\n[+] ĐÃ HOÀN TẤT XUẤT TOÀN BỘ 4 BIỂU ĐỒ TẠI outputs/figures/t11/!")
+    print("\n[+] ĐÃ HOÀN TẤT XUẤT TOÀN BỘ 4 BIỂU ĐỒ TẠI data/figures/t11/!")
 
 
 if __name__ == "__main__":
     main()
-

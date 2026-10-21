@@ -109,8 +109,16 @@ snapshot_download(repo, repo_type='dataset', revision=revision,
 T09: `python T09_Network_Centrality.py`, sau đó chạy các lệnh nghiệm thu trong
 `docs/T09_centrality_specification.md`. T10: `python T10_Heavy_Graph_Metrics.py`
 tự tính hai lượt, so hash và kiểm định; xem `docs/T10_heavy_metrics_specification.md`.
-T11: `python T11_Community_Concentration.py` phát hiện cộng đồng Louvain, tính modularity
-và chỉ số tập trung mạng lưới (HHI, Gini, CR-k, CCI) phục vụ RQ4; xem `docs/T11_community_concentration_specification.md`.
+T11: `python T11_Community_Concentration.py` tính community Louvain có hướng,
+modularity và chỉ số tập trung từ T08. Chạy hai tiến trình, so hash tám Parquet
+và kiểm định độc lập đủ 749 cửa sổ; chỉ sau khi đạt mới bật ready_for_downstream.
+`--skip-reproducibility` chỉ dùng khảo sát và luôn giữ ready=false.
+Đầu ra có bảng top community, regime hồi cứu và so sánh RQ4; biểu đồ PNG ở
+`data/figures/t11/`. “High-volume” là proxy từ volume transfer, không phải stress
+thị trường được xác nhận. Ba ngày cuối thiếu cửa sổ tương lai không vào so sánh.
+Welch/Holm là thăm dò, không chứng minh nhân quả hoặc danh tính cá nhân.
+Xem [đặc tả T11](docs/T11_community_concentration_specification.md),
+[báo cáo T11](docs/T11_completion_report.md) và [review](docs/T11_review_report.md).
 T12: `python T12_Whale_Score.py` tính WhaleScore từ T07/T09, gắn cờ hạ tầng
 và tạo ranking qua bộ lọc; xem `docs/T12_whale_score_specification.md`.
 High-centrality hoặc score cao không xác nhận nhà đầu tư cá nhân.

@@ -1,97 +1,143 @@
-# T11 — Community Detection và Network Concentration (RQ4)
+# T11 — Community detection và network concentration
 
-Chạy `python T11_Community_Concentration.py` từ thư mục gốc dự án. Cấu hình chung đọc từ `config/config.yaml`, cấu hình tham số riêng của T11 nằm tại `config/t11.yaml`. Việc tách file cấu hình riêng giúp T11 không làm thay đổi các file cấu hình đã được ký hash của T08, T09 và T10. T11 phụ thuộc trực tiếp vào dữ liệu T08 đã nghiệm thu.
+## Mục tiêu và đầu vào
 
----
+T11 bàn giao community theo node–cửa sổ, modularity và chuỗi chỉ số tập trung
+phục vụ RQ4. Chỉ phụ thuộc T08 đã netting, xác minh bằng SHA-256. Không cần
+T07, T09 hoặc WhaleScore. Đường dẫn/lịch đọc config/config.yaml; tham số riêng
+config/t11.yaml, không sửa cấu hình đã ký hash của các bước khác.
 
-## 1. Mục Tiêu Nghiên Cứu và Câu Hỏi Nghiên Cứu (RQ4)
+655 ngày UTC từ 2025-01-01 đến 2026-10-17; 94 tuần ISO bắt đầu thứ Hai.
+Giữ snapshot rỗng trong lịch. Hai tuần thiếu ngày có is_partial_week=true và
+eligible_for_regression=false, ở cả bảng snapshot và bảng node.
 
-* **Câu hỏi nghiên cứu cốt lõi (RQ4):** *"Community concentration có tăng trước stress events không?"*
-* **Ý nghĩa tài chính và mạng lưới:** 
-  Trong điều kiện thị trường bình thường, dòng vốn cá voi luân chuyển phân tán qua nhiều cụm thanh khoản (DEX pools, CEX market makers, OTC brokers, lending protocols). Khi thị trường bước vào giai đoạn biến động mạnh (market stress / liquidity crisis), mạng lưới có xu hướng:
-  1. Phân mảnh thành các cụm biệt lập với độ kết nối nội bộ cao (tăng **Modularity $Q_t$**).
-  2. Dòng tiền tập trung cực đoan vào một vài cộng đồng đầu não hoặc một số ít ví cá voi cốt lõi (tăng **HHI**, tăng **Gini**, tăng **Top-k Concentration Ratios**).
-  3. Chỉ số tập trung cộng đồng tổng hợp (**$CCI_t = Q_t \times HHI_{\text{comm\_volume}}$**) tăng vọt, báo hiệu sự tích tụ rủi ro hệ thống trước khi các cú sụp đổ thanh khoản diễn ra.
+## Đồ thị và cộng đồng
 
----
+Mỗi snapshot là DiGraph có hướng, weight=total_value từ T08, gồm node có hoạt
+động trong cửa sổ. Louvain weighted directed dùng resolution=1, threshold=1e-7.
+Không đổi sang đồ thị vô hướng hoặc lấy gross volume làm trọng số.
 
-## 2. Dữ Liệu Đầu Vào
+Directed modularity tính trên phân hoạch C:
+Q = sum_c [W_internal,c / m − gamma × K_out,c × K_in,c / m²].
+m là tổng volume cạnh; K_out,c/K_in,c là tổng strength ra/vào của node thuộc
+community. Với snapshot rỗng Q=0, không tạo node giả.
 
-* Đọc trực tiếp các cạnh có hướng đã netting từ T08:
-  * `data/processed/graphs/dynamic_edges_daily.parquet` (655 ngày UTC từ `2025-01-01` đến `2026-10-17`).
-  * `data/processed/graphs/dynamic_edges_weekly.parquet` (94 tuần ISO bắt đầu thứ Hai).
-* Kiểm tra xác thực tính toàn vẹn (SHA256) của T08 qua hàm `verified_t08_inputs()` trước khi tính toán.
-* Giữ nguyên lịch chuẩn 655 ngày và 94 tuần; các cửa sổ rỗng vẫn có 1 dòng snapshot với các chỉ số bằng 0. Tuần đầu/cuối thiếu ngày có cờ `eligible_for_regression=false`.
+Seed của mỗi snapshot là 32-bit đầu SHA-256(seed|window_type|time_window),
+seed gốc 20261021. Chạy qua T11_Community_Concentration.py để ép
+PYTHONHASHSEED=0. Node/cạnh và phép tổng volume community được sắp xếp ổn định.
+Louvain là phương pháp heuristic; tái lập không chứng minh tìm được optimum
+toàn cục hoặc phân hoạch bất biến khi đổi resolution/seed.
 
----
+Community được đánh số giảm dần theo số node, rồi volume giảm dần và địa chỉ
+nhỏ nhất để phá hòa. ID 0 là community lớn nhất theo node, không nhất thiết
+lớn nhất theo volume. ID chỉ có ý nghĩa trong snapshot; không đại diện danh
+tính ổn định qua ngày/tuần. Không đưa ID thô vào T19 như nhãn định danh bền vững.
+Thống kê size bao gồm mọi community, kể cả singleton; không còn tham số
+min_community_size_for_stats không được sử dụng.
 
-## 3. Định Nghĩa Toán Học Các Chỉ Số
+## Chỉ số tập trung
 
-### A. Phát hiện cộng đồng và Modularity ($Q$)
-* **Thuật toán Louvain có trọng số:** Tìm phân hoạch cộng đồng $\mathcal{C} = \{C_1, C_2, \dots, C_K\}$ tối ưu hóa hàm Modularity có hướng của NetworkX:
-  $$Q = \frac{1}{m} \sum_{i,j} \left( A_{ij} - \gamma \frac{k_i^{out} k_j^{in}}{m} \right) \delta(c_i, c_j)$$
-  với $A_{ij}$ là trọng số chuyển tiền USDT từ $i \to j$, $m = \sum_{ij} A_{ij}$, $\gamma$ là resolution parameter (mặc định = 1.0).
-* **Deterministic Seeding:** Seed ngẫu nhiên của từng snapshot được băm cố định bằng SHA-256 từ `seed|window_type|time_window` để đảm bảo 100% tái lập.
-* **Sắp xếp cộng đồng:** Các cộng đồng được sắp xếp giảm dần theo số lượng node, sau đó theo tổng volume. Cộng đồng lớn nhất luôn mang `community_id = 0` (*Giant Community*).
-* **Giant Community Metrics:**
-  * `giant_community_nodes`: Số node thuộc cộng đồng lớn nhất.
-  * `giant_community_node_ratio`: Tỷ lệ $N_{\text{giant}} / N_{\text{total}}$.
-  * `giant_community_volume`: Tổng throughput volume của cộng đồng lớn nhất.
-  * `giant_community_volume_ratio`: Tỷ trọng $V_{\text{giant}} / V_{\text{total}}$.
-* **Internal Volume Ratio:** Tỷ trọng volume các giao dịch diễn ra hoàn toàn nội bộ trong cùng một cộng đồng:
-  $$\text{InternalRatio} = \frac{\sum_{(u,v) \in E, c(u)=c(v)} w(u,v)}{\sum_{e \in E} w(e)}$$
+Volume node = strength vào + ra. Degree = in-degree + out-degree trên DiGraph.
+Volume community = tổng volume node thuộc community. Tổng volume node và tổng
+volume community đều bằng 2m, vì mỗi transfer được tính ở hai đầu. Đây là
+throughput tham gia, không phải số dư, tài sản hoặc net flow.
 
-### B. Chỉ số tập trung mạng lưới (Network Concentration)
-1. **Herfindahl-Hirschman Index (HHI):**
-   * **$HHI_{\text{volume}}$:** Đo lường mức độ tập trung dòng tiền ở cấp độ từng ví:
-     $$HHI_{\text{volume}} = \sum_{i \in V} \left( \frac{\text{Volume}_i}{\sum_j \text{Volume}_j} \right)^2 \in [0, 1]$$
-   * **$HHI_{\text{degree}}$:** Đo mức độ tập trung số liên kết bậc ở cấp độ ví.
-   * **$HHI_{\text{community\_volume}}$:** Đo mức độ tập trung dòng tiền ở cấp độ cộng đồng:
-     $$HHI_{\text{community\_volume}} = \sum_{c=1}^K \left( \frac{V_c}{V_{\text{total}}} \right)^2 \in [0, 1]$$
-   * **$HHI_{\text{community\_nodes}}$:** Đo mức độ tập trung số lượng node vào các cộng đồng lớn.
+- HHI volume/degree = sum_i (x_i/sum(x))². Đây là HHI tỷ phần, có mức đồng đều
+  1/N, không phải HHI được rescale để đồng đều bằng zero.
+- HHI community volume/nodes dùng cùng công thức theo phân phối community.
+- Gini volume/degree dùng phân phối mọi node hoạt động, giá trị zero nếu dân
+  số không đủ biến thiên hoặc tổng bằng zero.
+- CR1/5/10/20 là tỷ trọng volume của k node lớn nhất; giới hạn k theo N.
+  CR top1%/top5% dùng ceil(0.01N)/ceil(0.05N), tối thiểu một node khi N>0.
+- Entropy volume/community = −sum(p log p)/log(số nhóm); zero nếu <=1 nhóm
+  hoặc không có volume.
+- Internal volume ratio = tổng weight cạnh có hai đầu cùng community / m.
+- CCI = max(Q,0) × HHI community volume. Chỉ số tổng hợp do dự án định nghĩa,
+  không tự chứng minh tập trung kinh tế, rủi ro hệ thống hay stress.
+- Community size mean/std(ddof=0)/median/max và số singleton mô tả phân phối
+  size. Giant metrics dùng community ID 0.
 
-2. **Hệ số Bất bình đẳng Gini (Gini Coefficient):**
-   * Tính theo công thức chuẩn đại số tuyến tính:
-     $$Gini(x) = \frac{2 \sum_{i=1}^n i \cdot x_{(i)}}{n \sum_{i=1}^n x_{(i)}} - \frac{n+1}{n}$$
-   * Được tính riêng cho phân phối Volume ($Gini_{\text{volume}}$) và phân phối Degree ($Gini_{\text{degree}}$).
+community_volume_usdt được lặp trên mỗi dòng node của community. Khi tổng hợp
+theo community phải lấy một dòng mỗi community hoặc cộng node_volume_usdt;
+không cộng trực tiếp cột community_volume_usdt qua mọi node.
 
-3. **Tỷ Lệ Tập Trung Top-k (Concentration Ratios):**
-   * $CR_1, CR_5, CR_{10}, CR_{20}$: Tỷ trọng volume của top 1, 5, 10, 20 ví cá voi lớn nhất.
-   * $CR_{\text{top1pct}}, CR_{\text{top5pct}}$: Tỷ trọng volume của top 1% và top 5% ví cá voi.
+## Đầu ra chuẩn
 
-4. **Shannon Entropy Chuẩn Hóa:**
-   * Đo lường mức độ đa dạng hóa / phân tán dòng vốn:
-     $$\text{Entropy}_{\text{volume}} = - \frac{\sum_i p_i \ln(p_i)}{\ln(N)} \in [0, 1]$$
-   * Giá trị tiến về 1 nghĩa là dòng tiền phân tán đều; tiến về 0 nghĩa là dòng tiền siêu tập trung.
+Trong data/processed/t11/, tám Parquet được sinh trong cả hai lượt:
 
-5. **Community Concentration Index ($CCI_t$):**
-   $$CCI_t = \text{Modularity}_t \times HHI_{\text{community\_volume}, t}$$
-   Chỉ số đo lường đồng thời tính phân cụm và độ tập trung dòng vốn vào các cụm cá voi đầu não.
+| File | Nội dung |
+|---|---|
+| community_nodes_daily/weekly.parquet | window_type, time_window, address, community_id, community_size, community_volume_usdt, is_giant_community, node_volume_usdt, node_degree và metadata lịch |
+| snapshot_metrics_daily/weekly.parquet | Đủ lịch; modularity, số community, thống kê size, HHI/Gini/CR/entropy/CCI, internal/giant metrics và seed |
+| t11_validation.parquet | Kiểm tra nội bộ từng cửa sổ |
+| top_communities_summary.parquet | Top 5 community theo volume cho từng cửa sổ ngày/tuần, rank và tỷ trọng |
+| rq4_daily_regimes.parquet | Nhóm hồi cứu, ngưỡng, cửa sổ tương lai, cờ censor |
+| rq4_comparison.parquet | N/mean/difference, Welch Pre vs Baseline và Holm |
 
----
+Metadata: t11_summary.json, t11_reproducibility.json và t11_review.json.
+Chỉ bảng dữ liệu dùng Parquet; không tạo CSV.
 
-## 4. Danh Mục Sản Phẩm Bàn Giao
+## RQ4 mô tả và giới hạn suy luận
 
-Toàn bộ dữ liệu xuất ra tại thư mục `data/processed/t11/`:
-1. `community_nodes_daily.parquet` & `community_nodes_weekly.parquet`:
-   Khóa: `(window_type, time_window, address)`.
-   Gồm các cột: `community_id`, `community_size`, `community_volume_usdt`, `is_giant_community`, `node_volume_usdt`, `node_degree` cùng các cờ lịch.
-2. `snapshot_metrics_daily.parquet` & `snapshot_metrics_weekly.parquet`:
-   Khóa: `(window_type, time_window)`.
-   Gồm đầy đủ các chỉ số: `num_nodes`, `num_edges`, `num_communities`, `modularity`, `giant_community_*`, `hhi_*`, `gini_*`, `cr*`, `entropy_*`, `community_concentration_index`.
-3. `t11_validation.parquet`: Bảng kết quả kiểm tra chất lượng và ràng buộc toán học cho 749 cửa sổ.
-4. `t11_summary.json`: Tóm tắt tổng thể, metadata SHA256 và bằng chứng nghiệm thu sẵn sàng cho downstream.
-5. `t11_reproducibility.json`: Đối chiếu SHA256 hai lượt chạy độc lập (bit-for-bit identical).
+High-volume là total_volume_usdt >= phân vị 90% toàn bộ 655 ngày. Pre là ngày
+không high-volume nhưng có high-volume trong 1–3 ngày sau. Baseline là ngày
+còn lại với đủ ba ngày tương lai. Ba ngày cuối được ghi right_censored cho
+cả ba nhóm và không tham gia phép so sánh; chúng vẫn có metric T11 đầy đủ.
 
----
+Ngưỡng toàn kỳ và nhãn pre là phân loại hồi cứu, không phải thông tin đã biết
+tại ngày dự báo. Không đưa regime/pre flag vào predictor ngày t. Muốn dự báo
+phải dùng feature T11 trễ và thiết kế ngưỡng/sự kiện dựa trên thông tin quá khứ.
 
-## 5. Quy Trình Chạy và Nghiệm Thu
+Welch so pre_high_volume với baseline theo tên nhóm, không theo vị trí ngầm.
+Holm điều chỉnh năm phép so sánh: Gini node volume, HHI community volume, CCI,
+modularity và CR top5%. Cả p Welch và Holm chỉ là thăm dò; Holm không sửa phụ
+thuộc thời gian, cụm sự kiện hoặc thiết kế stress nội sinh theo volume mạng.
+Không dùng chúng để khẳng định nhân quả hay xác nhận stress thị trường.
 
-```bash
-# 1. Chạy pipeline tính toán và tự động đối chiếu tái lập lần 2
+Gini node khác concentration cấp community. Không kết luận nhà đầu tư cá nhân,
+ý định chuyển tiền, tái cơ cấu danh mục, nạp/rút CEX hoặc thanh lý từ community
+hay centrality. Giả thuyết thị trường cần stress độc lập và thiết kế thống kê
+phù hợp; kết quả không có ý nghĩa thống kê vẫn là một kết quả hợp lệ.
+
+## Chạy và nghiệm thu
+
+```powershell
 python T11_Community_Concentration.py
-
-# 2. Chạy bộ kiểm định độc lập
 python scripts/validate_t11_current.py
+python -m src.visualize_t11
 ```
 
+Lệnh chính tính hai lượt trong **hai tiến trình**, cùng PYTHONHASHSEED=0,
+so SHA-256 đúng danh sách tám Parquet, không glob mọi file trong thư mục.
+Lượt hai ở .cache/t11_repro_* và tự xóa khi kết thúc.
+
+Summary giữ ready_for_downstream=false trong khi tính và trước kiểm định.
+--skip-reproducibility luôn giữ false; không in thông báo đã tái lập.
+Validator không yêu cầu ready đã true. Nó kiểm tra hash thực tế với hai lượt,
+code/config/source, rồi kiểm tra mọi cửa sổ từ cạnh T08 bằng công thức riêng
+(không nhập hàm chỉ số production). Kiểm tra cả bảng top, metadata node/lịch,
+bảng validation, regime, thống kê RQ4 và Holm. Nếu lỗi phải hạ ready về false
+và lưu lý do; chỉ thành công mới ghi review all_pass và bật ready.
+
+Bằng chứng tái lập bảo đảm tính nhất quán trong phiên bản môi trường ghi nhận,
+không hứa kết quả bit-for-bit giữa mọi phiên bản NetworkX hoặc nền tảng.
+Giữ validator dữ liệu thật và kết quả JSON/Parquet. Xóa dữ liệu/code test giả,
+bản đối chiếu và cache sau kiểm tra theo quy ước dự án.
+
+## Hình vẽ và tích hợp
+
+Bốn PNG 300 dpi ở data/figures/t11/: t11_modularity_timeseries.png,
+t11_concentration_timeseries.png, t11_rq4_stress_comparison.png và
+t11_community_map_2026-10-17.png. Đây là Matplotlib tĩnh, không phải Plotly
+explorer. Biểu đồ box dùng thứ tự baseline/pre/high-volume, N động và đọc cùng
+bảng comparison đã kiểm định. Phân hoạch của community map lấy từ toàn bộ
+snapshot dù chỉ vẽ top 120 cạnh để dễ đọc.
+
+T19 dùng thuộc tính cấu trúc có ý nghĩa trong cửa sổ; tracking community cần
+alignment riêng. T27 có thể dùng bảng node và source visualization để phát
+triển explorer. T13/T14 có thể dùng chuỗi feature trễ, không dùng nhãn regime
+hồi cứu như predictor. Mạng chỉ chứa transfer sau netting >=500.000 USDT;
+các chỉ số mô tả mạng con này, không phải toàn Ethereum hoặc toàn bộ tài sản.
+
+Xem [báo cáo được sinh từ dữ liệu](T11_completion_report.md) và
+[kết quả xử lý review](T11_review_report.md).

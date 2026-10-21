@@ -100,16 +100,28 @@ def main():
         t11_dir=ROOT/t11_settings['output_dir']
         t11=read_json(t11_dir/'t11_summary.json')
         t11_repro=read_json(t11_dir/'t11_reproducibility.json')
+        t11_review=read_json(t11_dir/'t11_review.json')
         standard['t11']=[(t11_dir/name).relative_to(ROOT).as_posix() for name in [
             'community_nodes_daily.parquet','community_nodes_weekly.parquet',
             'snapshot_metrics_daily.parquet','snapshot_metrics_weekly.parquet',
-            't11_validation.parquet','t11_summary.json','t11_reproducibility.json']]
-        accepted['t11']=bool(t08.get('ready_for_t09_t12') and t11.get('ready_for_downstream') and
-            t11_repro.get('all_match') and
+            't11_validation.parquet','top_communities_summary.parquet','rq4_daily_regimes.parquet','rq4_comparison.parquet',
+            't11_summary.json','t11_reproducibility.json','t11_review.json']]
+        standard['t11'] += ['data/figures/t11/'+name for name in [
+            't11_modularity_timeseries.png','t11_concentration_timeseries.png',
+            't11_rq4_stress_comparison.png','t11_community_map_2026-10-17.png']]
+        accepted['t11']=bool(accepted['t08'] and t11.get('ready_for_downstream') and
+            t11.get('independent_review_pass') and t11.get('is_complete_run') and t11.get('reproducibility_pass') and
+            t11_repro.get('all_match') and t11_repro.get('separate_processes') and t11.get('python_hash_seed')=='0' and
+            t11_review.get('all_pass') and t11_review.get('windows_checked')==749 and
+            t11_review.get('validator_sha256')==file_hash(ROOT/'scripts/validate_t11_current.py') and
+            len(t11.get('source_code_hashes',{}))==4 and all((ROOT/path).is_file() and file_hash(ROOT/path)==expected
+                for path,expected in t11.get('source_code_hashes',{}).items()) and
             t11.get('config_sha256')==file_hash(ROOT/'config/config.yaml') and
             t11.get('settings_sha256')==file_hash(t11_settings_path) and
             t11.get('code_sha256')==file_hash(ROOT/'src/community_concentration.py') and
-            len(t11_repro.get('hashes',{}))==5 and all(
+            len(t11_review.get('output_hashes',{}))==8 and all(t11_review['output_hashes'].get(name)==proof.get('run1')
+                for name,proof in t11_repro.get('hashes',{}).items()) and
+            len(t11_repro.get('hashes',{}))==8 and all(
                 (t11_dir/name).is_file() and file_hash(t11_dir/name)==proof.get('run1')==proof.get('run2')
                 for name,proof in t11_repro.get('hashes',{}).items()) and
             len(t11.get('inputs',{}))==4 and all(
@@ -206,7 +218,7 @@ def main():
         upload_files=upload,blocked_upload_files=blocked,missing_files=missing,
         raw_input=dict(path=config['data']['interim_raw_transfers'],sha256=raw_sha256),
         excluded=['.cache/**','**/__pycache__/**','**/test_tmp*/**','**/repro_run*/**',
-                  '**/*.csv except eth_stats_from_2025.csv','generated graph HTML/PNG'],
+                  '**/*.csv except eth_stats_from_2025.csv','generated graph HTML/PNG except four canonical T11 PNGs'],
         upload_performed=False,
         note='Use exactly upload_files when publishing. Blocked tasks must be regenerated/reviewed before release. No automatic deletion of remote files.')
     destination=ROOT/'data/hf_release_manifest.json'

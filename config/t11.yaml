@@ -3,5 +3,5 @@ output_dir: data/processed/t11
 seed: 20261021
 louvain_resolution: 1.0
 louvain_threshold: 0.0000001
-min_community_size_for_stats: 2
-
+rq4_volume_quantile: 0.90
+rq4_forward_days: 3

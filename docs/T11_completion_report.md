@@ -1,90 +1,76 @@
-# BÁO CÁO NGHIỆM THU HOÀN THÀNH TASK T11
-## Community Detection và Network Concentration (RQ4)
+# T11 — Community detection và network concentration
 
-> **Phân hệ:** Đồ thị và chỉ số mạng lưới (Network Analytics & Topology)  
-> **Người thực hiện:** Yến Vy (TV1)  
-> **Người nghiệm thu / Đối soát:** TV4  
-> **Đầu vào phụ thuộc:** T08 Dynamic Graph (`dynamic_edges_daily.parquet`, `dynamic_edges_weekly.parquet`) đã xác minh SHA-256  
-> **Trạng thái nghiệm thu:** **PASS 100% (Ready for Downstream: True)**  
-> **Ngày nghiệm thu:** 2026-10-21  
+**Hoàn tất phần kỹ thuật, kiểm định và tái lập trên T08 hiện tại.**
+Kết quả RQ4 là mô tả hồi cứu quanh ngày volume cao, chưa xác nhận stress thị trường hoặc hành vi nhà đầu tư.
 
----
+## Phạm vi bàn giao
 
-## 1. Bảng Đối Chiếu Checklist Yêu Cầu Đầu Ra Task T11
+| Cửa sổ | Snapshot | Dòng node | Q trung bình |
+|---|---:|---:|---:|
+| daily | 655 | 712,519 | 0.715513 |
+| weekly | 94 | 388,557 | 0.693665 |
 
-| Mục Checklist | Tiêu chuẩn bàn giao | Trạng thái | Minh chứng / Đường dẫn file |
-| :--- | :--- | :---: | :--- |
-| **1. Community Assignment theo cửa sổ** | • Đầy đủ `time_window`, `address`, `community_id`, `community_size`.<br>• Kèm `node_volume_usdt`, `node_degree`, `is_giant_community`.<br>• Khớp 100% lịch Daily (655 ngày) và Weekly (94 tuần) của T08. | **HOÀN THÀNH** | • `data/processed/t11/community_nodes_daily.parquet` (712,519 rows)<br>• `data/processed/t11/community_nodes_weekly.parquet` (388,557 rows) |
-| **2. Modularity theo từng cửa sổ** | • Thuật toán Louvain, resolution $\gamma = 1.0$, seed cố định.<br>• Modularity $Q$, số lượng cụm $K_t$, phân phối kích thước cụm (`mean`, `std`, `median`, `max`, `singletons`). | **HOÀN THÀNH** | • `data/processed/t11/snapshot_metrics_daily.parquet`<br>• `data/processed/t11/snapshot_metrics_weekly.parquet` |
-| **3. Chỉ số tập trung theo thời gian** | • $HHI_{\text{volume}}$, $HHI_{\text{degree}}$, $HHI_{\text{community\_volume}}$.<br>• $Gini_{\text{volume}}$, $Gini_{\text{degree}}$.<br>• $CR_1, CR_5, CR_{10}, CR_{20}, CR_{\text{top1\%}}, CR_{\text{top5\%}}$.<br>• Shannon Entropy chuẩn hóa & $CCI_t$. | **HOÀN THÀNH** | • Đầy đủ 14 chỉ số tập trung trong `snapshot_metrics_*.parquet`. |
-| **4. Hình vẽ & Biểu đồ phục vụ RQ4** | • Biểu đồ chuỗi thời gian Modularity (Daily + Weekly).<br>• Biểu đồ chuỗi thời gian các chỉ số tập trung (Gini, HHI, CR-5).<br>• Biểu đồ kiểm định RQ4 (Boxplot 3 chế độ Baseline/Pre-Stress/Stress).<br>• Bản đồ cộng đồng mạng lưới mẫu (Community Map).<br>• Bảng Top communities qua các cửa sổ. | **HOÀN THÀNH** | • `outputs/figures/t11/t11_modularity_timeseries.png`<br>• `outputs/figures/t11/t11_concentration_timeseries.png`<br>• `outputs/figures/t11/t11_rq4_stress_comparison.png`<br>• `outputs/figures/t11/t11_community_map_2026-10-17.png`<br>• `data/processed/t11/top_communities_summary.parquet` |
-| **5. Phân tích trả lời RQ4** | • So sánh định lượng: Bình thường vs Tiền-Stress ($t-1 \dots t-3$) vs Đỉnh Stress.<br>• Kiểm định thống kê Welch's t-test với p-value rõ ràng.<br>• Diễn giải ý nghĩa tài chính và giới hạn phân tích. | **HOÀN THÀNH** | Chi tiết tại Mục 3 bên dưới. |
-| **6. Script & Config tái lập** | • Cấu hình `config/t11.yaml`.<br>• Tự động đối chiếu hash 2 lượt chạy độc lập (Run 1 vs Run 2).<br>• Validator độc lập `scripts/validate_t11_current.py`.<br>• Sẵn sàng làm node features cho **T19** và community map cho **T27**. | **HOÀN THÀNH** | • `T11_Community_Concentration.py`<br>• `scripts/validate_t11_current.py`<br>• `data/processed/t11/t11_reproducibility.json` |
+Giữ 655 ngày UTC và 94 tuần ISO; hai tuần thiếu ngày có eligible_for_regression=false.
+Louvain có hướng, trọng số USDT, resolution=1. Community ID chỉ có ý nghĩa trong từng snapshot.
 
----
+## Kiểm định
 
-## 2. Danh Mục File Sản Phẩm Bàn Giao tại `data/processed/t11/`
+- Validator độc lập đạt 749/749 cửa sổ từ cạnh T08; không nhập hàm tính chỉ số production.
+- 8/8 Parquet khớp SHA-256 giữa hai tiến trình mới, PYTHONHASHSEED=0.
+- Kiểm tra calendar, khóa, node/edge, volume/degree, phân hoạch, modularity, mọi chỉ số tập trung, bảng top và thống kê RQ4.
+- Chỉ validator đạt mới bật ready_for_downstream; --skip-reproducibility luôn giữ false.
+- Tái lập không chứng minh quyền sở hữu, ý nghĩa kinh tế hoặc giả thuyết RQ4.
 
-| Tên File | Định dạng | Quy mô | Kích thước | SHA-256 Hash |
-| :--- | :---: | :---: | :---: | :--- |
-| `community_nodes_daily.parquet` | Parquet | 712,519 dòng | 32.5 MB | `278910aa1c29658d433291eb5347a32bbcc6b7617b7ecdb4ebc6c3905086bce5` |
-| `community_nodes_weekly.parquet` | Parquet | 388,557 dòng | 18.8 MB | `a84cb93ea089e60058b4566dd95c4724b07f2dfae7dd73a7c6f030a0e4179344` |
-| `snapshot_metrics_daily.parquet` | Parquet | 655 ngày | 180 KB | `ad9dfd7bfa5dbf05141074a32d189bb46797db12776c5b057c7c34b17adfaef5` |
-| `snapshot_metrics_weekly.parquet` | Parquet | 94 tuần | 46 KB | `655a6d34b3f8e5628b3c959771146fcbe26e95b06069aa7d33d90f23cb5146c2` |
-| `top_communities_summary.parquet` | Parquet | 3,275 dòng | 68 KB | Bảng thống kê Top 5 cộng đồng chi phối volume lớn nhất mỗi ngày. |
-| `t11_validation.parquet` | Parquet | 749 records | 39 KB | `7335eebdf6bb3c4c9527ecb8ca30a218f2f64db2a843f55ba42969911e3b5674` |
-| `t11_summary.json` | JSON | 42 dòng | 1.8 KB | Bằng chứng nghiệm thu downstream: `ready_for_downstream: true`. |
-| `t11_reproducibility.json` | JSON | 18 dòng | 1.1 KB | Bằng chứng tái lập bit-for-bit: `all_match: true`. |
+## Bảng sản phẩm và hash hiện tại
 
----
+| File | Dòng | SHA-256 |
+|---|---:|---|
+| community_nodes_daily.parquet | 712,519 | `7bb18cb01b4f8cba675fcbddbeccc6a2196f70fdfee8dea1e55d976a92090eea` |
+| community_nodes_weekly.parquet | 388,557 | `950bc0d927ba1205d5f8ba694cfeda4fb1b16b422a385a4012462465eced4f58` |
+| snapshot_metrics_daily.parquet | 655 | `0b79d6750588025ed4750347a9915a2bfe1f0fcc7d885e1b666b8302ab613ed4` |
+| snapshot_metrics_weekly.parquet | 94 | `acd4230742a022c8b9c2a4f5449f400faeecf0182e64d2a8667357a5bc8137a4` |
+| t11_validation.parquet | 749 | `181303bf625e17d6de9dc5151eb3e9247b13e48cf869f55c09dd8cdc71b87e77` |
+| top_communities_summary.parquet | 3,745 | `f54b59ddd104466ded81689051115029713e8b89e99e2e92940bb045406be579` |
+| rq4_daily_regimes.parquet | 655 | `d8a073d2ee152e22732b670dfff5749579bd8602daf498443a12a301a9cd5d07` |
+| rq4_comparison.parquet | 5 | `038728e7da253373fb6f0180307e12d8f33ee61809596e5cd293dbe8694f39dc` |
 
-## 3. Phân Tích Định Lượng Trả Lời Câu Hỏi Nghiên Cứu 4 (RQ4)
+Bảng top có 3,745 dòng, top 5 theo volume trong mỗi cửa sổ ngày/tuần, được sinh trong cả hai lượt.
+Metadata: t11_summary.json, t11_review.json, t11_reproducibility.json.
 
-> **RQ4:** *"Community concentration có tăng trước stress events không?"*
+## RQ4 — đối chiếu mô tả
 
-### A. Thiết Kế Nghiệm Thu & Khung Thực Nghiệm:
-* **Giai đoạn Đỉnh Stress (Peak Stress Regime - $N=66$ ngày):** Các ngày có tổng volume luân chuyển của cá voi nằm trong Top 10% cao nhất ($Volume \ge P_{90}$).
-* **Giai đoạn Tiền-Stress (Pre-Stress Regime - $N=96$ ngày):** Các ngày bình thường nhưng nằm ngay trước một sự kiện Stress từ 1 đến 3 ngày ($[t-3, t-1]$ trước Stress Day).
-* **Giai đoạn Bình Thường Cơ Sở (Baseline Normal - $N=493$ ngày):** Các ngày thanh khoản thông thường, không kề cận sự kiện stress.
+High-volume là volume T08 >= phân vị 90% toàn kỳ; pre là 1–3 ngày trước high-volume và không phải high-volume.
+Số ngày: baseline=490, pre=96, high-volume=66, censored=3.
+Ba ngày cuối không đủ quan sát tương lai bị loại khỏi so sánh; không mặc định chúng là baseline.
 
-### B. Bảng So Sánh Kiểm Định Thống Kê (Welch's t-test):
+| Chỉ số | Baseline | Pre | High-volume | Thay đổi Pre/Base | p Welch | p Holm (5 chỉ số) |
+|---|---:|---:|---:|---:|---:|---:|
+| gini_volume | 0.816855 | 0.831010 | 0.869759 | +1.73% | 5.73022e-05 | 0.000286511 |
+| hhi_community_volume | 0.132915 | 0.137495 | 0.136254 | +3.45% | 0.321764 | 0.643527 |
+| community_concentration_index | 0.094865 | 0.096605 | 0.092972 | +1.83% | 0.501503 | 0.643527 |
+| modularity | 0.720254 | 0.710143 | 0.686800 | -1.40% | 0.026792 | 0.080376 |
+| cr_top5pct_volume | 0.651065 | 0.670432 | 0.743913 | +2.97% | 0.00291157 | 0.0116463 |
 
-| Chỉ số Mạng Lưới | 1. Baseline Bình Thường | 2. Tiền-Stress ($[t-3, t-1]$) | 3. Đỉnh Stress ($P_{90}$) | Thay đổi Pre vs Base | Mức ý nghĩa thống kê ($p$-value) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Gini Volume ($Gini_{\text{volume}}$)** | **0.8169** | **0.8310** | **0.8698** | **+1.73%** | **$p = 5.73 \times 10^{-5}$** (Rất mạnh) |
-| **HHI Community Volume** | **0.1329** | **0.1375** | **0.1363** | **+3.44%** | $p = 0.322$ |
-| **Community Concentration Index ($CCI$)** | **0.0949** | **0.0966** | **0.0930** | **+1.80%** | $p = 0.509$ |
-| **Modularity ($Q$)** | **0.7204** | **0.7101** | **0.6868** | **-1.42%** | **$p = 0.0246$** (Có ý nghĩa ở 5%) |
-| **Top 5% Whales Volume Share ($CR_{\text{top5\%}}$)** | **77.92%** | **78.45%** | **83.15%** | **+0.68%** | $p = 0.561$ |
+Các p-value là thăm dò: Welch giả định quan sát độc lập, Holm chỉ điều chỉnh kiểm định nhiều chỉ số, không xử lý phụ thuộc thời gian/cụm sự kiện.
+Không thể suy từ Gini node sang tập trung cộng đồng, danh tính cá nhân, tái cơ cấu danh mục, dòng vào sàn hoặc khủng hoảng thanh khoản.
+HHI cộng đồng và CCI không cung cấp bằng chứng đủ để xác nhận giả thuyết tăng tập trung trước stress thị trường.
+Cần sự kiện stress độc lập và thiết kế thống kê phù hợp trước khi đưa ra kết luận thị trường/nhân quả hoặc dự báo.
 
-### C. Ý Nghĩa Kinh Tế & Kết Luận Học Thuật (Economic Interpretation):
-1. **Sự gia tăng tập trung trước Stress:**
-   Hệ số Gini tăng mạnh từ **0.8169 lên 0.8310** ($p < 0.0001$) trong giai đoạn tiền-stress và đạt cực đại **0.8698** trong ngày stress. Điều này xác nhận rằng trước khi xảy ra cú sốc lớn, một nhóm thiểu số các "cá voi khổng lồ" (Super-Whales) bắt đầu thực hiện các lệnh chuyển tiền chiến lược (tái cấu trúc danh mục, nạp rút thanh khoản lên sàn CEX), dẫn đến việc mức độ tập trung dòng tiền tăng vọt.
-2. **Hành vi suy giảm Modularity khi Stress bùng nổ:**
-   Modularity $Q$ giảm từ **0.7204 xuống 0.6868** ($p = 7.10 \times 10^{-9}$). Khi cú sốc thanh khoản nổ ra, các rào cản phân cụm bị phá vỡ; luồng tiền cá voi tràn qua các cụm khác nhau (chuyển dịch ồ ạt giữa CEX và DeFi pools để phòng vệ / thanh lý), khiến mạng lưới trở nên kết nối chéo mạnh mẽ hơn giữa các cộng đồng.
+## Biểu đồ và giới hạn
 
----
+Bốn PNG được tạo ở data/figures/t11/: modularity_timeseries, concentration_timeseries, rq4_stress_comparison và community_map_2026-10-17 (tiền tố t11_).
+Các box dùng thứ tự baseline/pre/high-volume, N động và cùng bảng rq4_comparison; đây là biểu đồ Matplotlib tĩnh.
+Mạng chỉ chứa transfer sau netting >=500.000 USDT; concentration mô tả mạng con đang hoạt động, không phải toàn mạng hoặc tài sản cá nhân.
+Volume node là vào + ra, tổng bằng hai lần volume cạnh; community_volume lặp trên node, không cộng lại cột này qua các node.
+CCI=max(Q,0)×HHI community volume là chỉ số tổng hợp của dự án, không tự xác nhận rủi ro hệ thống.
 
-## 4. Danh Mục Biểu Đồ Hình Ảnh Trực Quan tại `outputs/figures/t11/`
+## Chạy lại
 
-Toàn bộ biểu đồ đạt chuẩn publication (DPI 300) đã được xuất phục vụ báo cáo và luận văn:
-1. `t11_modularity_timeseries.png`: Chuỗi thời gian Modularity $Q$ (Daily và Weekly), thể hiện cấu trúc phân cụm bền vững và các vùng Stress.
-2. `t11_concentration_timeseries.png`: Chuỗi thời gian 3 tầng gồm $Gini_{\text{volume}}$, $HHI_{\text{community}}$, và Top-5% Volume Share.
-3. `t11_rq4_stress_comparison.png`: Biểu đồ Boxplot 4 khung so sánh Baseline vs Pre-Stress vs Peak Stress kèm $p$-value kiểm định.
-4. `t11_community_map_2026-10-17.png`: Bản đồ mạng lưới cộng đồng (Community Map) trực quan hóa các cụm cá voi, sẵn sàng bàn giao cho **Task T27**.
+```powershell
+python T11_Community_Concentration.py
+python scripts/validate_t11_current.py
+python -m src.visualize_t11
+```
 
----
-
-## 5. Hướng Dẫn Tích Hợp Cho Các Phân Hệ Downstream
-
-* **Cho Task T19 (Feature Engineering cho GNN & ML):**
-  Nhóm làm T19 chỉ cần đọc bảng `data/processed/t11/community_nodes_daily.parquet` để lấy các đặc trưng cấu trúc cho từng ví:
-  ```python
-  import pandas as pd
-  df_comm = pd.read_parquet("data/processed/t11/community_nodes_daily.parquet")
-  # Sử dụng: community_id, community_size, community_volume_usdt, is_giant_community
-  ```
-* **Cho Task T27 (Interactive Community Explorer & Dashboard):**
-  Sử dụng trực tiếp script `src/visualize_t11.py` và bảng `community_nodes_*.parquet` để render đồ thị tương tác Plotly theo từng ngày.
-* **Cho Task T13 & T14 (Event Study & Forecasting):**
-  Sử dụng chuỗi `community_concentration_index` ($CCI$) và `gini_volume` từ `snapshot_metrics_daily.parquet` làm các biến trễ dự báo biến động thị trường.
+Không lưu mã/bản test giả sau khi kiểm tra; giữ validator dữ liệu thật và bằng chứng Parquet/JSON.
+Xem [đặc tả](T11_community_concentration_specification.md) và [kết quả xử lý review](T11_review_report.md).

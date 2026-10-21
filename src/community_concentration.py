@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import uuid
 from datetime import datetime, timezone
 from importlib.metadata import version
@@ -41,6 +42,9 @@ from src.node_centrality import (
 )
 
 SETTINGS_PATH = ROOT / "config/t11.yaml"
+OUTPUT_NAMES = ['community_nodes_daily.parquet','community_nodes_weekly.parquet',
+    'snapshot_metrics_daily.parquet','snapshot_metrics_weekly.parquet','t11_validation.parquet',
+    'top_communities_summary.parquet','rq4_daily_regimes.parquet','rq4_comparison.parquet']
 
 NODE_COLUMNS = [
     "window_type", "time_window", "address",
@@ -183,7 +187,7 @@ def calculate_community_and_concentration(
 
     # Sắp xếp communities deterministically: lớn nhất về node count đứng đầu, sau đó theo volume
     def comm_sort_key(c_nodes):
-        c_vol = sum(node_volumes[u] for u in c_nodes)
+        c_vol = sum(node_volumes[u] for u in sorted(c_nodes))
         first_addr = sorted(list(c_nodes))[0]
         return (-len(c_nodes), -c_vol, first_addr)
 
@@ -195,7 +199,7 @@ def calculate_community_and_concentration(
     comm_volumes = {}
     for cid, c_nodes in enumerate(sorted_communities):
         c_size = len(c_nodes)
-        c_vol = float(sum(node_volumes[u] for u in c_nodes))
+        c_vol = float(sum(node_volumes[u] for u in sorted(c_nodes)))
         comm_sizes[cid] = c_size
         comm_volumes[cid] = c_vol
         for u in c_nodes:
@@ -397,6 +401,8 @@ def run(folder: Path, cfg: Dict[str, Any], settings: Dict[str, Any]) -> Dict[str
 
     val_df = pd.DataFrame(validation_records)
     val_df.to_parquet(folder / "t11_validation.parquet", index=False)
+    from src.t11_reporting import write_derived_tables
+    write_derived_tables(folder,settings)
 
     return shapes
 
@@ -404,27 +410,38 @@ def run(folder: Path, cfg: Dict[str, Any], settings: Dict[str, Any]) -> Dict[str
 def main():
     parser = argparse.ArgumentParser(description="Task T11: Community detection & network concentration (RQ4)")
     parser.add_argument("--skip-reproducibility", action="store_true", help="Chế độ khảo sát, bỏ qua kiểm tra tái lập")
+    parser.add_argument('--repro-output',help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     cfg = read_config()
     settings = read_config(SETTINGS_PATH)
+    if os.environ.get('PYTHONHASHSEED')!='0':
+        raise ValueError('Chạy qua T11_Community_Concentration.py để dùng PYTHONHASHSEED=0')
     sources = verified_t08_inputs(cfg)
     folder = project_path(settings["output_dir"])
     code_path = ROOT / "src/community_concentration.py"
+    if args.repro_output:
+        worker=project_path(args.repro_output).resolve()
+        if not worker.is_relative_to((ROOT/'.cache').resolve()):raise ValueError('Repro worker output must stay in project cache')
+        run(worker,cfg,settings)
+        return
+    code_files=['src/community_concentration.py','src/t11_reporting.py','src/visualize_t11.py','T11_Community_Concentration.py']
 
     provenance = dict(
         inputs=sources,
         config_sha256=sha256(ROOT / "config/config.yaml"),
         settings_sha256=sha256(SETTINGS_PATH),
         code_sha256=sha256(code_path),
+        source_code_hashes={p:sha256(ROOT/p) for p in code_files},
         created_at=datetime.now(timezone.utc).isoformat(),
     )
 
     write_json(folder / "t11_summary.json", dict(ready_for_downstream=False, settings=settings, **provenance))
+    write_json(folder/'t11_review.json',dict(all_pass=False,status='calculation_in_progress'))
 
     # Chạy lần 1 (Run 1)
     shapes = run(folder, cfg, settings)
-    names = sorted(p.name for p in folder.glob("*.parquet"))
+    names = OUTPUT_NAMES
     hashes = {name: dict(run1=sha256(folder / name)) for name in names}
 
     # Chạy lần 2 (Run 2) để đối chiếu tái lập bit-for-bit
@@ -440,7 +457,8 @@ def main():
             probe.write_bytes(b"ok")
             probe.unlink()
 
-            run(temporary, cfg, settings)
+            subprocess.run([sys.executable,'-m','src.community_concentration','--repro-output',relative_path(temporary)],
+                cwd=ROOT,env=dict(os.environ,PYTHONHASHSEED='0'),check=True)
             for name in names:
                 hashes[name]["run2"] = sha256(temporary / name)
             same = all(v["run1"] == v.get("run2") for v in hashes.values())
@@ -455,16 +473,20 @@ def main():
         raise ValueError("Mã nguồn src/community_concentration.py đã bị thay đổi trong quá trình chạy.")
     if sha256(SETTINGS_PATH) != provenance["settings_sha256"]:
         raise ValueError("File cấu hình config/t11.yaml đã bị thay đổi trong quá trình chạy.")
+    if sha256(ROOT/'config/config.yaml')!=provenance['config_sha256'] or any(sha256(ROOT/p)!=h for p,h in provenance['source_code_hashes'].items()):
+        raise ValueError('Source/config changed during T11 run')
 
-    write_json(folder / "t11_reproducibility.json", dict(all_match=same, hashes=hashes))
+    write_json(folder / "t11_reproducibility.json", dict(all_match=same, hashes=hashes,
+        separate_processes=not args.skip_reproducibility,python_hash_seed='0'))
 
     val_df = pd.read_parquet(folder / "t11_validation.parquet")
-    ready = bool((same or args.skip_reproducibility) and (val_df["status"] == "PASS").all())
 
     summary = dict(
         task="T11",
         description="Community detection and network concentration metrics (RQ4)",
-        ready_for_downstream=ready,
+        ready_for_downstream=False,
+        is_complete_run=True,
+        reproducibility_pass=bool(same and not args.skip_reproducibility),
         settings=settings,
         **provenance,
         python_hash_seed=os.environ.get("PYTHONHASHSEED"),
@@ -472,7 +494,8 @@ def main():
         validation_pass=int((val_df["status"] == "PASS").sum()),
         versions={p: version(p) for p in ["networkx", "numpy", "pandas", "pyarrow"]},
         rq4_insights={
-            "hypothesis": "Community concentration increases before stress events",
+            "interpretation": "Retrospective high-volume proxy; not verified market stress",
+            "market_stress_hypothesis_confirmed": False,
             "mean_daily_modularity": shapes["daily"]["mean_modularity"],
             "mean_weekly_modularity": shapes["weekly"]["mean_modularity"],
             "mean_daily_cci": shapes["daily"]["mean_cci"],
@@ -486,12 +509,19 @@ def main():
     )
     write_json(folder / "t11_summary.json", summary)
 
-    print("\n" + "=" * 70)
-    print("      T11 HOÀN TẤT THÀNH CÔNG VÀ ĐẠT TÁI LẬP!")
-    print("=" * 70)
-    print(json.dumps(summary, indent=2, ensure_ascii=False))
+    if args.skip_reproducibility:
+        write_json(folder/'t11_review.json',dict(all_pass=False,status='exploration_without_reproducibility'))
+        print('T11 computed for exploration; ready_for_downstream=false',flush=True)
+        return
+    if not same:raise ValueError('T11 reproduction hashes differ')
+    from scripts.validate_t11_current import validate_release
+    validate_release()
+    from src.visualize_t11 import main as draw
+    draw()
+    from src.t11_reporting import write_completion_report
+    write_completion_report(folder,ROOT)
+    print('T11 technical validation complete; RQ4 remains exploratory.',flush=True)
 
 
 if __name__ == "__main__":
     main()
-

@@ -56,6 +56,15 @@ trong `config/t10.yaml` dùng cùng đường dẫn/lịch T08 từ `config/conf
 Đầu ra tại `data/processed/t10`; bảng sampling_quality công bố sai số xấp xỉ.
 `--skip-reproducibility` chỉ dùng khảo sát, không đánh dấu sẵn sàng bàn giao.
 
+T11: chạy `T11_Community_Concentration.py`, phụ thuộc T08 đã xác minh. Tính hai
+lượt trong hai tiến trình, so hash tám Parquet và kiểm định độc lập đủ 749 cửa
+sổ trước khi bật ready. Bàn giao node/snapshot ngày–tuần, validation, top
+community, regime hồi cứu, comparison và ba JSON summary/review/reproducibility.
+Bốn PNG Matplotlib chuẩn ở data/figures/t11 được bàn giao trên HF bằng allowlist
+cùng Parquet/JSON; ảnh thử và cache bị loại. RQ4 chỉ mô tả ngày volume cao, chưa xác nhận stress thị
+trường. Các nhãn pre và phân vị toàn kỳ không dùng làm predictor PIT.
+Xem docs/T11_community_concentration_specification.md và T11_completion_report.md.
+
 Sau khi push một release, các thành viên lấy đúng revision đã công bố rồi kiểm tra
 hash theo manifest. Việc upload dữ liệu là một bước riêng, không diễn ra khi test.
 

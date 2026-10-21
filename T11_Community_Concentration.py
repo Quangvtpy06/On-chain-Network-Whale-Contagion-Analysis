@@ -25,7 +25,3 @@ from src.community_concentration import main
 
 if __name__ == "__main__":
     main()
-    if "--skip-reproducibility" not in sys.argv:
-        from scripts.validate_t11_current import main as validate_release
-        validate_release()
-
