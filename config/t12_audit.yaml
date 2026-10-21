@@ -1,0 +1,11 @@
+output_dir: data/processed/t12
+primary_exploratory_variant: log_all
+top_k_stability: 50
+top_k_persistence: 10
+manual_review_top_n_per_variant: 20
+forwarding_net_ratio: 0.05
+high_frequency_quantile: 0.95
+minimum_large_edge_transactions: 20
+persistent_forwarding_days_in_7d: 3
+net_ratio_sensitivity: [0.01, 0.05, 0.10]
+frequency_quantile_sensitivity: [0.90, 0.95, 0.99]

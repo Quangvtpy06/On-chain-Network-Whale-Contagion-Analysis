@@ -7,6 +7,18 @@ Các báo cáo và metadata kiểm định tiếp tục dùng Markdown/JSON.
 Danh sách file bàn giao Hugging Face được tạo bằng `scripts/prepare_hf_manifest.py`;
 xem [quy ước dữ liệu dùng chung](docs/DATA_HANDOFF.md). Test/cache không đưa vào dataset.
 
+T12 hiện là điểm thăm dò địa chỉ hoạt động lớn, chưa xác nhận nhà đầu tư cá nhân.
+Chạy `python T12_Whale_Score.py` cho raw và audit hoặc
+`python T12_Whale_Score_Audit.py` nếu raw đã khớp hash. Audit so raw/log,
+độ phủ nhãn theo USDT, top 50 liền kề và ứng viên nhãn chờ người xác minh.
+Lệnh audit cũng tạo cohort 30 ngày kết thúc t−1 và CEX diagnostics (tách DEX).
+Sau khi 23 pytest đạt, mã test và dữ liệu/cache tạm đã được xóa theo yêu cầu
+bàn giao. Giữ bằng chứng JSON và kiểm định dữ liệu thật trong pipeline.
+Xem [báo cáo T12](docs/T12_completion_report.md) và gate T14/T15
+trong `data/processed/t12/t12_downstream_gate.json` trước khi dùng WhaleFlow.
+Gate chỉ chặn WhaleFlow theo cohort; các nhánh T14 độc lập được triển khai song
+song. Cấu hình lọc đóng băng ở `config/t12_design.yaml`, không chọn lại sau T15.
+
 ---
 
 ## 📌 Tổng Quan Dự Án
@@ -97,6 +109,9 @@ snapshot_download(repo, repo_type='dataset', revision=revision,
 T09: `python T09_Network_Centrality.py`, sau đó chạy các lệnh nghiệm thu trong
 `docs/T09_centrality_specification.md`. T10: `python T10_Heavy_Graph_Metrics.py`
 tự tính hai lượt, so hash và kiểm định; xem `docs/T10_heavy_metrics_specification.md`.
+T12: `python T12_Whale_Score.py` tính WhaleScore từ T07/T09, gắn cờ hạ tầng
+và tạo ranking qua bộ lọc; xem `docs/T12_whale_score_specification.md`.
+High-centrality hoặc score cao không xác nhận nhà đầu tư cá nhân.
 
 Để bàn giao dữ liệu: đăng nhập bằng `hf auth login`, chạy
 `python scripts/prepare_hf_manifest.py`, rồi `python scripts/publish_hf_release.py`.

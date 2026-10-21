@@ -1,0 +1,17 @@
+protocol_id: t12_lagged_v1
+frozen_on: '2026-10-21'
+output_dir: data/processed/t12
+lookback_days: 30
+minimum_history_days: 30
+cohort_size: 50
+score_variant: log_all
+forwarding_net_ratio: 0.05
+frequency_quantile: 0.95
+minimum_large_edge_transactions: 20
+entity_label_policy: human_verified_available_by_cutoff_only
+contract_policy: first_onchain_creation_by_cutoff
+secondary_labels: data/processed/t07/t07_secondary_verified_labels.parquet
+candidate_labels: data/processed/t07/t07_label_review_candidates.parquet
+net_ratio_sensitivity: [0.01, 0.05, 0.10]
+frequency_quantile_sensitivity: [0.90, 0.95, 0.99]
+regression_results_used_for_selection: false

@@ -65,7 +65,7 @@ def main():
     if changed:
         commit = api.create_commit(repo, repo_type=kind, parent_commit=parent,
             operations=[CommitOperationAdd(path_in_repo=r['path'], path_or_fileobj=ROOT/r['path']) for r in changed],
-            commit_message='Publish validated T07-T10 release on netted T08 graphs')
+            commit_message='Publish validated graph metrics and exploratory T12 with downstream gate')
     revision = commit.oid if commit else parent
     remote = {item.path: item for item in api.get_paths_info(repo, sorted(seen), repo_type=kind, revision=revision)}
     if any(r['path'] not in remote or not remote_matches(remote[r['path']], ROOT/r['path'], r['sha256']) for r in records):

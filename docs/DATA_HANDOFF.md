@@ -23,7 +23,8 @@ T08 mới; các bảng chỉ số chưa đạt vẫn nằm trong blocked_upload_
 
 Bảng dữ liệu chỉ dùng Parquet, báo cáo/metadata dùng JSON/Markdown. Ngoại lệ CSV
 duy nhất là `eth_stats_from_2025.csv` ở gốc dự án. Không push service-account, key,
-cache tải xuống, `__pycache__`, ảnh/HTML xem thử hoặc thư mục test.
+cache tải xuống, `__pycache__`, ảnh/HTML xem thử hoặc dữ liệu test tạm.
+Sau khi kiểm tra đạt, xóa mã pytest/dữ liệu giả; không upload chúng lên dataset.
 
 T07: bảng đầy đủ chuẩn là `t07_complete_wallet_labels.parquet`; bảng contracts và
 summary đi kèm giúp kiểm tra nguồn thuộc tính is_contract. Các bảng Unknown vẫn
@@ -42,8 +43,9 @@ replaces_remote_outputs của summary mới; không giữ bảng legacy trùng t
 
 ## Test và review
 
-Theo quy ước thống nhất: mã test với dữ liệu giả và dữ liệu test tạm được xóa sau
-khi kiểm tra đạt, áp dụng cả các bước trước. Không giữ bản chạy thứ hai trong data/.
+Theo yêu cầu bàn giao mới nhất: xóa cả mã pytest sau khi kiểm tra đạt.
+Giữ kết quả lịch sử và SHA-256 mã đã chạy trong t12_tests.json; không trình bày
+chúng như kiểm tra vừa thực thi lại. Không giữ bản chạy thứ hai trong data/.
 Giữ bộ kiểm định dữ liệu thật đang được pipeline sử dụng (`src/t08_review.py`,
 `src/t09_reference.py`, các lệnh nghiệm thu T09 và kiểm định tích hợp T10) để lần
 chạy sau vẫn phát hiện sai dữ liệu. Validation Parquet và review JSON được giữ làm
@@ -64,3 +66,41 @@ Publisher chỉ upload allowlist, kiểm tra hash trên remote và lưu receipt 
 GitHub chỉ lưu code/config/tài liệu; dữ liệu và receipt được `.gitignore` loại bỏ.
 File nguồn raw Parquet thật cũng nằm trong allowlist và phải khớp hash nguồn T08;
 không coi con trỏ Git LFS 134 byte là dữ liệu nguồn hợp lệ.
+
+T12: chạy `T12_Whale_Score.py`; phụ thuộc T07 đầy đủ và T09 trên T08 mới.
+Cấu hình `config/t12.yaml`, bảng Parquet và bằng chứng tại `data/processed/t12`.
+WhaleScore dùng z theo từng cửa sổ; bảng all và ranking qua bộ lọc có dân số
+chuẩn hóa riêng. Qua bộ lọc không có nghĩa đã xác nhận nhà đầu tư cá nhân.
+Sau nghiệm thu, tạo lại manifest rồi mới chạy publisher khi cần xuất bản.
+
+T12 hiện là điểm thăm dò. Lệnh đầy đủ chạy raw rồi audit; có thể chạy riêng
+`T12_Whale_Score_Audit.py` nếu raw đã được nghiệm thu và không đổi. Audit xuất
+độ phủ theo USDT, so sánh raw/log, tương quan, ổn định top 50, hành vi và bằng
+chứng rà soát 20 địa chỉ cho mỗi biến thể. 23 pytest đã đạt trước khi xóa mã.
+Những lần chạy audit sau vẫn kiểm định dữ liệu thật và so hash hai lượt;
+không còn chạy lại các ca giả đã xóa.
+Manifest chấp nhận T12 để lưu trữ thăm dò không có nghĩa biến WhaleFlow được dùng:
+xem `downstream_eligibility` và `data/processed/t12/t12_downstream_gate.json`.
+Hiện gate WhaleFlow false; cần kiểm định cohort sau lọc. T14 CEX NetFlow, sự kiện
+transfer lớn theo phân vị quá khứ và tập trung mạng có thể triển khai độc lập.
+
+Bổ sung protocol `t12_lagged_v1`: cohort top 50 từ 30 ngày [t−30,t), log cả
+PageRank; không dùng volume cùng ngày hoặc nhãn thực thể cuối kỳ cho dự báo.
+`config/t12_design.yaml` và `t12_protocol_freeze.json` cố định ngưỡng trước T15.
+Chạy audit sẽ tạo cả cohort và CEX diagnostics, so hash hai lượt rồi dọn bản tạm.
+Không đổi ngưỡng theo p-value/hệ số hồi quy; thay đổi phải version protocol.
+
+T07 lưu `t07_label_review_candidates.parquet` (AI, chưa xác minh) và
+`t07_secondary_verified_labels.parquet` (sidecar nguồn bậc hai, ban đầu rỗng).
+Thành viên mở nguồn, điền quyết định trong Parquet rồi chạy
+`python T07_Secondary_Label_Review.py --decisions <relative-path.parquet>`.
+Không coi tên do AI tìm thấy là nhãn đã kiểm chứng; chỉ nhập bản approve có
+người, thời điểm, URL, confidence và xác nhận đúng địa chỉ Ethereum.
+Sau quyết định phải chạy lại audit/design/manifest; không sửa ngầm complete T07
+đã ký hash. T07_Complete_Wallet_Labels.py đọc sidecar khi rebuild; nếu hợp nhất
+vào complete, version/rebuild các bước phụ thuộc trước khi tạo release mới.
+
+CEX NetFlow chỉ dùng CEX, loại DEX khỏi tập ví sàn, tách chuyển nội bộ CEX.
+`cex_coverage.parquet` đo tỷ trọng volume của ví CEX đã biết, không đo recall
+CEX thật vì Unknown có thể còn ví sàn. Nhãn hiện tại dùng mô tả hồi cứu;
+forecast RQ3 cần nhãn PIT. Xem T12_lagged_cohort_and_CEX_report.md.

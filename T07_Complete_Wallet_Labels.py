@@ -14,6 +14,38 @@ import pandas as pd
 from src.graph_config import read_config, project_path, relative_path
 
 
+def apply_secondary_labels(df, secondary):
+    """Only the human-decision sidecar can add secondary entity identities."""
+    if secondary.empty:
+        return df
+    if secondary.address.duplicated().any() or not secondary.verification_status.eq('human_verified').all():
+        raise ValueError('Nhãn bậc hai phải có quyết định người xác minh, không dùng hàng chờ AI')
+    if not secondary.source_tier.eq(2).all() or not secondary.source_url.str.startswith('https://').all():
+        raise ValueError('Thiếu provenance nguồn bậc hai')
+    for column in ['verified_by','confidence','verified_at','label_available_at','effective_from']:
+        if not secondary[column].fillna('').astype(str).str.strip().ne('').all():
+            raise ValueError('Thiếu metadata xác minh nhãn bậc hai')
+    if (pd.to_datetime(secondary.label_available_at,utc=True)<pd.to_datetime(secondary.verified_at,utc=True)).any():
+        raise ValueError('Không backdate ngày khả dụng nhãn')
+    df=df.copy()
+    for row in secondary.itertuples():
+        mask=df.address.eq(row.address)
+        if not mask.any():
+            raise ValueError('Nhãn ngoài tập địa chỉ T07; phải mở rộng universe có kiểm soát')
+        previous=df.loc[mask,'entity_type']
+        if (~previous.isin(['Unknown','Contract',row.entity_type])).any():
+            raise ValueError('Xung đột nhãn hiện có; cần quyết định reconciliation riêng')
+        for column in ['entity_name','entity_type','source_url','confidence','verified_by','verified_at','label_available_at','effective_from','source_tier']:
+            if column not in df:df[column]=None
+            df.loc[mask,column]=getattr(row,column)
+        category={'CEX':'exchange','DEX':'defi','Bridge':'bridge','DeFi':'defi'}.get(row.entity_type,'entity')
+        df.loc[mask,'class']=category
+        df.loc[mask,'public_category']=category
+        df.loc[mask,'source']='Human-verified secondary source'
+        df.loc[mask,'evidence']='Team member opened source and confirmed Ethereum address; see source_url/verification metadata'
+    return df
+
+
 def fetch_contract_status(addresses, config):
     from google.cloud import bigquery
     cfg = config['bigquery']
@@ -91,6 +123,9 @@ def complete_labels(config=None, refresh=False, offline=False):
     df.loc[generic, 'entity_name'] = 'Unattributed smart contract'
     df.loc[generic, 'source'] = df.loc[generic, 'contract_status_source']
     df.loc[generic, 'evidence'] = 'Address present in BigQuery contracts before study end; identity unknown'
+    secondary_path=output.parent/'t07_secondary_verified_labels.parquet'
+    if secondary_path.is_file():
+        df=apply_secondary_labels(df,pd.read_parquet(secondary_path))
     df['is_zero_address'] = df.address.eq('0x' + '0' * 40)
     df['is_entity_attributed'] = ~df.entity_type.isin(['Unknown', 'Contract'])
     df = df.sort_values('address').reset_index(drop=True)

@@ -1,0 +1,8 @@
+# T12: three distinct activity/structure features, standardized within each window.
+output_dir: data/processed/t12
+value_column: weighted_degree_usdt
+weighted_degree_column: weighted_degree_tx
+pagerank_column: pagerank
+standard_deviation_ddof: 0
+exclude_other_attributed_entities: false
+label_policy: retrospective_static_t07

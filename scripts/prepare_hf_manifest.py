@@ -94,6 +94,70 @@ def main():
         len(t10.get('inputs',{}))==4 and all(
             (ROOT/item['path']).is_file() and file_hash(ROOT/item['path'])==item['sha256']
             for item in t10.get('inputs',{}).values()))
+    t12_settings_path=ROOT/'config/t12.yaml'
+    if t12_settings_path.is_file():
+        t12_settings=yaml.safe_load(t12_settings_path.read_text(encoding='utf-8'))
+        t12_dir=ROOT/t12_settings['output_dir']
+        t12=read_json(t12_dir/'t12_summary.json')
+        t12_review=read_json(t12_dir/'t12_review.json')
+        t12_repro=read_json(t12_dir/'t12_reproducibility.json')
+        audit=read_json(t12_dir/'t12_audit_summary.json')
+        audit_repro=read_json(t12_dir/'t12_audit_reproducibility.json')
+        tests=read_json(t12_dir/'t12_tests.json')
+        gate=read_json(t12_dir/'t12_downstream_gate.json')
+        design=read_json(t12_dir/'t12_design_summary.json')
+        design_repro=read_json(t12_dir/'t12_design_reproducibility.json')
+        frozen=read_json(t12_dir/'t12_protocol_freeze.json')
+        standard['t12']=[(t12_dir/name).relative_to(ROOT).as_posix() for name in [
+            'whale_scores_daily.parquet','whale_scores_weekly.parquet',
+            'snapshot_metrics_daily.parquet','snapshot_metrics_weekly.parquet',
+            't12_standardization.parquet','t12_validation.parquet',
+            't12_summary.json','t12_review.json','t12_reproducibility.json',
+            'exploratory_scores_daily.parquet','exploratory_scores_weekly.parquet',
+            't12_label_coverage.parquet','t12_transfer_coverage.parquet','t12_rank_sensitivity.parquet',
+            't12_component_correlations.parquet','t12_top50_stability.parquet','t12_address_behavior.parquet',
+            't12_behavior_sensitivity.parquet','t12_address_review.parquet','t12_audit_validation.parquet',
+            't12_audit_summary.json','t12_audit_reproducibility.json','t12_tests.json','t12_downstream_gate.json']]
+        standard['t12'] += [(t12_dir/name).relative_to(ROOT).as_posix() for name in [
+            'cohort_members_daily.parquet','cohort_snapshot_daily.parquet','cohort_filter_sensitivity.parquet',
+            'cex_coverage.parquet','cex_netflow_daily.parquet','cex_wallet_inventory.parquet',
+            't12_design_validation.parquet','t12_design_summary.json','t12_design_reproducibility.json','t12_protocol_freeze.json']]
+        standard['t07'] += ['data/processed/t07/t07_label_review_candidates.parquet',
+                            'data/processed/t07/t07_secondary_verified_labels.parquet']
+        accepted['t12']=bool(accepted['t07'] and accepted['t09'] and
+            t12.get('ready_for_exploration') and t12_review.get('all_pass') and
+            t12.get('settings_sha256')==file_hash(t12_settings_path) and
+            t12.get('code_sha256')==file_hash(ROOT/'src/whale_score.py') and
+            t12_review.get('validator_sha256')==file_hash(ROOT/'scripts/validate_t12_current.py') and
+            t12_repro.get('all_match') and len(t12_repro.get('hashes',{}))==6 and all(
+                (t12_dir/name).is_file() and file_hash(t12_dir/name)==proof.get('run1')==proof.get('run2')
+                for name,proof in t12_repro.get('hashes',{}).items()) and
+            len(t12_review.get('output_hashes',{}))==6 and all(
+                expected==t12_repro.get('hashes',{}).get(name,{}).get('run1')
+                for name,expected in t12_review.get('output_hashes',{}).items()) and
+            bool(t12.get('inputs')) and all((ROOT/path).is_file() and file_hash(ROOT/path)==expected
+                for path,expected in t12.get('inputs',{}).items()))
+        # Publishing exploratory results does not authorize investor/WhaleFlow inference.
+        accepted['t12']=bool(accepted['t12'] and audit.get('audit_complete') and
+            audit.get('ready_for_exploration') and audit_repro.get('all_match') and
+            tests.get('passed') and tests.get('execution_scope')=='historical_before_source_cleanup' and
+            tests.get('source_files_retained') is False and bool(tests.get('test_files')) and
+            all(not (ROOT/path).exists() for path in tests.get('test_files',{})) and
+            bool(audit.get('inputs')) and all((ROOT/path).is_file() and file_hash(ROOT/path)==expected
+                for path,expected in audit.get('inputs',{}).items()) and
+            len(audit_repro.get('hashes',{}))==11 and all(
+                (t12_dir/name).is_file() and file_hash(t12_dir/name)==proof.get('run1')==proof.get('run2')
+                for name,proof in audit_repro.get('hashes',{}).items()) and
+            gate==audit.get('downstream_gate') and
+            gate.get('ready_for_t14_t15')==t12.get('ready_for_t14_t15'))
+        accepted['t12']=bool(accepted['t12'] and design.get('complete') and design_repro.get('all_match') and
+            frozen.get('settings_sha256')==file_hash(ROOT/'config/t12_design.yaml') and
+            design.get('current_audit_sha256')==file_hash(t12_dir/'t12_audit_summary.json') and
+            bool(design.get('inputs')) and all((ROOT/path).is_file() and file_hash(ROOT/path)==expected
+                for path,expected in design.get('inputs',{}).items()) and
+            len(design_repro.get('hashes',{}))==7 and all((t12_dir/name).is_file() and
+                file_hash(t12_dir/name)==proof.get('run1')==proof.get('run2')
+                for name,proof in design_repro.get('hashes',{}).items()))
     upload=[];blocked=[];missing=[]
     for task,files in standard.items():
         for rel in files:
@@ -102,7 +166,7 @@ def main():
                 missing.append(dict(task=task,path=rel));continue
             row=dict(task=task,path=rel,bytes=path.stat().st_size,sha256=file_hash(path))
             (upload if accepted[task] else blocked).append(row)
-    for rel in ['config/config.yaml','config/t10.yaml','eth_stats_from_2025.csv']:
+    for rel in ['config/config.yaml','config/t10.yaml','config/t12.yaml','config/t12_audit.yaml','config/t12_design.yaml','eth_stats_from_2025.csv']:
         path=ROOT/rel
         if path.is_file():
             upload.append(dict(task='shared',path=rel,bytes=path.stat().st_size,sha256=file_hash(path)))
@@ -114,6 +178,10 @@ def main():
             upload.append(dict(task='t09_review_evidence',path=rel,bytes=path.stat().st_size,sha256=file_hash(path)))
     summary=dict(repo_id=config['huggingface']['repo_id'],repo_type='dataset',
         tasks_accepted=accepted,manifest_file='data/hf_release_manifest.json',
+        acceptance_scope={'t12':'Validated exploration and lagged-cohort prototype; gate blocks cohort WhaleFlow only'},
+        downstream_eligibility=dict(cohort_whaleflow=False,
+            t14_independent_branches_allowed=['cex_netflow','lagged_large_transfer_events','network_concentration'],
+            rq3_cex_pit_forecast=False),
         upload_files=upload,blocked_upload_files=blocked,missing_files=missing,
         raw_input=dict(path=config['data']['interim_raw_transfers'],sha256=raw_sha256),
         excluded=['.cache/**','**/__pycache__/**','**/test_tmp*/**','**/repro_run*/**',
