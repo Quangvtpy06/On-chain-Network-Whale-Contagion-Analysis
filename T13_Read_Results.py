@@ -2,9 +2,10 @@
 """
 T13 - Read Network Statistics Results
 
-Read the 20 CSV outputs from T13 and display RQ1/RQ2 results.
+Read 20 validated Parquet outputs from T13 and
+display RQ1/RQ2 research results.
 
-Data repository:
+Dataset:
 team-crypto/Market-data-crypto-project
 
 This script DOES NOT recalculate network statistics.
@@ -20,34 +21,34 @@ DATASET_ID = "team-crypto/Market-data-crypto-project"
 DATA_FOLDER = "data/processed/t13"
 
 EXPECTED_FILES = [
-    "central_wallet_concentration_comparison.csv",
-    "central_wallet_concentration_daily.csv",
-    "central_wallet_concentration_summary.csv",
-    "centrality_distribution_daily.csv",
-    "cmsi2_daily_regimes.csv",
-    "cmsi2_robustness_results.csv",
-    "cmsi_daily_regimes.csv",
-    "cmsi_robustness_results.csv",
-    "network_descriptive_statistics.csv",
-    "network_normal_vs_stress.csv",
-    "rq1_network_hac_fdr_results.csv",
-    "rq1_network_weekly_comparison.csv",
-    "rq2_centrality_distribution_weekly.csv",
-    "rq2_concentration_hac_tests.csv",
-    "rq2_concentration_weekly_comparison.csv",
-    "rq2_concentration_weekly_summary.csv",
-    "rq2_hac_fdr_results.csv",
-    "rv_daily_regimes.csv",
-    "rv_threshold_sensitivity.csv",
-    "rv_weekly_regimes.csv",
+    "central_wallet_concentration_comparison.parquet",
+    "central_wallet_concentration_daily.parquet",
+    "central_wallet_concentration_summary.parquet",
+    "centrality_distribution_daily.parquet",
+    "cmsi2_daily_regimes.parquet",
+    "cmsi2_robustness_results.parquet",
+    "cmsi_daily_regimes.parquet",
+    "cmsi_robustness_results.parquet",
+    "network_descriptive_statistics.parquet",
+    "network_normal_vs_stress.parquet",
+    "rq1_network_hac_fdr_results.parquet",
+    "rq1_network_weekly_comparison.parquet",
+    "rq2_centrality_distribution_weekly.parquet",
+    "rq2_concentration_hac_tests.parquet",
+    "rq2_concentration_weekly_comparison.parquet",
+    "rq2_concentration_weekly_summary.parquet",
+    "rq2_hac_fdr_results.parquet",
+    "rv_daily_regimes.parquet",
+    "rv_threshold_sensitivity.parquet",
+    "rv_weekly_regimes.parquet",
 ]
 
 
 def load_results(local_dir=None):
-    """Read T13 CSVs from local folder or Hugging Face."""
+    """Load 20 T13 Parquet files locally or from Hugging Face."""
 
     if local_dir:
-        folder = Path(local_dir).expanduser()
+        folder = Path(local_dir).expanduser().resolve()
     else:
         try:
             from huggingface_hub import snapshot_download
@@ -56,13 +57,17 @@ def load_results(local_dir=None):
                 "Install huggingface_hub: pip install huggingface_hub"
             ) from exc
 
-        folder = Path(
-            snapshot_download(
-                repo_id=DATASET_ID,
-                repo_type="dataset",
-                allow_patterns=f"{DATA_FOLDER}/*.csv",
-            )
-        ) / DATA_FOLDER
+        snapshot = snapshot_download(
+            repo_id=DATASET_ID,
+            repo_type="dataset",
+            revision="main",
+            allow_patterns=[
+                f"{DATA_FOLDER}/{name}"
+                for name in EXPECTED_FILES
+            ],
+        )
+
+        folder = Path(snapshot) / DATA_FOLDER
 
     results = {}
     missing = []
@@ -70,65 +75,88 @@ def load_results(local_dir=None):
     for filename in EXPECTED_FILES:
         path = folder / filename
 
-        if path.is_file():
-            results[filename] = pd.read_csv(path)
-        else:
+        if not path.is_file():
             missing.append(filename)
+            continue
+
+        df = pd.read_parquet(path)
+
+        if df.empty:
+            raise ValueError(f"Empty T13 result: {filename}")
+
+        results[filename] = df
 
     if missing:
         raise FileNotFoundError(
-            "Missing T13 CSV files:\n" + "\n".join(missing)
+            "Missing T13 Parquet files:\n" + "\n".join(missing)
         )
+
+    if len(results) != 20:
+        raise RuntimeError("Expected exactly 20 T13 result tables")
 
     return results
 
 
 def display_results(results):
-    print("\n========== T13 RESULTS ==========")
-    print(f"Loaded {len(results)} CSV files successfully.")
+    """Display key RQ1 and RQ2 results."""
 
-    rv = results["rv_daily_regimes.csv"]
+    print("\n========== T13 RESULTS ==========")
+    print(f"Loaded {len(results)} Parquet files successfully.")
+
+    rv = results["rv_daily_regimes.parquet"]
+
     print("\nMARKET REGIMES")
     print(rv["regime"].value_counts().to_string())
 
+    print("\nRV P90 (%)")
+    print(round(rv["rv"].quantile(0.90) * 100, 4))
+
     print("\nRQ1 - NETWORK NORMAL VS STRESS")
     print(
-        results["network_normal_vs_stress.csv"]
+        results["network_normal_vs_stress.parquet"]
         .round(4)
         .to_string(index=False)
     )
 
     print("\nRQ1 - HAC + BH-FDR")
+    rq1 = results["rq1_network_hac_fdr_results.parquet"]
+    print(rq1.round(5).to_string(index=False))
     print(
-        results["rq1_network_hac_fdr_results.csv"]
-        .round(5)
-        .to_string(index=False)
+        "RQ1 BH-FDR significant:",
+        int(rq1["significant_bh_5pct"].sum()),
+        "/",
+        len(rq1),
     )
 
     print("\nRQ2 - CENTRAL WALLET CONCENTRATION")
     print(
-        results["central_wallet_concentration_comparison.csv"]
+        results["central_wallet_concentration_comparison.parquet"]
         .round(4)
         .to_string(index=False)
     )
 
     print("\nRQ2 - HAC + BH-FDR")
+    rq2 = results["rq2_hac_fdr_results.parquet"]
+    print(rq2.round(5).to_string(index=False))
     print(
-        results["rq2_hac_fdr_results.csv"]
-        .round(5)
-        .to_string(index=False)
+        "RQ2 BH-FDR significant:",
+        int(rq2["significant_bh_5pct"].sum()),
+        "/",
+        len(rq2),
     )
 
     print("\nT13 RESULTS LOADED SUCCESSFULLY")
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Read 20 T13 Parquet research results"
+    )
 
     parser.add_argument(
         "--local-dir",
         default=None,
-        help="Optional local directory containing T13 CSV files",
+        help="Optional local directory containing T13 Parquet files",
     )
 
     args = parser.parse_args()
