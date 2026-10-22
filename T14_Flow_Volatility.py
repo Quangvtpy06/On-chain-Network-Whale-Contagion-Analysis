@@ -6,8 +6,9 @@ Run from the project root after T05-T07, T08 and T12 have been accepted:
 
 The table is computed twice (second run in .cache/), hashes are compared, a
 truncation test removes future data and checks that no feature changes, and only
-then is `ready_for_t15` written. `--skip-reproducibility` is for exploration and
-never marks the output ready.
+then t14_summary.json records three separate levels per branch: computation validated,
+retrospective analysis, point-in-time forecast. `--skip-reproducibility` is for
+exploration and never marks the computation validated.
 """
 import argparse
 import json
@@ -25,7 +26,34 @@ FEATURES = 't14_features_daily.parquet'
 PIT_CUTS = [0.25, 0.5, 0.75, 0.95]
 
 
-def load_inputs(cfg, settings):
+def minute_files(cfg, settings, dates):
+    mm = settings['market_minute']
+    return [project_path(mm['dir']) / mm['file_pattern'].format(date=d) for d in dates]
+
+
+def dir_hash(paths):
+    """One digest over many files: sha256 of sorted (name, sha256) pairs."""
+    import hashlib
+    h = hashlib.sha256()
+    for p in sorted(paths):
+        h.update(p.name.encode()); h.update(sha256(p).encode())
+    return h.hexdigest()
+
+
+def preflight(cfg, settings):
+    """Fail early with the list of missing files instead of a deep traceback."""
+    dates = list(fv.day_index(cfg['project']['start_date'], cfg['project']['end_date']))
+    needed = [project_path(v) for v in settings['inputs'].values()]
+    needed += [project_path(cfg['data']['summary_json'])]
+    needed += minute_files(cfg, settings, dates)
+    missing = [relative_path(p) if p.is_relative_to(ROOT) else str(p) for p in needed if not p.is_file()]
+    if len(missing) > 12:
+        missing = missing[:12] + [f'... và {len(missing) - 12} file khác']
+    if missing:
+        raise SystemExit('Thiếu dữ liệu đầu vào (tải từ Hugging Face, xem README bước 3):\n  - ' + '\n  - '.join(missing))
+
+
+def load_inputs(cfg, settings, dates):
     paths = {k: project_path(v) for k, v in settings['inputs'].items()}
     labels = pd.read_parquet(paths['labels_parquet'])
     secondary = pd.read_parquet(paths['secondary_labels'])
@@ -44,17 +72,20 @@ def load_inputs(cfg, settings):
         edges=pd.read_parquet(paths['daily_edges_parquet'],
                               columns=['time_window', 'from_address', 'to_address', 'total_value']),
         cohort=cohort, cex=fv.cex_set(labels),
-        hourly=pd.read_parquet(paths['market_1h'], columns=['datetime_utc', 'close']),
+        minute=pd.concat([pd.read_parquet(p, columns=['minute', 'close']) for p in minute_files(cfg, settings, dates)],
+                         ignore_index=True),
+        pit_labels=secondary,
         daily=pd.read_parquet(paths['market_1d']),
         eth_stats=pd.read_csv(paths['eth_stats_csv']),
     ), paths
 
 
 def compute(folder, cfg, settings, dates, gate_open):
-    inputs, paths = load_inputs(cfg, settings)
+    inputs, paths = load_inputs(cfg, settings, dates)
     table = fv.build_features(inputs, settings, dates)
     table['whaleflow_gate_open'] = bool(gate_open)
-    table['cex_labels_pit'] = False  # T07 labels are retrospective; see T12 report.
+    # T07 labels are retrospective (no historical availability date); see T12 report and readiness.
+    table['cex_labels_pit'] = False
     table['protocol_id'] = settings['protocol_id']
     folder.mkdir(parents=True, exist_ok=True)
     table.reset_index().to_parquet(folder / FEATURES, index=False)
@@ -69,6 +100,7 @@ def main():
     cfg = read_config()
     settings = read_config(SETTINGS)
     folder = project_path(settings['output_dir'])
+    preflight(cfg, settings)
     provenance = verified_t08_inputs(cfg)
     dates = list(fv.day_index(cfg['project']['start_date'], cfg['project']['end_date']))
     if len(dates) != cfg['project']['total_days']:
@@ -105,12 +137,15 @@ def main():
         raise ValueError('T08 inputs changed during T14')
 
     passed = bool(validation.status.eq('PASS').all())
+    pit_max = int(table.pit_cex_n_wallets.max())
+    readiness = fv.readiness(passed and bool(same), gate_open, settings['pit_cex_labels']['enabled'], pit_max)
     feature_cols = fv.feature_columns(table)
     summary = dict(
         protocol_id=settings['protocol_id'],
         settings_sha256=sha256(SETTINGS),
         code_sha256={relative_path(p): sha256(p) for p in [ROOT / 'src/flow_volatility.py', ROOT / 'T14_Flow_Volatility.py']},
-        input_sha256={k: sha256(project_path(v)) for k, v in settings['inputs'].items()},
+        input_sha256={**{k: sha256(project_path(v)) for k, v in settings['inputs'].items()},
+                      'market_minute_files': dir_hash(minute_files(cfg, settings, dates))},
         upstream=provenance,
         days=len(dates), horizons=settings['horizons'],
         validation_passed=passed, reproducible=same,
@@ -121,16 +156,18 @@ def main():
         cohort_cex_addresses_removed_total=int(table.n_cohort_cex_removed.sum()),
         feature_columns=feature_cols,
         target_columns=[c for c in table.columns if c.startswith('target_')],
-        ready_for_t15_cex_netflow=bool(passed and same),
-        ready_for_t15_large_transfer=bool(passed and same),
-        ready_for_t15_cohort_whaleflow=bool(passed and same and gate_open),
+        validation_passed_note='Computation checks only; says nothing about label point-in-time validity.',
+        readiness=readiness,
         t12_gate_ready_for_cohort_whaleflow=gate_open,
+        sampling_minutes=settings['volatility']['sampling_minutes'],
+        pit_cex_wallets_available_max=pit_max,
         caveats=[
-            'CEX NetFlow uses retrospective T07 labels; it is not point-in-time label evidence for RQ3 forecasts.',
+            'CEX NetFlow and large_*_cex use retrospective T07 labels with no historical availability date; they are not point-in-time forecast evidence (RQ3). Label-free market and large-transfer columns are not affected.',
             'Known-CEX share is not CEX recall; Unknown addresses may be exchange wallets.',
             'Network covers netted USDT transfers >= 500000 only, not all Ethereum flows.',
             'spread_cs_proxy is a Corwin-Schultz high-low proxy, not a quoted spread; T06 has trades only.',
-            'WhaleFlow is blocked for regression until the T12 gate opens; the column is exploratory.'])
+            'Cohort WhaleFlow is blocked until the T12 gate opens; the column is exploratory.',
+            '1-minute realized volatility can contain microstructure noise; compare with rv_5m in robustness (T17).'])
     write_json(folder / 't14_summary.json', summary)
     write_json(folder / 't14_reproducibility.json', dict(all_match=same, hashes=hashes))
     print(json.dumps({k: summary[k] for k in summary if k not in ('feature_columns', 'input_sha256', 'code_sha256', 'upstream')},

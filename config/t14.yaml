@@ -10,12 +10,18 @@ inputs:
   cohort_members: data/processed/t12/cohort_members_daily.parquet
   t12_gate: data/processed/t12/t12_downstream_gate.json
   t12_cex_netflow: data/processed/t12/cex_netflow_daily.parquet
-  market_1h: market/processed/ohlcv_1h/ETHUSDT_1h_2025-2026.parquet
   market_1d: market/processed/ohlcv_1d/ETHUSDT_1d_2025-2026.parquet
   eth_stats_csv: eth_stats_from_2025.csv
-# Realized volatility from 24 UTC hourly log returns per day.
+# T06 1-minute closes (project convention is minute resolution; one file per UTC day).
+market_minute:
+  dir: market/processed/ohlcv_1m
+  file_pattern: ETHUSDT_1m_{date}.parquet
+# Realized volatility: sum of squared log returns sampled every `sampling_minutes`
+# minutes (1 -> 1440 returns/day). 1-minute RV can include microstructure noise,
+# so the sensitivity list adds rv_{k}m columns for robustness (T17); they are not targets.
 volatility:
-  bars_per_day: 24
+  sampling_minutes: 1
+  sensitivity_sampling_minutes: [5]
   har_week_days: 7
   har_month_days: 30
 horizons: [1, 3, 7]
@@ -31,6 +37,11 @@ large_transfer:
   minimum_history_days: 30
   minimum_edges_in_history: 100
 # Cohort WhaleFlow is blocked while the T12 gate is false; the table is still
-# written (exploratory) with ready_for_regression=false.
+# written (exploratory); readiness in t14_summary.json keeps it off for regression.
 whaleflow:
   exclude_cex_from_cohort: true
+# CEX wallet set chosen by an as-of join on human-verified label dates
+# (label_available_at and effective_from strictly before day D). Keep false until
+# T07 has historical availability dates; T07 collection dates are never used.
+pit_cex_labels:
+  enabled: false

@@ -49,6 +49,40 @@ def cex_netflow(edges, cex, dates):
     return daily[FLOW_COLUMNS + ['transfer_volume_usdt']]
 
 
+def cex_asof(secondary, day):
+    """CEX wallets whose human-verified label was available AND effective strictly before `day` 00:00 UTC.
+
+    Only the availability/effective dates of a human decision count. T07
+    `date_downloaded` or any collection date must never stand in for them.
+    """
+    if secondary is None or len(secondary) == 0:
+        return set()
+    cutoff = pd.Timestamp(day, tz='UTC')
+    ok = (secondary.verification_status.eq('human_verified') & secondary.entity_type.eq('CEX')
+          & (pd.to_datetime(secondary.label_available_at, utc=True) < cutoff)
+          & (pd.to_datetime(secondary.effective_from, utc=True) < cutoff))
+    return set(secondary.loc[ok, 'address'])
+
+
+def pit_cex_netflow(edges, secondary, dates):
+    """NetFlow using only the CEX set known as of each day (as-of join). NaN when none is known."""
+    out = pd.DataFrame({'pit_cex_n_wallets': 0, 'pit_cex_netflow_usdt': np.nan},
+                       index=pd.Index(dates, name='date'))
+    by_day = {d: g for d, g in edges.groupby('time_window', sort=True)}
+    for day in dates:
+        known = cex_asof(secondary, day)
+        out.loc[day, 'pit_cex_n_wallets'] = len(known)
+        if not known:
+            continue
+        g = by_day.get(day)
+        if g is None:
+            out.loc[day, 'pit_cex_netflow_usdt'] = 0.0
+            continue
+        a, b = g.from_address.isin(known), g.to_address.isin(known)
+        out.loc[day, 'pit_cex_netflow_usdt'] = float(g.total_value[~a & b].sum() - g.total_value[a & ~b].sum())
+    return out
+
+
 def whale_flow(edges, cohort, cex, dates, exclude_cex=True):
     """WhaleFlow_D = (cohort -> CEX) - (CEX -> cohort) on day D.
 
@@ -133,27 +167,37 @@ def normalise_flow(flow, volume, norm):
     return scaled, z
 
 
-def realized_volatility(hourly, dates, bars_per_day=24):
-    """RV_D = sum of squared hourly log returns of UTC day D; NaN unless all bars exist.
+MINUTES_PER_DAY = 1440
 
-    The return of the first hour of D uses the last close of D-1 (known before D),
-    so an incomplete first day (no previous close) is NaN rather than rescaled.
+
+def realized_volatility(minutes, dates, sampling_minutes=1):
+    """RV_D = sum of squared log returns sampled every `sampling_minutes` minutes on UTC day D.
+
+    Uses the T06 1-minute closes (project convention: minute resolution). With k=1
+    a full day has 1440 returns. The return of the first block of D uses the last
+    close of D-1 (known before D). A missing minute/block or an incomplete first
+    day (no previous close) gives NaN instead of mixing horizons.
     """
-    h = hourly[['datetime_utc', 'close']].copy()
-    h['datetime_utc'] = pd.to_datetime(h.datetime_utc, utc=True)
-    h = h.sort_values('datetime_utc')
-    if h.datetime_utc.duplicated().any():
-        raise ValueError('Duplicate hourly bars')
-    h['ret'] = np.log(h.close / h.close.shift(1))
-    # A gap would turn one return into a multi-hour return; blank it instead of mixing horizons.
-    gap = h.datetime_utc.diff().ne(pd.Timedelta(hours=1))
-    h.loc[gap, 'ret'] = np.nan
-    h['date'] = h.datetime_utc.dt.strftime('%Y-%m-%d')
-    g = h.groupby('date').ret
-    out = pd.DataFrame({'n_hourly_returns': g.count(), 'rv': g.apply(lambda r: float((r ** 2).sum()))})
+    k = int(sampling_minutes)
+    if k < 1 or MINUTES_PER_DAY % k:
+        raise ValueError('sampling_minutes must divide 1440')
+    bars = MINUTES_PER_DAY // k
+    m = minutes[['minute', 'close']].copy()
+    m['minute'] = pd.to_datetime(m.minute, utc=True)
+    m = m.sort_values('minute')
+    if m.minute.duplicated().any():
+        raise ValueError('Duplicate minute bars')
+    epoch_minute = (m.minute - pd.Timestamp('1970-01-01', tz='UTC')) // pd.Timedelta(minutes=1)
+    # Keep the last minute of every k-minute block; blocks are aligned to UTC midnight.
+    s = m.loc[(epoch_minute % k).eq(k - 1)].copy()
+    s['ret'] = np.log(s.close / s.close.shift(1))
+    s.loc[s.minute.diff().ne(pd.Timedelta(minutes=k)), 'ret'] = np.nan
+    s['date'] = s.minute.dt.strftime('%Y-%m-%d')
+    g = s.groupby('date').ret
+    out = pd.DataFrame({'n_returns': g.count(), 'rv': g.apply(lambda r: float((r ** 2).sum()))})
     out = out.reindex(dates)
-    out['n_hourly_returns'] = out.n_hourly_returns.fillna(0).astype(int)
-    out.loc[out.n_hourly_returns.ne(bars_per_day), 'rv'] = np.nan
+    out['n_returns'] = out.n_returns.fillna(0).astype(int)
+    out.loc[out.n_returns.ne(bars), 'rv'] = np.nan
     out['log_rv'] = np.log(out.rv.where(out.rv > 0))
     out['realized_vol'] = np.sqrt(out.rv)
     out.index.name = 'date'
@@ -216,12 +260,16 @@ def build_features(inputs, cfg, dates):
     """Assemble the daily table. `inputs` holds already loaded DataFrames / sets."""
     edges, cex = inputs['edges'], inputs['cex']
     flow = cex_netflow(edges, cex, dates)
-    vol = realized_volatility(inputs['hourly'], dates, cfg['volatility']['bars_per_day'])
+    vol = realized_volatility(inputs['minute'], dates, cfg['volatility']['sampling_minutes'])
+    for k in cfg['volatility'].get('sensitivity_sampling_minutes', []):
+        extra = realized_volatility(inputs['minute'], dates, k)
+        vol[f'rv_{k}m'], vol[f'log_rv_{k}m'] = extra.rv, extra.log_rv
     whale = whale_flow(edges, inputs['cohort'], cex, dates, cfg['whaleflow']['exclude_cex_from_cohort'])
     lt = cfg['large_transfer']
     large = large_transfer_flow(edges, cex, dates, lt['percentile'], lt['lookback_days'],
                                 lt['minimum_history_days'], lt['minimum_edges_in_history'])
-    table = pd.concat([flow, whale, large, vol], axis=1)
+    pit = pit_cex_netflow(edges, inputs.get('pit_labels'), dates)
+    table = pd.concat([flow, pit, whale, large, vol], axis=1)
     table['cex_netflow_scaled'], table['cex_netflow_z'] = normalise_flow(
         table.cex_netflow_usdt, table.transfer_volume_usdt, cfg['normalisation'])
     # Days without a cohort carry NaN, not a misleading zero WhaleFlow.
@@ -253,7 +301,8 @@ def truncate_inputs(inputs, cut):
         edges=inputs['edges'][inputs['edges'].time_window <= cut],
         cohort=inputs['cohort'][inputs['cohort'].date <= cut],
         cex=inputs['cex'],
-        hourly=inputs['hourly'][pd.to_datetime(inputs['hourly'].datetime_utc, utc=True) < end],
+        minute=inputs['minute'][pd.to_datetime(inputs['minute'].minute, utc=True) < end],
+        pit_labels=inputs.get('pit_labels'),
         daily=inputs['daily'][pd.to_datetime(inputs['daily'].datetime_utc, utc=True) < end],
         eth_stats=inputs['eth_stats'][pd.to_datetime(inputs['eth_stats'].tx_date) <= pd.Timestamp(cut)])
 
@@ -301,7 +350,9 @@ def validate(table, cfg, dates, t12_cex=None):
         f"removed_total={int(table.n_cohort_cex_removed.sum())}")
     rv_ok = table.rv.dropna()
     add('rv_nonnegative', bool((rv_ok >= 0).all()), f"nan_days={int(table.rv.isna().sum())}")
-    add('rv_full_day_bars', bool(table.loc[table.rv.notna(), 'n_hourly_returns'].eq(cfg['volatility']['bars_per_day']).all()))
+    bars = MINUTES_PER_DAY // cfg['volatility']['sampling_minutes']
+    add('rv_full_day_minute_returns', bool(table.loc[table.rv.notna(), 'n_returns'].eq(bars).all()), f'expected={bars}')
+    add('pit_cex_no_wallet_means_nan', bool(table.loc[table.pit_cex_n_wallets.eq(0), 'pit_cex_netflow_usdt'].isna().all()))
     for h in cfg['horizons']:
         t = table[f'target_log_rv_h{h}']
         ok = bool(t.iloc[-h:].isna().all()) and bool(np.allclose(t.iloc[:-h].dropna(), table.log_rv.shift(-h).iloc[:-h].dropna()))
@@ -313,3 +364,37 @@ def validate(table, cfg, dates, t12_cex=None):
         diff = float((t.cex_netflow_usdt - table.cex_netflow_usdt).abs().max())
         add('matches_t12_cex_netflow', diff <= 1e-6 * max(1.0, float(table.cex_netflow_usdt.abs().max())), f'max_abs_diff={diff}')
     return pd.DataFrame(rows)
+
+
+def readiness(computation_validated, gate_open, pit_cex_enabled, pit_cex_wallets_max):
+    """Three separate questions per branch; computation passing never implies the other two.
+
+    computation_validated : numerical checks and reproducibility passed (this run).
+    retrospective_analysis: usable to describe/estimate on the full sample with today's labels.
+    pit_forecast          : usable as a predictor known at forecast time.
+    """
+    ok = bool(computation_validated)
+    label_reason = ('CEX labels are retrospective: no historical availability date, so the wallet set '
+                    'cannot be chosen by an as-of join at forecast time.')
+    pit_cex_ok = ok and bool(pit_cex_enabled) and pit_cex_wallets_max > 0
+    return {
+        'computation_validated': ok,
+        'branches': {
+            'market_volatility_controls': dict(label_dependent=False, retrospective_analysis=ok, pit_forecast=ok,
+                columns='rv, log_rv, har terms, ret_1d, log_volume_usdt, taker_imbalance, spread_cs_proxy, eth_*'),
+            'large_transfer_label_free': dict(label_dependent=False, retrospective_analysis=ok, pit_forecast=ok,
+                columns='large_transfer_count, large_transfer_volume_usdt, large_transfer_threshold_usdt'),
+            'large_cex_flows': dict(label_dependent=True, retrospective_analysis=ok, pit_forecast=False,
+                columns='large_to_cex_usdt, large_from_cex_usdt, large_cex_netflow_*', blocked_reason=label_reason),
+            'cex_netflow': dict(label_dependent=True, retrospective_analysis=ok, pit_forecast=False,
+                columns='cex_external_*, cex_netflow_*', blocked_reason=label_reason),
+            'pit_cex_netflow': dict(label_dependent=True, retrospective_analysis=False, pit_forecast=pit_cex_ok,
+                columns='pit_cex_n_wallets, pit_cex_netflow_usdt',
+                blocked_reason=None if pit_cex_ok else (
+                    'Needs human-verified CEX labels with label_available_at/effective_from; '
+                    f'wallets available as-of: max {int(pit_cex_wallets_max)}; enabled={bool(pit_cex_enabled)}.')),
+            'cohort_whaleflow': dict(label_dependent=True, retrospective_analysis=ok and bool(gate_open), pit_forecast=False,
+                columns='whale_*, whaleflow_*',
+                blocked_reason=('T12 gate for cohort WhaleFlow is closed. ' if not gate_open else '') + label_reason),
+        },
+    }
