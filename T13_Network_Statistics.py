@@ -173,24 +173,32 @@ def read_parquet(relative_path, root):
     return pd.read_parquet(path)
 
 
-def write_csv(df, filename, cfg, index=False):
-    cfg.out_dir.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+def write_parquet(df, filename, cfg, index=False):
+    cfg.out_dir.mkdir(parents=True, exist_ok=True)
 
     path = cfg.out_dir / filename
 
-    df.to_csv(path, index=index, encoding="utf-8-sig")
-    parquet_path = path.with_suffix(".parquet")
+    if path.suffix.lower() != ".parquet":
+        raise ValueError(
+            f"Expected a .parquet output filename: {filename}"
+        )
+
     parquet_df = df.reset_index() if index else df
+
     if isinstance(parquet_df.columns, pd.MultiIndex):
         parquet_df = parquet_df.copy()
         parquet_df.columns = [
-            "_".join(str(part) for part in column if part)
+            "_".join(str(part) for part in column if str(part))
+            if isinstance(column, tuple)
+            else str(column)
             for column in parquet_df.columns
         ]
-    parquet_df.to_parquet(parquet_path, index=False, compression="zstd")
+
+    parquet_df.to_parquet(
+        path,
+        index=False,
+        compression="zstd",
+    )
 
     log(f"Saved {filename}: {len(df):,} rows")
 
@@ -287,6 +295,9 @@ def compute_market_days(cfg):
             freq="min",
             tz="UTC",
         )
+
+        timestamps = timestamps.as_unit("ns")
+        expected = expected.as_unit("ns")
 
         if not timestamps.equals(expected):
             raise ValueError(
@@ -395,9 +406,9 @@ def compute_market_days(cfg):
         "date"
     ].dt.strftime("%Y-%m-%d")
 
-    write_csv(
+    write_parquet(
         output,
-        "rv_daily_regimes.csv",
+        "rv_daily_regimes.parquet",
         cfg,
     )
 
@@ -504,9 +515,9 @@ def regime_cmsi(market, cfg):
         "date"
     ].dt.strftime("%Y-%m-%d")
 
-    write_csv(
+    write_parquet(
         cmsi3,
-        "cmsi_daily_regimes.csv",
+        "cmsi_daily_regimes.parquet",
         cfg,
     )
 
@@ -521,9 +532,9 @@ def regime_cmsi(market, cfg):
         "date"
     ].dt.strftime("%Y-%m-%d")
 
-    write_csv(
+    write_parquet(
         cmsi2,
-        "cmsi2_daily_regimes.csv",
+        "cmsi2_daily_regimes.parquet",
         cfg,
     )
 
@@ -872,9 +883,9 @@ def build_rq1_daily(
         ["mean", "median", "std"]
     )
 
-    write_csv(
+    write_parquet(
         descriptive,
-        "network_descriptive_statistics.csv",
+        "network_descriptive_statistics.parquet",
         cfg,
         index=True,
     )
@@ -884,9 +895,9 @@ def build_rq1_daily(
         GRAPH_METRICS,
     )
 
-    write_csv(
+    write_parquet(
         comparison,
-        "network_normal_vs_stress.csv",
+        "network_normal_vs_stress.parquet",
         cfg,
     )
 
@@ -912,9 +923,9 @@ def build_rq1_daily(
 
     tests = add_bh_fdr(tests)
 
-    write_csv(
+    write_parquet(
         tests,
-        "rq1_network_hac_fdr_results.csv",
+        "rq1_network_hac_fdr_results.parquet",
         cfg,
     )
 
@@ -1290,9 +1301,9 @@ def build_rq2_daily(
         nodes
     )
 
-    write_csv(
+    write_parquet(
         distribution,
-        "centrality_distribution_daily.csv",
+        "centrality_distribution_daily.parquet",
         cfg,
     )
 
@@ -1325,9 +1336,9 @@ def build_rq2_daily(
         "date"
     ].dt.strftime("%Y-%m-%d")
 
-    write_csv(
+    write_parquet(
         daily_output,
-        "central_wallet_concentration_daily.csv",
+        "central_wallet_concentration_daily.parquet",
         cfg,
     )
 
@@ -1335,9 +1346,9 @@ def build_rq2_daily(
         concentration
     )
 
-    write_csv(
+    write_parquet(
         summary,
-        "central_wallet_concentration_summary.csv",
+        "central_wallet_concentration_summary.parquet",
         cfg,
     )
 
@@ -1345,9 +1356,9 @@ def build_rq2_daily(
         concentration
     )
 
-    write_csv(
+    write_parquet(
         comparison,
-        "central_wallet_concentration_comparison.csv",
+        "central_wallet_concentration_comparison.parquet",
         cfg,
     )
 
@@ -1359,9 +1370,9 @@ def build_rq2_daily(
         concentration
     )
 
-    write_csv(
+    write_parquet(
         tests,
-        "rq2_concentration_hac_tests.csv",
+        "rq2_concentration_hac_tests.parquet",
         cfg,
     )
 
@@ -1369,9 +1380,9 @@ def build_rq2_daily(
         tests
     )
 
-    write_csv(
+    write_parquet(
         tests_fdr,
-        "rq2_hac_fdr_results.csv",
+        "rq2_hac_fdr_results.parquet",
         cfg,
     )
 
@@ -1480,9 +1491,9 @@ def build_weekly(
 
     weekly_out = weekly.loc[complete].copy()
 
-    write_csv(
+    write_parquet(
         weekly_out,
-        "rv_weekly_regimes.csv",
+        "rv_weekly_regimes.parquet",
         cfg,
     )
 
@@ -1495,9 +1506,9 @@ def build_weekly(
         GRAPH_METRICS,
     )
 
-    write_csv(
+    write_parquet(
         weekly_comparison,
-        "rq1_network_weekly_comparison.csv",
+        "rq1_network_weekly_comparison.parquet",
         cfg,
     )
 
@@ -1534,9 +1545,9 @@ def build_weekly(
         p99=("p99", "mean"),
     )
 
-    write_csv(
+    write_parquet(
         distribution,
-        "rq2_centrality_distribution_weekly.csv",
+        "rq2_centrality_distribution_weekly.parquet",
         cfg,
     )
 
@@ -1584,9 +1595,9 @@ def build_weekly(
         )
     )
 
-    write_csv(
+    write_parquet(
         summary,
-        "rq2_concentration_weekly_summary.csv",
+        "rq2_concentration_weekly_summary.parquet",
         cfg,
     )
 
@@ -1594,9 +1605,9 @@ def build_weekly(
         concentration
     )
 
-    write_csv(
+    write_parquet(
         comparison,
-        "rq2_concentration_weekly_comparison.csv",
+        "rq2_concentration_weekly_comparison.parquet",
         cfg,
     )
 
@@ -1790,9 +1801,9 @@ def build_robustness(
         sensitivity_rows
     )
 
-    write_csv(
+    write_parquet(
         sensitivity,
-        "rv_threshold_sensitivity.csv",
+        "rv_threshold_sensitivity.parquet",
         cfg,
     )
 
@@ -1836,9 +1847,9 @@ def build_robustness(
         cmsi3_rows
     )
 
-    write_csv(
+    write_parquet(
         cmsi3_results,
-        "cmsi_robustness_results.csv",
+        "cmsi_robustness_results.parquet",
         cfg,
     )
 
@@ -1878,9 +1889,9 @@ def build_robustness(
         cmsi2_rows
     )
 
-    write_csv(
+    write_parquet(
         cmsi2_results,
-        "cmsi2_robustness_results.csv",
+        "cmsi2_robustness_results.parquet",
         cfg,
     )
 
