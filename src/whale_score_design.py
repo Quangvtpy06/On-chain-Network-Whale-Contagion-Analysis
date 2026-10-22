@@ -2,6 +2,8 @@
 import json
 import shutil
 import uuid
+import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -177,11 +179,17 @@ def compute(folder,cfg,settings):
 
 def main():
     cfg=read_config();settings=read_config(DESIGN_CONFIG);folder=project_path(settings['output_dir'])
+    gate_path=folder/'t12_downstream_gate.json'
+    gate=json.loads(gate_path.read_text(encoding='utf-8')) if gate_path.exists() else {}
+    gate.update(ready_for_t14_t15=False,ready_for_cohort_whaleflow=False,
+        blocking_reasons=['T12 design recomputation in progress or interrupted.'])
+    write_json(gate_path,gate)
     provenance,_=verify_inputs(cfg);prepare_label_review(settings);check_protocol(settings,folder)
     audit=json.loads((folder/'t12_audit_summary.json').read_text(encoding='utf-8'))
     if not audit.get('audit_complete'):raise ValueError('Run current T12 audit first')
     paths=[DESIGN_CONFIG,Path(__file__),ROOT/'src/secondary_labels.py',ROOT/'src/whale_score_audit.py',
-        project_path(settings['secondary_labels']),project_path(settings['candidate_labels'])]
+        project_path(settings['secondary_labels']),project_path(settings['candidate_labels']),
+        ROOT/'scripts/validate_t12_cohort.py']
     inputs={relative_path(p):sha256(p) for p in paths}
     compute(folder,cfg,settings);hashes={name:dict(run1=sha256(folder/name)) for name in DESIGN_NAMES}
     cache=ROOT/'.cache';cache.mkdir(exist_ok=True);temporary=cache/f't12_design_{uuid.uuid4().hex}';temporary.mkdir()
@@ -212,6 +220,8 @@ def main():
     write_json(folder/'t12_design_reproducibility.json',dict(all_match=same,hashes=hashes))
     write_json(folder/'t12_design_summary.json',result)
     print(json.dumps(result,indent=2),flush=True)
+    # Canonical gate comes from independent real-data validation and human evidence.
+    subprocess.run([sys.executable,str(ROOT/'scripts/validate_t12_cohort.py')],cwd=ROOT,check=True)
 
 
 if __name__=='__main__':main()

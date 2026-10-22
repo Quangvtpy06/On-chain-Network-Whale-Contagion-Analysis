@@ -1,0 +1,37 @@
+protocol_id: t07_cex_public_history_v1
+output_dir: data/processed/t07/cex_history
+repository: DefiLlama/DefiLlama-Adapters
+snapshot_commit: 97218fb144afd6bdd65e1b58a2c5c14b1a8f7a8e
+public_merge_pr: 12915
+public_available_upper_bound: '2024-12-31T12:14:13Z'
+availability_policy: conservative_public_merge_bound_not_first_publication
+persistence_policy: last_public_attribution_until_superseded_or_explicit_effective_to
+human_approval_required: true
+source_tier: 2
+confidence_proposal: medium
+regression_results_used_for_selection: false
+sources:
+  - {project: binance, entity: Binance, path: projects/binance/config.js, parser: binance_asset_list}
+  - {project: crypto-com, entity: Crypto.com, path: projects/crypto-com/index.js, parser: ethereum_owners}
+  - {project: bybit, entity: Bybit, path: projects/bybit/index.js, parser: ethereum_owners}
+  - {project: okex, entity: OKX, path: projects/okex/index.js, parser: ethereum_owners}
+  - {project: kucoin, entity: KuCoin, path: projects/kucoin/index.js, parser: ethereum_owners}
+  - {project: gateio, entity: Gate.io, path: projects/gateio/index.js, parser: ethereum_owners}
+  - {project: huobi, entity: HTX, path: projects/huobi/index.js, parser: ethereum_owners}
+  - {project: bitget, entity: Bitget, path: projects/bitget/index.js, parser: ethereum_owners}
+  - {project: mexc, entity: MEXC, path: projects/mexc/index.js, parser: ethereum_owners}
+  - {project: deribit, entity: Deribit, path: projects/deribit/index.js, parser: ethereum_owners}
+  - {project: bitfinex, entity: Bitfinex, path: projects/bitfinex/index.js, parser: ethereum_owners}
+  - {project: bitstamp, entity: Bitstamp, path: projects/bitstamp/index.js, parser: ethereum_owners}
+  - {project: kraken, entity: Kraken, path: projects/kraken/index.js, parser: ethereum_owners}
+  - {project: coinbase, entity: Coinbase, path: projects/coinbase/index.js, parser: ethereum_owners}
+  - {project: phemex, entity: Phemex, path: projects/phemex/index.js, parser: ethereum_owners}
+  - {project: bitmart, entity: BitMart, path: projects/bitmart/index.js, parser: ethereum_owners}
+  - {project: bitkub, entity: Bitkub, path: projects/bitkub/index.js, parser: ethereum_owners}
+  - {project: coinex, entity: CoinEx, path: projects/coinex/index.js, parser: ethereum_owners}
+  - {project: bingx, entity: BingX, path: projects/bingx/index.js, parser: ethereum_owners}
+  - {project: whitebit, entity: WhiteBIT, path: projects/whitebit/index.js, parser: ethereum_owners}
+  - {project: poloniex, entity: Poloniex, path: projects/poloniex/index.js, parser: ethereum_owners}
+  - {project: bitmex, entity: BitMEX, path: projects/bitmex/index.js, parser: ethereum_owners}
+  - {project: hashkey-exchange, entity: HashKey Exchange, path: projects/hashkey-exchange/index.js, parser: ethereum_owners}
+  - {project: osl, entity: OSL, path: projects/osl/index.js, parser: ethereum_owners}

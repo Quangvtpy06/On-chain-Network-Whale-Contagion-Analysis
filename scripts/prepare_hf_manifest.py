@@ -23,6 +23,8 @@ def read_json(path):
 
 
 def main():
+    gate={}
+    v2_gate={}
     config=yaml.safe_load((ROOT/'config/config.yaml').read_text(encoding='utf-8'))
     t07=read_json(ROOT/'data/processed/t07/t07_complete_summary.json')
     t08=read_json(ROOT/'data/processed/graphs/t08_summary.json')
@@ -154,7 +156,8 @@ def main():
         standard['t12'] += [(t12_dir/name).relative_to(ROOT).as_posix() for name in [
             'cohort_members_daily.parquet','cohort_snapshot_daily.parquet','cohort_filter_sensitivity.parquet',
             'cex_coverage.parquet','cex_netflow_daily.parquet','cex_wallet_inventory.parquet',
-            't12_design_validation.parquet','t12_design_summary.json','t12_design_reproducibility.json','t12_protocol_freeze.json']]
+            't12_design_validation.parquet','t12_design_summary.json','t12_design_reproducibility.json','t12_protocol_freeze.json',
+            't12_cohort_validation.parquet','t12_cohort_review_queue.parquet','t12_cohort_review.json','t12_cohort_controls.json']]
         standard['t07'] += ['data/processed/t07/t07_label_review_candidates.parquet',
                             'data/processed/t07/t07_secondary_verified_labels.parquet']
         accepted['t12']=bool(accepted['t07'] and accepted['t09'] and
@@ -191,6 +194,46 @@ def main():
             len(design_repro.get('hashes',{}))==7 and all((t12_dir/name).is_file() and
                 file_hash(t12_dir/name)==proof.get('run1')==proof.get('run2')
                 for name,proof in design_repro.get('hashes',{}).items()))
+        cohort_review=read_json(t12_dir/'t12_cohort_review.json')
+        accepted['t12']=bool(accepted['t12'] and cohort_review.get('all_pass') and
+            cohort_review.get('gate')==gate and
+            gate.get('acceptance_validator_sha256')==file_hash(ROOT/'scripts/validate_t12_cohort.py') and
+            design.get('cohort_validation_sha256')==file_hash(t12_dir/'t12_cohort_review.json') and
+            bool(cohort_review.get('input_hashes')) and all((ROOT/path).is_file() and
+                file_hash(ROOT/path)==expected for path,expected in cohort_review.get('input_hashes',{}).items()) and
+            all((t12_dir/name).is_file() and file_hash(t12_dir/name)==expected
+                for name,expected in cohort_review.get('output_hashes',{}).items()) and
+            file_hash(t12_dir/'t12_cohort_validation.parquet')==cohort_review.get('validation_sha256') and
+            file_hash(t12_dir/'t12_cohort_review_queue.parquet')==cohort_review.get('queue_sha256'))
+    v2_dir=ROOT/'data/processed/t12/v2'
+    if (v2_dir/'t12_summary.json').exists():
+        v2=read_json(v2_dir/'t12_summary.json')
+        v2_gate=read_json(v2_dir/'t12_downstream_gate.json')
+        v2_accept=read_json(v2_dir/'t12_acceptance.json')
+        v2_repro=read_json(v2_dir/'t12_reproducibility.json')
+        v2_freeze=read_json(v2_dir/'t12_protocol_freeze.json')
+        v2_products=[f'{branch}/{name}.parquet' for branch in ['primary','retrospective'] for name in [
+            'cohort_members_daily','cohort_snapshot_daily','cohort_filter_sensitivity','t12_design_validation']]
+        v2_products+=['cohort_label_diagnostics.parquet','cohort_sensitivity_daily.parquet',
+            'cohort_flows_daily.parquet','source_review_status.parquet']
+        standard['t12_v2']=[(v2_dir/n).relative_to(ROOT).as_posix() for n in v2_products+[
+            't12_summary.json','t12_acceptance.json','t12_reproducibility.json',
+            't12_protocol_freeze.json','t12_downstream_gate.json','t12_validation.parquet','t12_controls.parquet',
+            't12_integrity_control.json']]
+        accepted['t12_v2']=bool(accepted.get('t12') and v2.get('accepted') and
+            v2_accept.get('all_pass') and v2_accept.get('gate')==v2_gate and
+            v2.get('acceptance_sha256')==file_hash(v2_dir/'t12_acceptance.json') and
+            v2_gate.get('protocol_id')=='t12_unidentified_activity_v2' and
+            v2_gate.get('ready_for_cohort_whaleflow') and
+            v2_freeze.get('settings_sha256')==file_hash(ROOT/'config/t12_v2.yaml') and
+            v2_gate.get('validator_sha256')==file_hash(ROOT/'scripts/validate_t12_v2.py') and
+            bool(v2.get('inputs')) and v2.get('inputs')==v2_gate.get('input_hashes') and
+            all((ROOT/p).is_file() and file_hash(ROOT/p)==h for p,h in v2['inputs'].items()) and
+            v2_repro.get('all_match') and set(v2_repro.get('hashes',{}))==set(v2_products) and
+            all((v2_dir/n).is_file() and file_hash(v2_dir/n)==v2_repro['hashes'][n].get('run1')==
+                v2_repro['hashes'][n].get('run2')==v2_gate.get('output_hashes',{}).get(n) for n in v2_products) and
+            file_hash(v2_dir/'t12_validation.parquet')==v2_gate.get('validation_sha256') and
+            file_hash(v2_dir/'t12_controls.parquet')==v2_gate.get('controls_sha256'))
     upload=[];blocked=[];missing=[]
     for task,files in standard.items():
         for rel in files:
@@ -199,7 +242,7 @@ def main():
                 missing.append(dict(task=task,path=rel));continue
             row=dict(task=task,path=rel,bytes=path.stat().st_size,sha256=file_hash(path))
             (upload if accepted[task] else blocked).append(row)
-    for rel in ['config/config.yaml','config/t10.yaml','config/t11.yaml','config/t12.yaml','config/t12_audit.yaml','config/t12_design.yaml','eth_stats_from_2025.csv']:
+    for rel in ['config/config.yaml','config/t10.yaml','config/t11.yaml','config/t12.yaml','config/t12_audit.yaml','config/t12_design.yaml','config/t12_v2.yaml','eth_stats_from_2025.csv']:
         path=ROOT/rel
         if path.is_file():
             upload.append(dict(task='shared',path=rel,bytes=path.stat().st_size,sha256=file_hash(path)))
@@ -211,8 +254,11 @@ def main():
             upload.append(dict(task='t09_review_evidence',path=rel,bytes=path.stat().st_size,sha256=file_hash(path)))
     summary=dict(repo_id=config['huggingface']['repo_id'],repo_type='dataset',
         tasks_accepted=accepted,manifest_file='data/hf_release_manifest.json',
-        acceptance_scope={'t12':'Validated exploration and lagged-cohort prototype; gate blocks cohort WhaleFlow only'},
-        downstream_eligibility=dict(cohort_whaleflow=False,
+        acceptance_scope={'t12':'V1 unchanged; exploration and lagged-cohort prototype',
+                          't12_v2':'Unidentified high-activity cohort only; retrospective sensitivity and ownership limits explicit'},
+        downstream_eligibility=dict(cohort_whaleflow=bool(accepted.get('t12_v2') and v2_gate.get('ready_for_cohort_whaleflow')),
+            cohort_protocol_id=v2_gate.get('protocol_id') if accepted.get('t12_v2') else None,
+            cohort_path=v2_gate.get('cohort_path') if accepted.get('t12_v2') else None,
             t14_independent_branches_allowed=['cex_netflow','lagged_large_transfer_events','network_concentration'],
             rq3_cex_pit_forecast=False),
         upload_files=upload,blocked_upload_files=blocked,missing_files=missing,

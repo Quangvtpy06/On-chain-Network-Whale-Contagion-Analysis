@@ -5,6 +5,7 @@ No remote deletion is performed.
 """
 import hashlib
 import json
+import argparse
 from pathlib import Path
 
 from huggingface_hub import HfApi, CommitOperationAdd
@@ -29,12 +30,24 @@ def remote_matches(remote, path, expected):
 
 
 def main():
-    manifest_path = ROOT / 'data/hf_release_manifest.json'
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--manifest',default='data/hf_release_manifest.json')
+    parser.add_argument('--commit-message')
+    parser.add_argument('--receipt-name',default='hf_publish_receipt.json')
+    parser.add_argument('--direct',action='store_true',help='Use a direct HTTPS client instead of environment proxies')
+    args=parser.parse_args()
+    if args.direct:
+        import httpx
+        from huggingface_hub import set_client_factory
+        set_client_factory(lambda:httpx.Client(trust_env=False,follow_redirects=True,timeout=120))
+    manifest_path = (ROOT / args.manifest).resolve()
+    if not manifest_path.is_relative_to(ROOT.resolve()):raise ValueError('Manifest must be inside the project')
+    if Path(args.receipt_name).name!=args.receipt_name:raise ValueError('Receipt must be a filename')
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     if manifest['blocked_upload_files'] or manifest['missing_files'] or not all(manifest['tasks_accepted'].values()):
         raise ValueError('Manifest contains blocked, missing or unaccepted artifacts.')
     records = list(manifest['upload_files'])
-    records.append(dict(path='data/hf_release_manifest.json', sha256=digest(manifest_path)))
+    records.append(dict(path=manifest_path.relative_to(ROOT).as_posix(), sha256=digest(manifest_path)))
     seen = set()
     for record in records:
         rel = record['path']; path = (ROOT / rel).resolve()
@@ -52,6 +65,13 @@ def main():
     api.whoami()  # fail before upload if no authentication is configured
     repo = manifest['repo_id']; kind = manifest['repo_type']
     parent = api.repo_info(repo, repo_type=kind).sha
+    # Scoped releases bind already-published upstream data without replacing it.
+    dependencies=manifest.get('remote_dependencies',[])
+    upstream={item.path:item for item in api.get_paths_info(repo,[r['path'] for r in dependencies],repo_type=kind,revision=parent)} if dependencies else {}
+    for row in dependencies:
+        path=ROOT/row['path']
+        if not path.is_file() or digest(path)!=row['sha256'] or row['path'] not in upstream or not remote_matches(upstream[row['path']],path,row['sha256']):
+            raise ValueError('Remote upstream differs from accepted input: '+row['path'])
     raw = manifest.get('raw_input', manifest.get('raw_input_already_on_remote', {}))
     if raw.get('path') and raw.get('sha256') and raw['path'] not in seen:
         found = api.get_paths_info(repo, [raw['path']], repo_type=kind, revision=parent)
@@ -68,7 +88,7 @@ def main():
     if changed:
         commit = api.create_commit(repo, repo_type=kind, parent_commit=parent,
             operations=[CommitOperationAdd(path_in_repo=r['path'], path_or_fileobj=ROOT/r['path']) for r in changed],
-            commit_message='Publish validated dataset release: '+', '.join(sorted(manifest['tasks_accepted'])))
+            commit_message=args.commit_message or 'Publish validated dataset release: '+', '.join(sorted(manifest['tasks_accepted'])))
     revision = commit.oid if commit else parent
     remote = {item.path: item for item in api.get_paths_info(repo, sorted(seen), repo_type=kind, revision=revision)}
     if any(r['path'] not in remote or not remote_matches(remote[r['path']], ROOT/r['path'], r['sha256']) for r in records):
@@ -77,7 +97,7 @@ def main():
     receipt = dict(repo_id=repo, revision=revision, verified_files=len(records), changed_files=len(changed),
         manifest_sha256=digest(manifest_path), commit_url=commit.commit_url if commit else
         f'https://huggingface.co/datasets/{repo}/tree/{revision}', remote_deletions=0)
-    (destination/'hf_publish_receipt.json').write_text(json.dumps(receipt, indent=2), encoding='utf-8')
+    (destination/args.receipt_name).write_text(json.dumps(receipt, indent=2), encoding='utf-8')
     print(json.dumps(receipt, indent=2), flush=True)
 
 

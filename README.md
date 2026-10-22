@@ -19,6 +19,15 @@ trong `data/processed/t12/t12_downstream_gate.json` trước khi dùng WhaleFlow
 Gate chỉ chặn WhaleFlow theo cohort; các nhánh T14 độc lập được triển khai song
 song. Cấu hình lọc đóng băng ở `config/t12_design.yaml`, không chọn lại sau T15.
 
+V1 và gate bảo thủ của v1 được giữ nguyên: [T12 cohort acceptance](docs/T12_cohort_acceptance.md).
+Protocol mới cho **địa chỉ hoạt động lớn chưa được định danh**:
+[T12 protocol v2](docs/T12_protocol_v2.md). Chạy `python scripts/run_t12_v2.py`,
+rồi review độc lập bằng `python scripts/validate_t12_v2.py`.
+Kết quả ở `data/processed/t12/v2/`; T14 phải đọc gate v2 và đúng `cohort_path`
+trong gate, không dùng cohort v1 mặc định. V2 giữ ngưỡng v1, báo cáo Unknown và
+nhánh loại hạ tầng hồi cứu riêng; không xác nhận nhà đầu tư cá nhân hay endpoint CEX PIT.
+Xem [kết quả nghiệm thu v2](docs/T12_v2_completion_report.md).
+
 ---
 
 ## 📌 Tổng Quan Dự Án
@@ -174,6 +183,18 @@ python T07_Complete_Wallet_Labels.py
 T08 đọc bảng `t07_complete_wallet_labels.parquet` theo config, gồm mọi địa chỉ,
 nhãn có bằng chứng và trạng thái contract từ BigQuery. Các thực thể chưa xác minh
 giữ Unknown hoặc Contract, không suy tên tổ chức từ volume.
+
+Lịch sử nhãn CEX cho T14 được bổ sung riêng ở `data/processed/t07/cex_history/`.
+Xem [bảng review nguồn lịch sử](docs/T07_CEX_history_review_packet.md),
+[hướng dẫn duyệt và loader T14](docs/T07_CEX_history_handoff.md) và
+[kết quả kiểm định](docs/T07_CEX_history_completion_report.md).
+Chạy offline `python scripts/build_t07_cex_history.py`; chỉ hàng được người review
+duyệt mới vào `t07_cex_label_history.parquet`. Không dùng candidates làm endpoint PIT.
+
+Bản phát hành T07/T12 dùng manifest riêng `data/hf_t07_t12_release_manifest.json`,
+được tạo bằng `python scripts/prepare_t07_t12_release.py`; publisher hỗ trợ
+`--manifest data/hf_t07_t12_release_manifest.json`. Xem
+[công việc T14 cần sửa sau bàn giao](docs/T14_fix_handoff_T07_T12.md).
 
 ### 3. Phân hệ Tải & Cập Nhật Dữ Liệu BigQuery (Task T05)
 *(Chỉ cần khi muốn tải lại dữ liệu từ đầu từ Google Cloud BigQuery)*

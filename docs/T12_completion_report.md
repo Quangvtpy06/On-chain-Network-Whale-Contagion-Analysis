@@ -1,9 +1,18 @@
 # T12 — Điểm thăm dò địa chỉ hoạt động lớn
 
+**Cập nhật v2:** đã ban hành [protocol v2](T12_protocol_v2.md), giữ nguyên scoring/ngưỡng v1 và
+tách cohort hoạt động lớn khỏi suy luận nhà đầu tư cá nhân. [Báo cáo v2](T12_v2_completion_report.md)
+và gate `data/processed/t12/v2/t12_downstream_gate.json` là nơi xem nghiệm thu mới.
+Phần dưới ghi lại raw/audit/v1; các phát biểu gate đóng bên dưới áp dụng cho v1.
+
 **Hoàn thành kiểm tra số học và audit bổ sung; chưa đủ điều kiện dùng biến
 WhaleFlow theo cohort hoặc diễn giải là nhà đầu tư cá nhân.** T14 có các nhánh
 độc lập không bị gate này chặn. Phụ thuộc T07 đầy đủ và T09
 trên T08 netted. Bảng bàn giao chỉ dùng Parquet; metadata dùng JSON.
+
+Cập nhật 22/10/2026: đã thêm kiểm định độc lập cohort 655 ngày và gate theo bằng
+chứng thực tế. Còn 79 địa chỉ overlap hạ tầng T07 hồi cứu và 40 địa chỉ cần thành
+viên review; gate chưa mở. Xem [nghiệm thu cohort](T12_cohort_acceptance.md).
 
 ## Dân số và độ phủ nhãn theo USDT
 

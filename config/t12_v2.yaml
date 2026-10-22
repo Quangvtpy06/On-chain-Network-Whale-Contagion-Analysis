@@ -1,0 +1,24 @@
+protocol_id: t12_unidentified_activity_v2
+issued_on: '2026-10-22'
+output_dir: data/processed/t12/v2
+base_config: config/t12_design.yaml
+primary_label_policy: human_verified_available_by_cutoff_only
+primary_scope: unidentified_high_activity_addresses_as_of_cutoff
+retrospective_scope: backfilled_T07_infrastructure_sensitivity_not_PIT
+allow_unresolved_identity: true
+require_human_verified_identity: false
+individual_investor_inference_allowed: false
+rq3_pit_endpoint_certified: false
+unresolved_identity_policy: retain_unknown_never_infer_individual
+frozen_behavior_thresholds_unchanged: true
+regression_results_used_for_selection: false
+sensitivity_selection_policy: report_all_days_never_choose_by_T15_results
+acceptance:
+  independent_calendar_checks: true
+  reproducible_parquet_hashes: true
+  preserve_v1_membership_and_scores: true
+  report_identity_coverage_and_infrastructure_overlap: true
+  retrospective_filter_before_normalization_and_ranking: true
+  source_lookup_is_not_human_approval: true
+  no_T15_output_at_initial_freeze: true
+  require_no_infrastructure_overlap: false

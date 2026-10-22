@@ -1,5 +1,9 @@
 # T12 — Whale Score theo node và cửa sổ
 
+Đặc tả này giữ định nghĩa raw/audit lịch sử. Cohort hoạt động lớn mới tuân theo
+[protocol v2](T12_protocol_v2.md), không thay công thức raw hoặc ngưỡng v1.
+V2 cho phép danh tính chưa rõ, báo độ phủ/độ nhạy hồi cứu và không xác nhận cá nhân.
+
 Chạy `T12_Whale_Score.py` ở gốc dự án. Cấu hình riêng `config/t12.yaml` giữ
 nguyên config đã ký hash của T09/T10. Chỉ đọc T07 đầy đủ và T09 trên T08 netted
 đã nghiệm thu; kiểm tra hash, lịch, code và cấu hình nguồn trước/sau tính.

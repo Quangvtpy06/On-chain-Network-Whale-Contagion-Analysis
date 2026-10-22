@@ -2,3 +2,5 @@
 # Keep code/config bytes stable for the accepted SHA-256 provenance.
 *.py -text
 *.yaml -text
+*.md -text
+*.json -text
