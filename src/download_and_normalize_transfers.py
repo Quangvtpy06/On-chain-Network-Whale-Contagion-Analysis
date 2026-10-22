@@ -15,7 +15,11 @@ Task T05: Script tải và chuẩn hóa dữ liệu Token Transfers từ BigQuer
 import os
 import sys
 import glob
+import re
+from pathlib import Path
 from datetime import datetime, timedelta, date
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 # Fix encoding cho Windows terminal (cp1252 -> utf-8)
 if sys.platform.startswith('win'):
@@ -25,17 +29,23 @@ if sys.platform.startswith('win'):
 # Tự động load biến môi trường từ file .env (nếu có)
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv(PROJECT_ROOT / '.env')
 except ImportError:
     pass  # Nếu chưa cài python-dotenv thì bỏ qua, dùng biến môi trường hệ thống
 
 import pandas as pd
 from google.cloud import bigquery
 from google.auth.exceptions import DefaultCredentialsError
+from google.api_core.exceptions import BadRequest, Forbidden, Unauthorized
 
 # 1. Config GCP Project ID & Credentials
 PROJECT_ID = os.getenv("GCP_PROJECT_ID") or "whale-network"
 CREDENTIALS_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "whale-network-4a41a91fd701.json")
+if CREDENTIALS_FILE:
+    credential_path = Path(CREDENTIALS_FILE).expanduser()
+    if not credential_path.is_absolute():
+        credential_path = PROJECT_ROOT / credential_path
+    CREDENTIALS_FILE = str(credential_path)
 
 # Token: USDT (Tether USD ERC-20)
 TOKEN_ADDRESS = "0xdac17f958d2ee523a2206206994597c13d831ec7"
@@ -48,13 +58,18 @@ START_DATE_STR = "2025-01-01"
 END_DATE_STR = "2026-10-17"
 
 # Thư mục lưu trữ
-RAW_DAILY_DIR = os.path.join("data", "raw", "daily")
-INTERIM_DIR = os.path.join("data", "interim")
+RAW_DAILY_DIR = str(PROJECT_ROOT / "data" / "raw" / "daily")
+INTERIM_DIR = str(PROJECT_ROOT / "data" / "interim")
 os.makedirs(RAW_DAILY_DIR, exist_ok=True)
 os.makedirs(INTERIM_DIR, exist_ok=True)
 
 
 def get_client(project_id: str = PROJECT_ID) -> bigquery.Client:
+    project_id = (project_id or '').strip()
+    if not re.fullmatch(r'[a-z][a-z0-9-]{4,28}[a-z0-9]', project_id):
+        raise ValueError('GCP_PROJECT_ID không hợp lệ: phải dùng Project ID gồm chữ thường, số và dấu gạch ngang, không phải tên hiển thị. Kiểm tra .env và cấu hình Run của PyCharm.')
+    if os.getenv('GOOGLE_APPLICATION_CREDENTIALS') and not Path(CREDENTIALS_FILE).is_file():
+        raise FileNotFoundError('GOOGLE_APPLICATION_CREDENTIALS trỏ tới file không tồn tại. Đường dẫn tương đối được tính từ gốc dự án crypto.')
     if CREDENTIALS_FILE and os.path.exists(CREDENTIALS_FILE):
         print(f"[*] Xác thực bằng Service Account: {CREDENTIALS_FILE}")
         return bigquery.Client.from_service_account_json(CREDENTIALS_FILE, project=project_id)
@@ -64,7 +79,8 @@ def get_client(project_id: str = PROJECT_ID) -> bigquery.Client:
     except DefaultCredentialsError:
         print("[!] Auth error: Application Default Credentials not configured.")
         print("    Vui lòng chạy: gcloud auth application-default login")
-        print("    Hoặc đặt biến môi trường GCP_PROJECT_ID trong file .env")
+        print("    Hoặc đặt GOOGLE_APPLICATION_CREDENTIALS trong .env tới file xác thực JSON hợp lệ.")
+        print("    GCP_PROJECT_ID chỉ chọn project, không cung cấp thông tin xác thực.")
         sys.exit(1)
 
 
@@ -182,13 +198,19 @@ def sync_all_and_build_interim(client: bigquery.Client, start_date_str: str = ST
 
     # Tải các ngày còn thiếu
     if missing_dates:
+        failed_dates = []
         print(f"[*] Đang tải dữ liệu cho {len(missing_dates)} ngày mới...")
         for idx, target_date in enumerate(missing_dates, 1):
             print(f"  [{idx}/{len(missing_dates)}] Đang xử lý ngày {target_date}...")
             try:
                 fetch_and_save_daily_raw(client, target_date)
+            except (BadRequest, Forbidden, Unauthorized) as e:
+                raise RuntimeError('BigQuery từ chối job. Dừng tải để kiểm tra Project ID, quyền và quota; không ghi đè interim.') from e
             except Exception as e:
+                failed_dates.append(target_date)
                 print(f"    [!] Lỗi khi tải ngày {target_date}: {e}")
+        if failed_dates:
+            raise RuntimeError(f'Còn {len(failed_dates)} ngày tải lỗi; không ghi đè interim bằng dữ liệu thiếu. Chạy lại để tải các ngày còn thiếu.')
     else:
         print("[+] Toàn bộ dữ liệu raw đã đầy đủ cập nhật tới hôm nay!")
 

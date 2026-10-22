@@ -3,14 +3,24 @@ import sys
 from pathlib import Path
 from google.cloud import bigquery
 from google.auth.exceptions import DefaultCredentialsError
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / '.env')
 
 # 1. Config
 # Lấy Project ID từ biến môi trường hoặc mặc định 'whale-network'
-PROJECT_ID = os.getenv("GCP_PROJECT_ID") or "whale-network"
+PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 CREDENTIALS_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "whale-network-4a41a91fd701.json")
+if CREDENTIALS_FILE:
+    credential_path = Path(CREDENTIALS_FILE).expanduser()
+    if not credential_path.is_absolute():
+        credential_path = Path(__file__).resolve().parent / credential_path
+    CREDENTIALS_FILE = str(credential_path)
 STATS_CSV = Path(__file__).resolve().parent / 'eth_stats_from_2025.csv'
 
 def get_bigquery_client(project_id: str = PROJECT_ID):
+    if os.getenv('GOOGLE_APPLICATION_CREDENTIALS') and not Path(CREDENTIALS_FILE).is_file():
+        raise FileNotFoundError('GOOGLE_APPLICATION_CREDENTIALS trỏ tới file không tồn tại. Đường dẫn tương đối được tính từ gốc dự án crypto.')
     if CREDENTIALS_FILE and os.path.exists(CREDENTIALS_FILE):
         print(f"[*] Using service account file: {CREDENTIALS_FILE}")
         return bigquery.Client.from_service_account_json(CREDENTIALS_FILE, project=project_id)
@@ -21,7 +31,8 @@ def get_bigquery_client(project_id: str = PROJECT_ID):
     except DefaultCredentialsError:
         print("\n[!] AUTH ERROR: Application Default Credentials not found.")
         print("    Vui lòng chạy: gcloud auth application-default login")
-        print("    Hoặc đặt biến môi trường GCP_PROJECT_ID trong file .env")
+        print("    Hoặc đặt GOOGLE_APPLICATION_CREDENTIALS trong .env tới file xác thực JSON hợp lệ.")
+        print("    GCP_PROJECT_ID chỉ chọn project, không cung cấp thông tin xác thực.")
         sys.exit(1)
 
 # 2. Time range: from 2025-01-01 to 2026-10-17 (Chốt dữ liệu nghiên cứu)
