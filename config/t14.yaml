@@ -1,0 +1,36 @@
+# T14 - NetFlow, WhaleFlow, realized volatility and controls X_t.
+# Paths are relative to the project root. Settings are frozen before T15 is run;
+# do not tune them on regression coefficients or p-values (see docs/T14 spec).
+protocol_id: t14_v1
+output_dir: data/processed/t14
+inputs:
+  daily_edges_parquet: data/processed/graphs/dynamic_edges_daily.parquet
+  labels_parquet: data/processed/t07/t07_complete_wallet_labels.parquet
+  secondary_labels: data/processed/t07/t07_secondary_verified_labels.parquet
+  cohort_members: data/processed/t12/cohort_members_daily.parquet
+  t12_gate: data/processed/t12/t12_downstream_gate.json
+  t12_cex_netflow: data/processed/t12/cex_netflow_daily.parquet
+  market_1h: market/processed/ohlcv_1h/ETHUSDT_1h_2025-2026.parquet
+  market_1d: market/processed/ohlcv_1d/ETHUSDT_1d_2025-2026.parquet
+  eth_stats_csv: eth_stats_from_2025.csv
+# Realized volatility from 24 UTC hourly log returns per day.
+volatility:
+  bars_per_day: 24
+  har_week_days: 7
+  har_month_days: 30
+horizons: [1, 3, 7]
+# Normalisation uses only days strictly before t: window [t-L, t).
+normalisation:
+  volume_lookback_days: 30
+  zscore_lookback_days: 90
+  minimum_history_days: 30
+# Large transfers: edge total_value above the past-only percentile of edges in [t-L, t).
+large_transfer:
+  percentile: 0.95
+  lookback_days: 90
+  minimum_history_days: 30
+  minimum_edges_in_history: 100
+# Cohort WhaleFlow is blocked while the T12 gate is false; the table is still
+# written (exploratory) with ready_for_regression=false.
+whaleflow:
+  exclude_cex_from_cohort: true
