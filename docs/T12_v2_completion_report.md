@@ -59,4 +59,4 @@ Trong `data/processed/t12/v2/`:
 - `t12_validation.parquet`, `t12_controls.parquet`.
 - JSON freeze, summary, acceptance, reproducibility, gate và integrity control.
 
-Chạy `python scripts/run_t12_v2.py` để tính hai lượt và nghiệm thu; `python scripts/validate_t12_v2.py` để kiểm định lại độc lập. Validator đối chiếu hash toàn bộ code/config/input/output trước khi mở gate. Không tạo CSV hoặc giả hồ sơ human review. Các thư mục run/control tạm được xóa sau kiểm tra; giữ validator dữ liệu thật để nhóm tái lập. Chưa push GitHub/Hugging Face trong công việc này.
+Chạy `python scripts/run_t12_v2.py` để tính hai lượt và nghiệm thu; `python scripts/validate_t12_v2.py` để kiểm định lại độc lập. Validator đối chiếu hash toàn bộ code/config/input/output trước khi mở gate. Không tạo CSV hoặc giả hồ sơ human review. Các thư mục run/control tạm được xóa sau kiểm tra; giữ validator dữ liệu thật để nhóm tái lập. Đã push GitHub/Hugging Face; xem [revision phát hành và bàn giao T14](T07_T12_release_2026-10-22.md).

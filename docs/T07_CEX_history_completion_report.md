@@ -28,4 +28,4 @@ Gate kỹ thuật đạt; sau xác nhận Quang đã mở và kiểm tra toàn b
 
 Người làm T14 có thể bắt đầu tích hợp loader ngay; để chốt biến PIT cần ít nhất một tập con nhãn approved và coverage tương ứng. Không cần chờ định danh mọi ví Unknown. Các nhánh volatility/large-transfer độc lập không bị chặn.
 
-[Bảng nguồn và top 20 ưu tiên review](T07_CEX_history_review_packet.md) có URL mở đúng dòng. [Hướng dẫn phê duyệt, schema và hợp đồng T14](T07_CEX_history_handoff.md) có lệnh CLI. Tất cả bảng ở `data/processed/t07/cex_history/`, chỉ dùng Parquet; metadata JSON. Chưa push GitHub/HF trong công việc này.
+[Bảng nguồn và top 20 ưu tiên review](T07_CEX_history_review_packet.md) có URL mở đúng dòng. [Hướng dẫn phê duyệt, schema và hợp đồng T14](T07_CEX_history_handoff.md) có lệnh CLI. Tất cả bảng ở `data/processed/t07/cex_history/`, chỉ dùng Parquet; metadata JSON. Đã push GitHub/HF; xem [revision phát hành và bàn giao T14](T07_T12_release_2026-10-22.md).
