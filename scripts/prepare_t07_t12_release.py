@@ -38,6 +38,12 @@ def main():
     repro(t12,'t12_reproducibility.json',6);repro(t12,'t12_audit_reproducibility.json',11);repro(t12,'t12_design_reproducibility.json',7)
     for n,h in review['output_hashes'].items():require(file_hash(t12/n)==h,'Changed raw T12 output')
     mappings=[hg['input_hashes'],raw['inputs'],audit['inputs'],design['inputs'],cohort['input_hashes']]
+    # T08 provenance uses named records {path, sha256}, not a flat hash map.
+    mappings.append({record['path']:record['sha256'] for record in raw['t08_inputs'].values()})
+    t09=read_json(ROOT/'data/processed/t09/t09_review.json')
+    mappings.append(t09['input_hashes'])
+    mappings.append({f'data/processed/graphs/{name}':file_hash(ROOT/'data/processed/graphs'/name)
+                     for name in ['t08_summary.json','t08_reproducibility.json']})
     for m in mappings:check_inputs(m)
     require(cohort['gate']==read_json(t12/'t12_downstream_gate.json')==audit['downstream_gate'],'V1 gate mismatch')
     require(file_hash(t12/'t12_cohort_validation.parquet')==cohort['validation_sha256'] and
@@ -58,7 +64,7 @@ def main():
     selected.update(configs)
     uploads=[dict(task='t07_cex_history' if '/t07/' in n else 't12',path=n,sha256=file_hash(ROOT/n),bytes=(ROOT/n).stat().st_size) for n in sorted(selected)]
     dependencies={}
-    for mapping in mappings+[raw.get('t08_inputs',{})]:
+    for mapping in mappings:
         for path,h in mapping.items():
             if path.startswith(('data/','market/')) and path not in selected:
                 require(path not in dependencies or dependencies[path]==h,'Conflicting dependency hashes')
