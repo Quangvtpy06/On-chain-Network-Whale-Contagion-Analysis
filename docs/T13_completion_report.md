@@ -161,20 +161,36 @@ Các hạn chế chính gồm: (i) Stress đo bằng ETH/USDT RV, là biến đ�
 
 ## 7. Sản phẩm bàn giao và khả năng tái lập
 
-| Đầu ra | Tình trạng đã xác nhận |
-| --- | --- |
-| T13_Network_Statistics.py | Pipeline đã chạy hoàn tất trong Worktree; 20 CSV + 20 Parquet + 4 PNG |
-| T13_Read_Results.py | Đọc thành công 20 Parquet từ Hugging Face main |
-| Dataset Hugging Face | 20 Parquet trên main: team-crypto/Market-data-crypto-project/data/processed/t13 |
-| GitHub | Commit c5602bf trên nhánh feature/t13-parquet-update đã push; việc merge PR GitHub chưa được xác nhận |
-| Đối chiếu giá trị | 20 Parquet khớp CSV của cùng lần chạy; các mốc trọng yếu RV, RQ1, RQ2 khớp kết quả gốc |
+Bản nguồn T13 đã có trên GitHub main. Lần kiểm định cuối ngày 22/10/2026 dùng commit `30d29a1efa9f757d0e36e581252c1cb04dfe928a`; thay đổi nguồn T13 gần nhất là `b67c3a62c8eb634ffaa8d5bc44d8823065164420`. Dữ liệu được ghim tại revision HF `ad3d2603bb3ff1e15033d1f98cd2520151d64dbb`.
 
-Lưu ý nghiệm thu: phép kiểm tra nhất quán CSV ↔ Parquet mới không thay thế kiểm tra từng giá trị của toàn bộ 20 bảng với bản gốc. Những kết luận trên dựa vào kiểm thử pipeline và các bảng trọng yếu đã được đối chiếu trong phiên làm việc.
+| Đầu ra / kiểm tra | Kết quả cuối cùng |
+| --- | --- |
+| T13_Network_Statistics.py | Hai lần chạy CLI hoàn tất, giữ chế độ kiểm tra nghiêm ngặt; mỗi lần sinh 20 Parquet và 4 PNG |
+| Dataset Hugging Face | Đọc được 20 Parquet và 4 PNG tại `data/processed/t13`; không xuất thêm CSV |
+| Đầu vào | Hash của 655 file OHLCV phút và 4 bảng T08/T09 khớp snapshot HF đã ghim |
+| Đối chiếu với HF | 20/20 bảng khớp giá trị; rtol=1e-9, atol=1e-11; không yêu cầu dtype hoặc byte giống HF |
+| Tái lập hai lần | SHA-256 giống nhau cho 20/20 Parquet và 4/4 PNG giữa hai lần chạy |
+| Kiểm tra công thức độc lập | RV, lịch UTC, top-K incident flow, 20 mô hình OLS/HAC và hiệu chỉnh BH-FDR đều đạt |
+| Manifest | `docs/T13_release_manifest.json` trên GitHub; cùng nội dung tại `data/processed/t13/t13_release_manifest.json` trên HF |
+
+Lỗi so sánh timestamp đã được sửa bằng cách thống nhất đơn vị `ns` cho timestamp và lịch kỳ vọng trước `.equals()`. Tần suất dữ liệu thị trường vẫn là một phút; đồ thị vẫn theo ngày/tuần.
+
+Kiểm tra độc lập ghi nhận 943.200 nến, 943.199 minute returns, 589 ngày Normal, 66 ngày Stress và 92 tuần đủ ngày. Sai số RV tối đa 2,26e-16; sai số trong 5.895 dòng concentration tối đa 5,56e-16. Kiểm tra công thức không gọi lại các hàm tính tương ứng của T13; kiểm tra hash hai lần được ghi riêng vì chỉ chứng minh tính nhất quán khi thực chạy.
+
+Các biểu đồ đang công bố trên HF được giữ nguyên. Hai lần chạy nguồn hiện tại sinh biểu đồ ổn định nhưng tên/bố cục khác bản HF; chưa kết luận nguyên nhân là chưa chạy lại sau sửa code. Manifest ghi rõ khác biệt này, không ghi nhận ảnh công bố đã được tái tạo giống pixel. Các liên kết ảnh hiện có trong báo cáo được giữ theo quy ước lưu hình trên HF.
+
+Dữ liệu tải tạm và hai bộ output kiểm tra đã được xóa sau kiểm định; manifest giữ hash đầu vào, hash bảng HF, hash hai lần chạy, môi trường và kết quả kiểm tra cuối cùng.
+
+## 8. Phạm vi RQ và bàn giao cho các bước tiếp theo
+
+T13 cung cấp kết quả mô tả và so sánh hồi cứu cho RQ1/RQ2. Theo phân công Blueprint08, T15 và T16 trực tiếp trả lời RQ3; việc T13 không kiểm định hoặc mở gate dự báo RQ3 không phải lỗi nghiệm thu T13. T14 vẫn phải bảo đảm các biến đầu vào theo nguyên tắc point-in-time và hợp đồng dữ liệu T07/T12 trước khi bàn giao cho T15/T16.
+
+Stress P90 và các z-score toàn kỳ của T13 dùng để so sánh hồi cứu; không chuyển trực tiếp chúng thành predictor point-in-time. Mạng T08 chỉ chứa transfer sau netting đạt ngưỡng 500.000 USDT, vì vậy các kết quả mô tả mạng con transfer lớn, không phải toàn bộ mạng USDT. Ví trung tâm được xếp hạng từ T09; không mặc nhiên là nhà đầu tư cá nhân hoặc bằng chứng nhân quả.
 
 ## Nguồn và tài liệu tham chiếu
 
-[1] Dữ liệu nhóm: https://huggingface.co/datasets/team-crypto/Market-data-crypto-project (T06, T08, T09 và 20 kết quả Parquet T13).
+[1] [Snapshot dữ liệu HF được kiểm định](https://huggingface.co/datasets/team-crypto/Market-data-crypto-project/tree/ad3d2603bb3ff1e15033d1f98cd2520151d64dbb/data/processed/t13).
 
-[2] Mã nguồn nhóm: https://github.com/Quangvtpy06/On-chain-Network-Whale-Contagion-Analysis (nhánh feature/t13-parquet-update, commit c5602bf).
+[2] [Mã nguồn T13 được kiểm định](https://github.com/Quangvtpy06/On-chain-Network-Whale-Contagion-Analysis/blob/30d29a1efa9f757d0e36e581252c1cb04dfe928a/T13_Network_Statistics.py).
 
-[3] Output T13: các bảng network_normal_vs_stress, rq1_network_hac_fdr_results, central_wallet_concentration_comparison, rq2_hac_fdr_results và 4 hình PNG do pipeline tạo; kết quả Terminal người thực hiện cung cấp ngày 22/10/2026.
+[3] [Manifest phiên bản và kiểm định cuối](T13_release_manifest.json), [báo cáo review](T13_updated_release_review.md), và [bàn giao T14 từ T07/T12](T14_fix_handoff_T07_T12.md).
