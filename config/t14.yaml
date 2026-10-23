@@ -1,29 +1,48 @@
 # T14 - NetFlow, WhaleFlow, realized volatility and controls X_t.
 # Paths are relative to the project root. Settings are frozen before T15 is run;
 # do not tune them on regression coefficients or p-values (see docs/T14 spec).
-protocol_id: t14_v1
+# Bumped from t14_v1: WhaleFlow/CEX definitions changed (PIT branch on C_D), so v1 outputs must not be mixed in.
+protocol_id: t14_v2
 output_dir: data/processed/t14
 inputs:
   daily_edges_parquet: data/processed/graphs/dynamic_edges_daily.parquet
+  # Retrospective T07 labels: used ONLY for the retrospective branch, never as PIT evidence.
   labels_parquet: data/processed/t07/t07_complete_wallet_labels.parquet
   secondary_labels: data/processed/t07/t07_secondary_verified_labels.parquet
-  cohort_members: data/processed/t12/cohort_members_daily.parquet
-  t12_gate: data/processed/t12/t12_downstream_gate.json
-  t12_cex_netflow: data/processed/t12/cex_netflow_daily.parquet
+  # T07 public-history registry (approved subset) and its gate: the PIT CEX branch.
+  t07_label_history: data/processed/t07/cex_history/t07_cex_label_history.parquet
+  t07_history_gate: data/processed/t07/cex_history/t07_cex_history_gate.json
+  # T12 v2 primary cohort and gate (cohort_path in the gate must equal this path).
+  cohort_members: data/processed/t12/v2/primary/cohort_members_daily.parquet
+  t12_gate: data/processed/t12/v2/t12_downstream_gate.json
+  market_1h: market/processed/ohlcv_1h/ETHUSDT_1h_2025-2026.parquet
   market_1d: market/processed/ohlcv_1d/ETHUSDT_1d_2025-2026.parquet
   eth_stats_csv: eth_stats_from_2025.csv
-# T06 1-minute closes (project convention is minute resolution; one file per UTC day).
-market_minute:
-  dir: market/processed/ohlcv_1m
-  file_pattern: ETHUSDT_1m_{date}.parquet
-# Realized volatility: sum of squared log returns sampled every `sampling_minutes`
-# minutes (1 -> 1440 returns/day). 1-minute RV can include microstructure noise,
-# so the sensitivity list adds rv_{k}m columns for robustness (T17); they are not targets.
+# Optional reference for the retrospective reconciliation check only (skipped if absent).
+retrospective_reference:
+  t12_cex_netflow: data/processed/t12/cex_netflow_daily.parquet
+# Optional provenance; hashed into the summary if present, not parsed.
+release_manifest: data/hf_t07_t12_release_manifest.json
+t12_protocol_id: t12_unidentified_activity_v2
+t07_protocol_id: t07_cex_public_history_v1
+# WhaleFlow scope MUST be chosen by the team before T15 (handoff section 3). Do not pick by sign/p-value.
+#   v2_activity_cohort  : option 1 - keep v2 cohort membership/rank, report CEX overlap, boundary = W \ C_D
+#   next_cohort_version : option 2 - needs a new T12 version that filters labels as-of before ranking (not supported yet)
+#   null                : undecided -> WhaleFlow PIT forecast stays closed
+whaleflow_scope: null
+# Reference overlap published in the handoff (v2 cohort vs approved registry). Mismatch fails validation.
+reference_overlap:
+  unique_addresses: 26
+  member_days: 6289
+# Realized volatility from 24 UTC hourly log returns per day: rv = sum(r^2); log_rv = log(rv) only if rv > 0.
 volatility:
-  sampling_minutes: 1
-  sensitivity_sampling_minutes: [5]
+  bars_per_day: 24
   har_week_days: 7
   har_month_days: 30
+# Forward target. single_day: log RV of day D+h. sum_days: log of sum of daily RV over D+1..D+h.
+# Predictors are known at D+1 00:00 UTC; targets start at that cutoff, never inside the predictor window.
+target:
+  horizon_definition: single_day
 horizons: [1, 3, 7]
 # Normalisation uses only days strictly before t: window [t-L, t).
 normalisation:
@@ -36,12 +55,3 @@ large_transfer:
   lookback_days: 90
   minimum_history_days: 30
   minimum_edges_in_history: 100
-# Cohort WhaleFlow is blocked while the T12 gate is false; the table is still
-# written (exploratory); readiness in t14_summary.json keeps it off for regression.
-whaleflow:
-  exclude_cex_from_cohort: true
-# CEX wallet set chosen by an as-of join on human-verified label dates
-# (label_available_at and effective_from strictly before day D). Keep false until
-# T07 has historical availability dates; T07 collection dates are never used.
-pit_cex_labels:
-  enabled: false
