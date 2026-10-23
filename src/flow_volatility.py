@@ -267,6 +267,46 @@ def normalise_flow(flow, volume, norm):
     return scaled, z
 
 
+def realized_volatility_minute(minute, dates, bars_per_day=1440, sensitivity_bars=288):
+    """RV_D = sum of squared 1-minute log returns of UTC day D (baseline 1440 bars).
+    Also computes 5-minute sensitivity RV_D_5m (288 bars).
+    """
+    m = minute[['datetime_utc', 'close']].copy()
+    m['datetime_utc'] = pd.to_datetime(m.datetime_utc, utc=True)
+    m = m.sort_values('datetime_utc')
+    if m.datetime_utc.duplicated().any():
+        raise ValueError('Duplicate minute bars')
+    if m.close.isna().any() or not (m.close > 0).all():
+        raise ValueError('Minute close must be present and > 0')
+
+    m['ret_1m'] = np.log(m.close / m.close.shift(1))
+    gap_1m = m.datetime_utc.diff().ne(pd.Timedelta(minutes=1))
+    m.loc[gap_1m, 'ret_1m'] = np.nan
+    m['date'] = m.datetime_utc.dt.strftime('%Y-%m-%d')
+
+    g1 = m.groupby('date').ret_1m
+    out = pd.DataFrame({'n_minute_returns': g1.count(), 'rv': g1.apply(lambda r: float((r ** 2).sum()))})
+    out = out.reindex(dates)
+    out['n_minute_returns'] = out.n_minute_returns.fillna(0).astype(int)
+    out.loc[out.n_minute_returns.ne(bars_per_day), 'rv'] = np.nan
+    out['log_rv'] = np.log(out.rv.where(out.rv > 0))
+    out['realized_vol'] = np.sqrt(out.rv)
+
+    # 5-minute sensitivity
+    m_5m = m[m.datetime_utc.dt.minute % 5 == 0].copy()
+    m_5m['ret_5m'] = np.log(m_5m.close / m_5m.close.shift(1))
+    gap_5m = m_5m.datetime_utc.diff().ne(pd.Timedelta(minutes=5))
+    m_5m.loc[gap_5m, 'ret_5m'] = np.nan
+    g5 = m_5m.groupby('date').ret_5m
+    out['rv_5m'] = g5.apply(lambda r: float((r ** 2).sum()))
+    out['n_5m_returns'] = g5.count().reindex(dates).fillna(0).astype(int)
+    out.loc[out.n_5m_returns.ne(sensitivity_bars), 'rv_5m'] = np.nan
+    out['realized_vol_5m'] = np.sqrt(out.rv_5m)
+
+    out.index.name = 'date'
+    return out
+
+
 def realized_volatility(hourly, dates, bars_per_day=24):
     """RV_D = sum of squared hourly log returns of UTC day D; NaN unless all bars exist.
 
@@ -382,7 +422,12 @@ def build_features(inputs, cfg, dates):
     history = inputs.get('cex_history')
     cex_by_day = asof_cex_sets(history, dates, inputs.get('labeler')) if history is not None else None
     flow = cex_netflow(edges, cex, dates)
-    vol = realized_volatility(inputs['hourly'], dates, cfg['volatility']['bars_per_day'])
+    vol_input = inputs.get('minute') if 'minute' in inputs else inputs.get('hourly')
+    bars = cfg['volatility']['bars_per_day']
+    if bars > 24 or 'minute' in inputs:
+        vol = realized_volatility_minute(vol_input, dates, bars_per_day=bars)
+    else:
+        vol = realized_volatility(vol_input, dates, bars_per_day=bars)
     whale = whale_flow(edges, inputs['cohort'], dates, cex_by_day=cex_by_day, retro_cex=cex)
     lt = cfg['large_transfer']
     large = large_transfer_flow(edges, cex, dates, lt['percentile'], lt['lookback_days'],
@@ -467,14 +512,33 @@ def overlap_table(table):
     return out.reset_index()
 
 
+def flow_z_status(raw_flow, z_col, lookback=90, min_history=30, base_condition=None):
+    """Phân loại trạng thái z-score theo đúng logic warm-up:
+    1. Đếm số raw flow hợp lệ trong cửa sổ quá khứ [D-L, D).
+    2. Nếu chưa đủ 30 ngày lịch sử -> insufficient_flow_history.
+    3. Nếu đủ 30 ngày nhưng độ lệch chuẩn bằng 0 -> zero_variance.
+    4. Nếu tính được z-score hợp lệ -> ok.
+    """
+    valid_past_count = raw_flow.notna().astype(int).shift(1).rolling(lookback, min_periods=0).sum()
+    past_std = raw_flow.shift(1).rolling(lookback, min_periods=min_history).std(ddof=1)
+
+    status = pd.Series('missing_input', index=raw_flow.index)
+    if base_condition is not None:
+        status[~base_condition] = 'no_cohort'
+
+    has_flow = raw_flow.notna() if base_condition is None else (raw_flow.notna() & base_condition)
+    status[has_flow & (valid_past_count < min_history)] = 'insufficient_flow_history'
+    status[has_flow & (valid_past_count >= min_history) & (past_std == 0)] = 'zero_variance'
+    status[z_col.notna()] = 'ok'
+    return status
+
+
 def eligibility_table(table, cfg):
     """Why each day is (not) usable: warm-up vs missing vs genuinely observed zero flow."""
     t = table
-    warm = cfg['normalisation']['minimum_history_days']
-    pos = pd.Series(np.arange(len(t)), index=t.index)
-
-    def z_status(z):
-        return pd.Series(np.where(z.notna(), 'ok', np.where(pos < warm, 'warmup', 'missing_input')), index=t.index)
+    norm = cfg['normalisation']
+    lookback = norm['zscore_lookback_days']
+    min_hist = norm['minimum_history_days']
 
     out = pd.DataFrame(index=t.index)
     out['has_cohort'] = t.has_cohort
@@ -486,8 +550,8 @@ def eligibility_table(table, cfg):
                                            np.where(t.n_pit_cex_endpoints.eq(0), 'no_pit_labels',
                                                     np.where(t.whale_to_cex_pit_usdt.add(t.cex_to_whale_pit_usdt).eq(0),
                                                              'observed_zero', 'observed')))
-    out['pit_cex_z_status'] = z_status(t.pit_cex_netflow_z)
-    out['whaleflow_pit_z_status'] = z_status(t.whaleflow_pit_z)
+    out['pit_cex_z_status'] = flow_z_status(t.pit_cex_netflow_usdt, t.pit_cex_netflow_z, lookback, min_hist)
+    out['whaleflow_pit_z_status'] = flow_z_status(t.whaleflow_pit_usdt, t.whaleflow_pit_z, lookback, min_hist, base_condition=t.has_cohort)
     out['rv_available'] = t.rv.notna()
     for branch, sets in [('retro_cex', RETRO_CEX_PREDICTORS), ('retro_whale', RETRO_WHALE_PREDICTORS),
                          ('pit_cex', PIT_CEX_PREDICTORS), ('pit_whale', PIT_WHALE_PREDICTORS)]:
@@ -521,9 +585,12 @@ def truncate_inputs(inputs, cut):
         edges=inputs['edges'][inputs['edges'].time_window <= cut],
         cohort=cohort[cohort.date <= cut],
         cex=inputs['cex'],
-        hourly=inputs['hourly'][pd.to_datetime(inputs['hourly'].datetime_utc, utc=True) < end],
         daily=inputs['daily'][pd.to_datetime(inputs['daily'].datetime_utc, utc=True) < end],
         eth_stats=inputs['eth_stats'][pd.to_datetime(inputs['eth_stats'].tx_date) <= pd.Timestamp(cut)])
+    if 'minute' in inputs:
+        result['minute'] = inputs['minute'][pd.to_datetime(inputs['minute'].datetime_utc, utc=True) < end]
+    if 'hourly' in inputs:
+        result['hourly'] = inputs['hourly'][pd.to_datetime(inputs['hourly'].datetime_utc, utc=True) < end]
     if 'cex_history' in inputs:
         result['cex_history'] = truncate_history(inputs['cex_history'], cut)
     if 'labeler' in inputs:
@@ -726,13 +793,20 @@ def validate(table, cfg, dates, t12_cex=None, expected_days=None):
     add('whaleflow_nan_without_cohort', bool(table.loc[~table.has_cohort.astype(bool), 'whaleflow_usdt'].isna().all()),
         f"days_without_cohort={int((~table.has_cohort.astype(bool)).sum())}")
     rv_ok = table.rv.dropna()
-    add('rv_nonnegative', bool((rv_ok >= 0).all()), f"nan_days={int(table.rv.isna().sum())}")
-    add('rv_sqrt_relation', same(table.realized_vol ** 2, table.rv))
-    add('rv_full_day_bars', bool(table.loc[table.rv.notna(), 'n_hourly_returns'].eq(cfg['volatility']['bars_per_day']).all()))
+    min_expected_rv_days = int(0.9 * len(table))
+    add('rv_sufficient_coverage', len(rv_ok) >= min_expected_rv_days,
+        f"valid_days={len(rv_ok)}/{len(table)} (min required: {min_expected_rv_days})")
+    add('rv_nonnegative', bool(len(rv_ok) > 0 and (rv_ok >= 0).all()), f"nan_days={int(table.rv.isna().sum())}")
+    add('rv_sqrt_relation', bool(len(rv_ok) > 0) and same(table.realized_vol ** 2, table.rv))
+    bars_col = 'n_minute_returns' if 'n_minute_returns' in table.columns else 'n_hourly_returns'
+    add('rv_full_day_bars', bool(len(rv_ok) > 0 and table.loc[table.rv.notna(), bars_col].eq(cfg['volatility']['bars_per_day']).all()))
     definition = cfg['target']['horizon_definition']
     for h in cfg['horizons']:
         t = table[f'target_log_rv_h{h}']
         expected = _expected_target(table.rv, h, definition)
+        valid_targets = int(t.iloc[:-h].notna().sum())
+        add(f'target_h{h}_sufficient_coverage', valid_targets >= int(0.9 * (len(table) - h)),
+            f"valid_targets={valid_targets}/{len(table) - h}")
         add(f'target_h{h}_matches_definition_{definition}', bool(t.iloc[-h:].isna().all()) and same(t.to_numpy(), expected))
     add('available_after_day_end', bool((pd.to_datetime(table.available_at, utc=True)
                                           > pd.to_datetime(table.index, utc=True)).all()))
