@@ -113,10 +113,17 @@ def load_inputs(cfg, settings):
 
     cohort = pd.read_parquet(paths['cohort_members'], columns=['date', 'address'])
     return dict(
-        edges=pd.read_parquet(paths['daily_edges_parquet'],
-                              columns=['time_window', 'from_address', 'to_address', 'total_value']),
-        cohort=fv.normalise_cohort(cohort), cex=fv.cex_set(labels), cex_history=history,
-        hourly=pd.read_parquet(paths['market_1h'], columns=['datetime_utc', 'close']),
+        edges=pd.read_parquet(
+            paths['daily_edges_parquet'],
+            columns=['time_window', 'from_address', 'to_address', 'total_value']
+        ),
+        cohort=fv.normalise_cohort(cohort),
+        cex=fv.cex_set(labels),
+        cex_history=history,
+        minute=pd.read_parquet(
+            paths['market_1m'],
+            columns=['datetime_utc', 'close']
+        ),
         daily=read_daily(paths['market_1d']),
         eth_stats=pd.read_csv(paths['eth_stats_csv']),
     ), paths

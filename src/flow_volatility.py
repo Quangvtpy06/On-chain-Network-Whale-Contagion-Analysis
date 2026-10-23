@@ -279,6 +279,10 @@ def realized_volatility_minute(minute, dates, bars_per_day=1440, sensitivity_bar
     if m.close.isna().any() or not (m.close > 0).all():
         raise ValueError('Minute close must be present and > 0')
 
+    ts = m.datetime_utc
+    if not ((ts.dt.second == 0) & (ts.dt.microsecond == 0) & (ts.dt.nanosecond == 0)).all():
+        raise ValueError('Minute bars are not aligned to UTC minute boundaries (second=0, microsecond=0); fix the input, do not round')
+
     m['ret_1m'] = np.log(m.close / m.close.shift(1))
     gap_1m = m.datetime_utc.diff().ne(pd.Timedelta(minutes=1))
     m.loc[gap_1m, 'ret_1m'] = np.nan
@@ -422,12 +426,13 @@ def build_features(inputs, cfg, dates):
     history = inputs.get('cex_history')
     cex_by_day = asof_cex_sets(history, dates, inputs.get('labeler')) if history is not None else None
     flow = cex_netflow(edges, cex, dates)
-    vol_input = inputs.get('minute') if 'minute' in inputs else inputs.get('hourly')
-    bars = cfg['volatility']['bars_per_day']
-    if bars > 24 or 'minute' in inputs:
-        vol = realized_volatility_minute(vol_input, dates, bars_per_day=bars)
+    if inputs.get('minute') is not None:
+        bars = cfg['volatility'].get('bars_per_day', 1440)
+        vol = realized_volatility_minute(inputs['minute'], dates, bars_per_day=bars,
+                                         sensitivity_bars=cfg['volatility'].get('sensitivity_bars_per_day', 288))
     else:
-        vol = realized_volatility(vol_input, dates, bars_per_day=bars)
+        bars = cfg['volatility'].get('bars_per_day', 24)
+        vol = realized_volatility(inputs['hourly'], dates, bars_per_day=bars)
     whale = whale_flow(edges, inputs['cohort'], dates, cex_by_day=cex_by_day, retro_cex=cex)
     lt = cfg['large_transfer']
     large = large_transfer_flow(edges, cex, dates, lt['percentile'], lt['lookback_days'],

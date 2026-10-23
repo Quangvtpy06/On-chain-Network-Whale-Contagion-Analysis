@@ -15,7 +15,7 @@ inputs:
   # T12 v2 primary cohort and gate (cohort_path in the gate must equal this path).
   cohort_members: data/processed/t12/v2/primary/cohort_members_daily.parquet
   t12_gate: data/processed/t12/v2/t12_downstream_gate.json
-  market_1h: market/processed/ohlcv_1h/ETHUSDT_1h_2025-2026.parquet
+  market_1m: market/processed/ohlcv_1m/ETHUSDT_1m_2025-2026.parquet
   market_1d: market/processed/ohlcv_1d/ETHUSDT_1d_2025-2026.parquet
   eth_stats_csv: eth_stats_from_2025.csv
 # Optional reference for the retrospective reconciliation check only (skipped if absent).
@@ -29,14 +29,16 @@ t07_protocol_id: t07_cex_public_history_v1
 #   v2_activity_cohort  : option 1 - keep v2 cohort membership/rank, report CEX overlap, boundary = W \ C_D
 #   next_cohort_version : option 2 - needs a new T12 version that filters labels as-of before ranking (not supported yet)
 #   null                : undecided -> WhaleFlow PIT forecast stays closed
-whaleflow_scope: null
+whaleflow_scope: v2_activity_cohort
 # Reference overlap published in the handoff (v2 cohort vs approved registry). Mismatch fails validation.
 reference_overlap:
   unique_addresses: 26
   member_days: 6289
-# Realized volatility from 24 UTC hourly log returns per day: rv = sum(r^2); log_rv = log(rv) only if rv > 0.
+# Realized volatility from 1440 UTC 1-minute log returns per day: rv = sum(r^2); log_rv = log(rv) only if rv > 0.
+# Sensitivity uses 288 5-minute bars per day.
 volatility:
-  bars_per_day: 24
+  bars_per_day: 1440
+  sensitivity_bars_per_day: 288
   har_week_days: 7
   har_month_days: 30
 # Forward target. single_day: log RV of day D+h. sum_days: log of sum of daily RV over D+1..D+h.
