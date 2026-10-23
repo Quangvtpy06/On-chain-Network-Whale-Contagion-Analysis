@@ -71,3 +71,6 @@ chỉ là metadata tham khảo. Thay cho việc chờ các cờ đó, T14 xuất
 Hai cờ này chứng nhận input theo phạm vi, không chứng nhận nhà đầu tư cá nhân hoặc RQ3 đã có kết quả.
 Consumer mới phải kiểm tra version/hash/gate rồi mới dùng eligibility. Xem đặc tả T14 cho schema mới.
 Bản đóng gói hiện tại chỉ ở máy; chưa upload HF.
+## Cập nhật phát hành 24/10/2026
+
+Sau khi được người dùng cho phép, gói đã lên GitHub/HF và tải lại xác minh 12/12 file khớp local. Các mô tả chỉ ở máy/chưa upload phía trên ghi trạng thái lúc kiểm định ban đầu. Xem [receipt phát hành và revision cần tải](T14_release_receipt.md).

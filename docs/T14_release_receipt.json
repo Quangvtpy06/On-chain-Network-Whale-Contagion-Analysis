@@ -1,0 +1,136 @@
+{
+  "repo_id": "team-crypto/Market-data-crypto-project",
+  "revision": "87bfe944925467fa74083ec0377c6b2579692bf0",
+  "verified_files": 12,
+  "changed_files": 12,
+  "manifest_sha256": "526029f91a32c30c570aece2a151b94e14ed83bb6bf98d40454aac3a05e9a57e",
+  "commit_url": "https://huggingface.co/datasets/team-crypto/Market-data-crypto-project/commit/87bfe944925467fa74083ec0377c6b2579692bf0",
+  "remote_deletions": 0,
+  "code_git_commit": "0c5e2685baff4d78ad4f0bde422d2823d3aca01e",
+  "remote_dependencies": [
+    {
+      "path": "data/processed/graphs/dynamic_edges_daily.parquet",
+      "sha256": "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "data/processed/t07/t07_complete_wallet_labels.parquet",
+      "sha256": "4bf112d171d080c739c2709d67fcf79dbbe0e922bd5727ca5770ca97dad7e00f",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "data/processed/t07/t07_secondary_verified_labels.parquet",
+      "sha256": "55e8d4031e3eb3eff6e5c0500d0f0a58e33102599d8efea468a2afaafa330570",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "data/processed/t07/cex_history/t07_cex_label_history.parquet",
+      "sha256": "ba5c92f65e04df37f71d9232382e80b3856ae970146938c46526e19b26a94500",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "data/processed/t07/cex_history/t07_cex_history_gate.json",
+      "sha256": "1525beb95631a256c70636c8e10b8a05f17ec0f7af1637815251d7c46d3cd724",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "data/processed/t12/v2/primary/cohort_members_daily.parquet",
+      "sha256": "a0b8007ad7f893e35d7afc09b6a3f9bb5b809d31e892cb8a497f00fe6b797e78",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "data/processed/t12/v2/t12_downstream_gate.json",
+      "sha256": "d9bb0a007aad49861acfdf3106e42dc4a56f5a78d85b302abbea63a386c72f39",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "market/processed/ohlcv_1m/ETHUSDT_1m_2025-2026.parquet",
+      "sha256": "46816308ad14b7491255150bd1bc484c6f54f2d4dca7a25a065f3767dabbb524",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "market/processed/ohlcv_1m/ETHUSDT_1m_2025-2026.manifest.json",
+      "sha256": "c13b778076c939312c406122f24182a1fd3b0665147085499746164ffc8380f0",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "market/processed/ohlcv_1d/ETHUSDT_1d_2025-2026.parquet",
+      "sha256": "540b408ce7276aec643d95c6febd348aaf25204525575877dea36aca96d40fba",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    },
+    {
+      "path": "eth_stats_from_2025.csv",
+      "sha256": "c6cd08e4d1c8e7f822a75cf9e496362630cfcbb12fd609ead1c8f649812e636f",
+      "revision": "de42b5dc4e5c3d63161b38ad4f528d97c47f5068"
+    }
+  ],
+  "downloaded_bytes_verified": [
+    {
+      "path": "data/processed/t14/t14_features_daily.parquet",
+      "sha256": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195",
+      "download_matches_local": true,
+      "rows": 655
+    },
+    {
+      "path": "data/processed/t14/t14_cex_coverage_daily.parquet",
+      "sha256": "25c4902b81ee07016c70d77be5267578449a72d6550e0f6dd407e6b3ab421f41",
+      "download_matches_local": true,
+      "rows": 655
+    },
+    {
+      "path": "data/processed/t14/t14_cex_coverage_monthly.parquet",
+      "sha256": "c2de626c7f9896287432d0b056cbd797927aa71e058c4628646f81f35dd2288e",
+      "download_matches_local": true,
+      "rows": 23
+    },
+    {
+      "path": "data/processed/t14/t14_cohort_cex_overlap_daily.parquet",
+      "sha256": "e62b2b3c5ff095a3624e5a1a520f9b75f8b241e0ba136f6d2d472c40b260e544",
+      "download_matches_local": true,
+      "rows": 655
+    },
+    {
+      "path": "data/processed/t14/t14_sample_eligibility_daily.parquet",
+      "sha256": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+      "download_matches_local": true,
+      "rows": 655
+    },
+    {
+      "path": "data/processed/t14/t14_validation.parquet",
+      "sha256": "645c91fad4e4f4aa0e1a3d20bfd98fef3949a2278bcc8a57813a873f07f456c5",
+      "download_matches_local": true,
+      "rows": 81
+    },
+    {
+      "path": "data/processed/t14/t14_summary.json",
+      "sha256": "5c1e8c4813d05d864bc725bdd6cbf5f3a10299b480aa8602bdde70ef970917f2",
+      "download_matches_local": true
+    },
+    {
+      "path": "data/processed/t14/t14_reproducibility.json",
+      "sha256": "72726ebf3cf9a0e0ad2271598b912e263e83e787cff8f943c0edc47124288b97",
+      "download_matches_local": true
+    },
+    {
+      "path": "data/processed/t14/t14_downstream_gate.json",
+      "sha256": "583d10de4da96c1df5a59d994e52c4e94c5c6fb9e41f8d87c6161d54d932b767",
+      "download_matches_local": true
+    },
+    {
+      "path": "data/processed/t14/t14_release_manifest.json",
+      "sha256": "80976aab91a0f6214c78d3467b857f43718c8947dfb09c822d216159b4c5af46",
+      "download_matches_local": true
+    },
+    {
+      "path": "config/t14.yaml",
+      "sha256": "7e01b707e9043db0bcc9883987ed6ba500cb31cc23e7ef0c046987028c996813",
+      "download_matches_local": true
+    },
+    {
+      "path": "data/hf_t14_release_manifest.json",
+      "sha256": "526029f91a32c30c570aece2a151b94e14ed83bb6bf98d40454aac3a05e9a57e",
+      "download_matches_local": true
+    }
+  ],
+  "all_downloaded_files_match": true
+}

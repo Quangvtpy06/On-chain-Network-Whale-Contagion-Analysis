@@ -62,3 +62,6 @@ python scripts/validate_t14_release.py
 ```
 
 Sau khi validator đạt, chọn đúng nhánh readiness, rồi mới dùng eligibility theo horizon và predictor_sets. Không lấy target/metadata/readiness làm predictor; không dùng nhánh hồi cứu thay PIT.
+## Cập nhật phát hành 24/10/2026
+
+Sau khi được người dùng cho phép, gói đã lên GitHub/HF và tải lại xác minh 12/12 file khớp local. Các mô tả chỉ ở máy/chưa upload phía trên ghi trạng thái lúc kiểm định ban đầu. Xem [receipt phát hành và revision cần tải](T14_release_receipt.md).

@@ -237,7 +237,6 @@ Chạy `python T14_Flow_Volatility.py`, rồi `python scripts/validate_t14_relea
 Hợp đồng `t14_inputs_v1` cấp riêng `forecast_inputs_ready_cex` và
 `forecast_inputs_ready_activity_cohort`; không sửa cờ RQ3 T07/T12 và không chứng nhận danh tính cá nhân.
 T15/T16 kiểm tra gate/hash trước khi dùng eligibility/predictor_sets. Xem
-[đặc tả T14](docs/T14_flow_volatility_specification.md). Bản output hiện chỉ được đóng gói tại máy,
-chưa upload lên HF.
+[đặc tả T14](docs/T14_flow_volatility_specification.md). Gói đã được phát hành lên GitHub/HF; xem [receipt và revision đầu vào](docs/T14_release_receipt.md).
 
 

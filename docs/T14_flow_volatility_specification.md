@@ -86,3 +86,7 @@ thuộc T18/T15/T16 và phải chốt trước mô hình.
 
 Bản đóng gói ngày 24/10/2026 chỉ phát hành tại máy, `upload_performed=false`;
 chưa upload HF hoặc push GitHub theo phạm vi công việc hiện tại.
+
+## Cập nhật phát hành 24/10/2026
+
+Sau khi được người dùng cho phép, gói đã lên GitHub/HF và tải lại xác minh 12/12 file khớp local. Các mô tả chỉ ở máy/chưa upload phía trên ghi trạng thái lúc kiểm định ban đầu. Xem [receipt phát hành và revision cần tải](T14_release_receipt.md).
