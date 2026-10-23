@@ -234,6 +234,22 @@ def main():
                 v2_repro['hashes'][n].get('run2')==v2_gate.get('output_hashes',{}).get(n) for n in v2_products) and
             file_hash(v2_dir/'t12_validation.parquet')==v2_gate.get('validation_sha256') and
             file_hash(v2_dir/'t12_controls.parquet')==v2_gate.get('controls_sha256'))
+    t14_settings_path=ROOT/'config/t14.yaml'
+    if t14_settings_path.is_file():
+        t14_settings=yaml.safe_load(t14_settings_path.read_text(encoding='utf-8'))
+        t14_dir=ROOT/t14_settings['output_dir']
+        t14=read_json(t14_dir/'t14_summary.json')
+        t14_repro=read_json(t14_dir/'t14_reproducibility.json')
+        standard['t14']=[(t14_dir/name).relative_to(ROOT).as_posix() for name in [
+            't14_features_daily.parquet','t14_validation.parquet','t14_summary.json','t14_reproducibility.json']]
+        # Cohort WhaleFlow columns are exploratory while the T12 gate is closed; see t14_summary.json.
+        accepted['t14']=bool(accepted.get('t12') and t14.get('validation_passed') and t14.get('reproducible') and
+            t14_repro.get('all_match') and t14.get('settings_sha256')==file_hash(t14_settings_path) and
+            bool(t14.get('code_sha256')) and all((ROOT/path).is_file() and file_hash(ROOT/path)==expected
+                for path,expected in t14.get('code_sha256',{}).items()) and
+            len(t14_repro.get('hashes',{}))==1 and all(
+                (t14_dir/name).is_file() and file_hash(t14_dir/name)==proof.get('run1')==proof.get('run2')
+                for name,proof in t14_repro.get('hashes',{}).items()))
     upload=[];blocked=[];missing=[]
     for task,files in standard.items():
         for rel in files:
@@ -242,7 +258,7 @@ def main():
                 missing.append(dict(task=task,path=rel));continue
             row=dict(task=task,path=rel,bytes=path.stat().st_size,sha256=file_hash(path))
             (upload if accepted[task] else blocked).append(row)
-    for rel in ['config/config.yaml','config/t10.yaml','config/t11.yaml','config/t12.yaml','config/t12_audit.yaml','config/t12_design.yaml','config/t12_v2.yaml','eth_stats_from_2025.csv']:
+    for rel in ['config/config.yaml','config/t10.yaml','config/t11.yaml','config/t12.yaml','config/t12_audit.yaml','config/t12_design.yaml','config/t12_v2.yaml','config/t14.yaml','eth_stats_from_2025.csv']:
         path=ROOT/rel
         if path.is_file():
             upload.append(dict(task='shared',path=rel,bytes=path.stat().st_size,sha256=file_hash(path)))

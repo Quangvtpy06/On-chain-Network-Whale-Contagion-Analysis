@@ -4,17 +4,43 @@ Conventions
 -----------
 * One row per UTC calendar day D = [D 00:00, D+1 00:00). Every feature in the row
   is computable at `available_at` = D+1 00:00 UTC; nothing later is read.
-* Targets are named `target_*` and look forward (D+h). They are the only columns
-  allowed to use data after D, and they are never used as predictors.
+* Targets are named `target_*` and look forward. They start at or after the
+  cutoff D+1 00:00 UTC, so they never contain a day that feeds the predictors.
 * Any normaliser (scale, z-score, percentile) uses days strictly before D.
-* Pure functions only; file I/O lives in T14_Flow_Volatility.py.
+* Two branches are kept apart and never mixed:
+    - retrospective: CEX set = current T07 labels (not point-in-time evidence);
+    - pit: CEX set C_D = approved public-history registry, public_available_at < D.
+* Pure functions only; file I/O and gate verification live in T14_Flow_Volatility.py.
 """
 import numpy as np
 import pandas as pd
 
-ZERO_ADDRESS = '0x' + '0' * 40
-FLOW_COLUMNS = ['cex_external_in_usdt', 'cex_external_out_usdt', 'cex_internal_usdt', 'cex_netflow_usdt']
-WHALE_COLUMNS = ['whale_to_cex_usdt', 'cex_to_whale_usdt', 'whaleflow_usdt']
+RETRO_FLOW_COLUMNS = ['cex_external_in_usdt', 'cex_external_out_usdt', 'cex_internal_usdt', 'cex_netflow_usdt']
+FLOW_COLUMNS = RETRO_FLOW_COLUMNS
+PIT_FLOW_COLUMNS = ['pit_cex_external_in_usdt', 'pit_cex_external_out_usdt', 'pit_cex_internal_usdt', 'pit_cex_netflow_usdt']
+RETRO_WHALE_COLUMNS = ['whale_to_cex_usdt', 'cex_to_whale_usdt', 'whaleflow_usdt']
+PIT_WHALE_COLUMNS = ['whale_to_cex_pit_usdt', 'cex_to_whale_pit_usdt', 'whaleflow_pit_usdt']
+WHALE_COLUMNS = RETRO_WHALE_COLUMNS
+
+# --- explicit predictor sets: the regression never sees metadata/readiness flags or targets ---
+CONTROL_COLUMNS = ['ret_1d', 'log_volume_usdt', 'log_trade_count', 'taker_imbalance', 'spread_cs_proxy',
+                   'parkinson_var', 'eth_log_transactions', 'eth_log_volume', 'eth_log_gas_gwei',
+                   'log_transfer_volume_usdt', 'log_rv', 'log_rv_week', 'log_rv_month', 'day_of_week']
+RETRO_CEX_PREDICTORS = ['cex_netflow_scaled', 'cex_netflow_z', 'large_cex_netflow_scaled']
+RETRO_WHALE_PREDICTORS = ['whaleflow_scaled', 'whaleflow_z']
+PIT_CEX_PREDICTORS = ['pit_cex_netflow_scaled', 'pit_cex_netflow_z', 'pit_large_cex_netflow_scaled']
+PIT_WHALE_PREDICTORS = ['whaleflow_pit_scaled', 'whaleflow_pit_z']
+BOOKKEEPING_COLUMNS = ['available_at', 'protocol_id', 'whaleflow_gate_open', 'cex_labels_pit', 'has_cohort',
+                       'n_hourly_returns']
+
+
+def predictor_sets():
+    return {
+        'retrospective_cex': RETRO_CEX_PREDICTORS + CONTROL_COLUMNS,
+        'retrospective_whaleflow': RETRO_WHALE_PREDICTORS + CONTROL_COLUMNS,
+        'pit_cex': PIT_CEX_PREDICTORS + CONTROL_COLUMNS,
+        'pit_whaleflow': PIT_WHALE_PREDICTORS + CONTROL_COLUMNS,
+    }
 
 
 def day_index(start, end):
@@ -22,16 +48,41 @@ def day_index(start, end):
 
 
 def cex_set(labels):
-    """Same rule as T12: entity_type == CEX and no unresolved label conflict."""
+    """RETROSPECTIVE rule (same as T12 v1): entity_type == CEX and no unresolved label conflict."""
     conflict = labels.label_conflict_review.fillna(False).astype(bool) if 'label_conflict_review' in labels else False
     return set(labels.loc[labels.entity_type.eq('CEX') & ~conflict, 'address'])
 
 
-def cex_netflow(edges, cex, dates):
-    """External NetFlow of the known-CEX wallet set: inflow - outflow, internal CEX moves split out.
+def normalise_cohort(cohort):
+    c = cohort[['date', 'address']].copy()
+    c['date'] = pd.to_datetime(c.date).dt.strftime('%Y-%m-%d')
+    return c.drop_duplicates().reset_index(drop=True)
 
-    edges: columns time_window ('YYYY-MM-DD'), from_address, to_address, total_value.
-    Mirrors T12 build_cex so the two tables can be reconciled.
+
+# ----------------------------------------------------------------------------- CEX sets as-of D
+
+def asof_cex_sets(history, dates, labeler=None):
+    """C_D for every day: approved public-history labels with public_available_at < D 00:00 UTC.
+
+    `labeler(history, cutoff)` defaults to src.cex_label_history.available_cex_labels, the
+    function that load_cex_for_cutoff itself uses after its gate/hash checks. The caller must have
+    verified the history file against the T07 gate before calling this.
+    """
+    if labeler is None:
+        from src.cex_label_history import available_cex_labels as labeler
+    sets = {}
+    for day in dates:
+        labels = labeler(history, pd.Timestamp(day, tz='UTC'))
+        sets[day] = frozenset(labels.address)
+    return sets
+
+
+# ----------------------------------------------------------------------------- retrospective NetFlow
+
+def cex_netflow(edges, cex, dates):
+    """RETROSPECTIVE external NetFlow of the current known-CEX set: inflow - outflow.
+
+    CEX->CEX moves are reported in cex_internal_usdt and are not part of NetFlow.
     """
     a = edges.from_address.isin(cex)
     b = edges.to_address.isin(cex)
@@ -46,47 +97,111 @@ def cex_netflow(edges, cex, dates):
     daily = frame.groupby('time_window', sort=True).sum().reindex(dates).fillna(0.0)
     daily['cex_netflow_usdt'] = daily.cex_external_in_usdt - daily.cex_external_out_usdt
     daily.index.name = 'date'
-    return daily[FLOW_COLUMNS + ['transfer_volume_usdt']]
+    return daily[RETRO_FLOW_COLUMNS + ['transfer_volume_usdt']]
 
 
-def whale_flow(edges, cohort, cex, dates, exclude_cex=True):
-    """WhaleFlow_D = (cohort -> CEX) - (CEX -> cohort) on day D.
+def pit_cex_netflow(edges, cex_by_day, dates):
+    """PIT NetFlow with the per-day set C_D.
 
-    cohort: columns date, address. Row for D must have been selected from data
-    before D (T12 protocol t12_lagged_v1, information_cutoff = D-1). CEX
-    addresses are removed from the cohort because T12 only drops human-verified
-    labels, not the retrospective T07 CEX set.
+    Inflow: from not in C_D, to in C_D.   Outflow: from in C_D, to not in C_D.
+    NetFlow = Inflow - Outflow; CEX->CEX is reported separately (internal), not in NetFlow.
+    No labels available on D  -> all flows NaN (evidence unavailable, not zero).
+    Labels but no transfers   -> 0.0 (observed zero).
     """
-    out = pd.DataFrame(0.0, index=pd.Index(dates, name='date'), columns=WHALE_COLUMNS)
-    out['n_cohort_members'] = 0
-    out['n_cohort_cex_removed'] = 0
-    out['n_cohort_members_active'] = 0
-    out['has_cohort'] = False
-    if len(cohort) == 0:
-        return out
-    members = {d: set(g.address) for d, g in cohort.groupby('date', sort=True)}
-    for day, group in edges.groupby('time_window', sort=True):
-        if day not in members or day not in out.index:
+    by_day = dict(tuple(edges.groupby('time_window', sort=True)))
+    empty = edges.iloc[:0]
+    rows = []
+    for day in dates:
+        c = cex_by_day.get(day, frozenset())
+        row = dict(date=day, n_pit_cex_endpoints=len(c), n_pit_cex_active=0)
+        if not c:
+            row.update({k: np.nan for k in PIT_FLOW_COLUMNS})
+            rows.append(row)
             continue
-        m = members[day]
-        removed = len(m & cex) if exclude_cex else 0
-        if exclude_cex:
-            m = m - cex
-        f, t, v = group.from_address, group.to_address, group.total_value
-        w2c = float(v[f.isin(m) & t.isin(cex)].sum())
-        c2w = float(v[f.isin(cex) & t.isin(m)].sum())
-        active = set(f[f.isin(m)]) | set(t[t.isin(m)])
-        out.loc[day, ['whale_to_cex_usdt', 'cex_to_whale_usdt', 'whaleflow_usdt']] = [w2c, c2w, w2c - c2w]
-        out.loc[day, 'n_cohort_members_active'] = len(active)
-    counts = cohort.groupby('date').address.nunique().reindex(dates).fillna(0).astype(int)
-    out['n_cohort_members'] = counts.to_numpy()
-    out['n_cohort_cex_removed'] = [len(members.get(d, set()) & cex) if exclude_cex else 0 for d in dates]
-    out['has_cohort'] = out.n_cohort_members.gt(0)
-    return out
+        g = by_day.get(day, empty)
+        a, b, v = g.from_address.isin(c), g.to_address.isin(c), g.total_value
+        ext_in, ext_out = float(v[~a & b].sum()), float(v[a & ~b].sum())
+        row.update(pit_cex_external_in_usdt=ext_in, pit_cex_external_out_usdt=ext_out,
+                   pit_cex_internal_usdt=float(v[a & b].sum()), pit_cex_netflow_usdt=ext_in - ext_out,
+                   n_pit_cex_active=len(c & (set(g.from_address) | set(g.to_address))))
+        rows.append(row)
+    return pd.DataFrame(rows).set_index('date')
 
+
+# ----------------------------------------------------------------------------- WhaleFlow
+
+def _boundary(f, t, v, members, cex):
+    """cohort -> CEX minus CEX -> cohort on one day, with an explicit boundary rule.
+
+    Boundary rule (must be confirmed by the team, see whaleflow_scope):
+      * membership/rank of the T12 cohort W is untouched; W is NOT replaced by a new top-50.
+      * a node in W ∩ C is treated as CEX infrastructure on the flow boundary, so only
+        core = W \\ C acts as the cohort side;
+      * edges inside C (CEX->CEX) and inside core are not WhaleFlow;
+      * volume of every edge touching W ∩ C is reported (overlap_edge_usdt), never hidden.
+    """
+    core = members - cex
+    f_core, t_core = f.isin(core), t.isin(core)
+    f_c, t_c = f.isin(cex), t.isin(cex)
+    w2c = float(v[f_core & t_c].sum())
+    c2w = float(v[f_c & t_core].sum())
+    overlap = members & cex
+    overlap_edge = float(v[f.isin(overlap) | t.isin(overlap)].sum()) if overlap else 0.0
+    active = len(core & (set(f) | set(t)))
+    return w2c, c2w, overlap_edge, active
+
+
+def whale_flow(edges, cohort, dates, cex_by_day=None, retro_cex=None):
+    """WhaleFlow_D = (cohort -> CEX) - (CEX -> cohort) on day D, for two separate branches.
+
+    PIT branch   : C_D from the approved public-history registry (cex_by_day).
+    Retrospective: current T07 CEX set (retro_cex); a sensitivity only, never called PIT.
+    NaN (not 0) when D has no cohort, or (PIT branch) no CEX label available on D.
+    """
+    cohort = normalise_cohort(cohort)
+    members = {d: frozenset(g.address) for d, g in cohort.groupby('date', sort=True)}
+    by_day = dict(tuple(edges.groupby('time_window', sort=True)))
+    empty = edges.iloc[:0]
+    rows = []
+    for day in dates:
+        w = members.get(day, frozenset())
+        row = dict(date=day, n_cohort_members=len(w), has_cohort=bool(w),
+                   whale_to_cex_usdt=np.nan, cex_to_whale_usdt=np.nan, whaleflow_usdt=np.nan,
+                   whale_to_cex_pit_usdt=np.nan, cex_to_whale_pit_usdt=np.nan, whaleflow_pit_usdt=np.nan,
+                   n_cohort_cex_retro_overlap=0, cohort_cex_pit_overlap=0,
+                   overlap_edge_retro_usdt=np.nan, overlap_edge_pit_usdt=np.nan,
+                   n_cohort_members_active=0, n_cohort_members_active_pit=0)
+        if w:
+            g = by_day.get(day, empty)
+            f, t, v = g.from_address, g.to_address, g.total_value
+            if retro_cex is not None:
+                w2c, c2w, ov, act = _boundary(f, t, v, w, retro_cex)
+                row.update(whale_to_cex_usdt=w2c, cex_to_whale_usdt=c2w, whaleflow_usdt=w2c - c2w,
+                           overlap_edge_retro_usdt=ov, n_cohort_members_active=act,
+                           n_cohort_cex_retro_overlap=len(w & retro_cex))
+            if cex_by_day is not None:
+                c = cex_by_day.get(day, frozenset())
+                row['cohort_cex_pit_overlap'] = len(w & c)
+                if c:
+                    w2c, c2w, ov, act = _boundary(f, t, v, w, c)
+                    row.update(whale_to_cex_pit_usdt=w2c, cex_to_whale_pit_usdt=c2w,
+                               whaleflow_pit_usdt=w2c - c2w, overlap_edge_pit_usdt=ov,
+                               n_cohort_members_active_pit=act)
+        rows.append(row)
+    return pd.DataFrame(rows).set_index('date')
+
+
+def overlap_addresses(cohort, cex_by_day):
+    """Unique cohort addresses that are in C_D on at least one of their member-days, and member-days."""
+    cohort = normalise_cohort(cohort)
+    hit = cohort[[a in cex_by_day.get(d, frozenset()) for d, a in zip(cohort.date, cohort.address)]]
+    return set(hit.address), int(len(hit))
+
+
+# ----------------------------------------------------------------------------- large transfers
 
 def large_transfer_flow(edges, cex, dates, percentile, lookback, min_history, min_edges):
-    """Large-transfer events with a threshold estimated only on [D-L, D).
+    """Large-transfer events with a threshold estimated only on [D-L, D) (retrospective CEX set).
 
     The percentile is of edge total_value among all edges in the past window; it
     is NaN (no events counted) until `min_history` days and `min_edges` edges exist.
@@ -114,6 +229,25 @@ def large_transfer_flow(edges, cex, dates, percentile, lookback, min_history, mi
     return pd.DataFrame(rows).set_index('date')
 
 
+def pit_large_flow(edges, threshold, cex_by_day, dates):
+    """Large-transfer CEX NetFlow with C_D, reusing the past-only threshold. NaN if no threshold or no labels."""
+    by_day = dict(tuple(edges.groupby('time_window', sort=True)))
+    empty = edges.iloc[:0]
+    vals = []
+    for day in dates:
+        c, thr = cex_by_day.get(day, frozenset()), threshold.get(day, np.nan)
+        if not c or not np.isfinite(thr):
+            vals.append(np.nan)
+            continue
+        g = by_day.get(day, empty)
+        big = g[g.total_value >= thr]
+        a, b, v = big.from_address.isin(c), big.to_address.isin(c), big.total_value
+        vals.append(float(v[~a & b].sum() - v[a & ~b].sum()))
+    return pd.Series(vals, index=pd.Index(dates, name='date'), name='pit_large_cex_netflow_usdt')
+
+
+# ----------------------------------------------------------------------------- normalisation, volatility, controls
+
 def past_mean(series, lookback, min_history):
     """Mean over [D-L, D): shift(1) removes day D itself."""
     return series.shift(1).rolling(lookback, min_periods=min_history).mean()
@@ -136,14 +270,20 @@ def normalise_flow(flow, volume, norm):
 def realized_volatility(hourly, dates, bars_per_day=24):
     """RV_D = sum of squared hourly log returns of UTC day D; NaN unless all bars exist.
 
-    The return of the first hour of D uses the last close of D-1 (known before D),
-    so an incomplete first day (no previous close) is NaN rather than rescaled.
+    rv = sum(r^2) (variance scale, unitless); realized_vol = sqrt(rv); log_rv = log(rv) only if rv > 0
+    (rv == 0 gives NaN, never a filled value). The return of the first hour of D uses the last close
+    of D-1, so a day whose previous close is missing has fewer returns and is NaN, not rescaled.
     """
     h = hourly[['datetime_utc', 'close']].copy()
     h['datetime_utc'] = pd.to_datetime(h.datetime_utc, utc=True)
     h = h.sort_values('datetime_utc')
     if h.datetime_utc.duplicated().any():
         raise ValueError('Duplicate hourly bars')
+    if h.close.isna().any() or not (h.close > 0).all():
+        raise ValueError('Hourly close must be present and > 0')
+    ts = h.datetime_utc
+    if not ((ts.dt.minute == 0) & (ts.dt.second == 0) & (ts.dt.microsecond == 0) & (ts.dt.nanosecond == 0)).all():
+        raise ValueError('Hourly bars are not aligned to UTC hour boundaries; fix the input, do not round')
     h['ret'] = np.log(h.close / h.close.shift(1))
     # A gap would turn one return into a multi-hour return; blank it instead of mixing horizons.
     gap = h.datetime_utc.diff().ne(pd.Timedelta(hours=1))
@@ -212,104 +352,400 @@ def har_terms(log_rv, rv, week, month):
     return out
 
 
+def forward_targets(rv, horizons, definition):
+    """Targets start after the cutoff D+1 00:00 UTC.
+
+    single_day: log RV of the one day D+h.
+    sum_days  : log of sum of daily RV over D+1 ... D+h (needs all h days).
+    """
+    out = {}
+    for h in horizons:
+        if definition == 'single_day':
+            value = rv.shift(-h)
+        elif definition == 'sum_days':
+            value = rv.iloc[::-1].rolling(h, min_periods=h).sum().iloc[::-1].shift(-1)
+        else:
+            raise ValueError(f'Unknown horizon_definition: {definition}')
+        out[f'target_log_rv_h{h}'] = np.log(value.where(value > 0))
+    return pd.DataFrame(out, index=rv.index)
+
+
+# ----------------------------------------------------------------------------- feature table
+
 def build_features(inputs, cfg, dates):
-    """Assemble the daily table. `inputs` holds already loaded DataFrames / sets."""
+    """Assemble the daily table. `inputs` holds already loaded DataFrames / sets.
+
+    `cex` (retrospective set) feeds the retrospective branch; `cex_history` (verified T07 registry)
+    feeds the PIT branch. Each branch is normalised from its own flow, never from the other one.
+    """
     edges, cex = inputs['edges'], inputs['cex']
+    history = inputs.get('cex_history')
+    cex_by_day = asof_cex_sets(history, dates, inputs.get('labeler')) if history is not None else None
     flow = cex_netflow(edges, cex, dates)
     vol = realized_volatility(inputs['hourly'], dates, cfg['volatility']['bars_per_day'])
-    whale = whale_flow(edges, inputs['cohort'], cex, dates, cfg['whaleflow']['exclude_cex_from_cohort'])
+    whale = whale_flow(edges, inputs['cohort'], dates, cex_by_day=cex_by_day, retro_cex=cex)
     lt = cfg['large_transfer']
     large = large_transfer_flow(edges, cex, dates, lt['percentile'], lt['lookback_days'],
                                 lt['minimum_history_days'], lt['minimum_edges_in_history'])
     table = pd.concat([flow, whale, large, vol], axis=1)
+    norm = cfg['normalisation']
     table['cex_netflow_scaled'], table['cex_netflow_z'] = normalise_flow(
-        table.cex_netflow_usdt, table.transfer_volume_usdt, cfg['normalisation'])
-    # Days without a cohort carry NaN, not a misleading zero WhaleFlow.
-    wf = table.whaleflow_usdt.where(table.has_cohort.astype(bool))
+        table.cex_netflow_usdt, table.transfer_volume_usdt, norm)
     table['whaleflow_scaled'], table['whaleflow_z'] = normalise_flow(
-        wf, table.transfer_volume_usdt, cfg['normalisation'])
+        table.whaleflow_usdt, table.transfer_volume_usdt, norm)
     table['large_cex_netflow_scaled'], _ = normalise_flow(
-        table.large_cex_netflow_usdt, table.transfer_volume_usdt, cfg['normalisation'])
+        table.large_cex_netflow_usdt, table.transfer_volume_usdt, norm)
     table['log_transfer_volume_usdt'] = np.log(table.transfer_volume_usdt.where(table.transfer_volume_usdt > 0))
+    if cex_by_day is not None:
+        pit = pit_cex_netflow(edges, cex_by_day, dates)
+        table = pd.concat([table, pit], axis=1)
+        table['pit_cex_netflow_scaled'], table['pit_cex_netflow_z'] = normalise_flow(
+            table.pit_cex_netflow_usdt, table.transfer_volume_usdt, norm)
+        table['whaleflow_pit_scaled'], table['whaleflow_pit_z'] = normalise_flow(
+            table.whaleflow_pit_usdt, table.transfer_volume_usdt, norm)
+        table['pit_large_cex_netflow_usdt'] = pit_large_flow(
+            edges, table.large_transfer_threshold_usdt.to_dict(), cex_by_day, dates)
+        table['pit_large_cex_netflow_scaled'], _ = normalise_flow(
+            table.pit_large_cex_netflow_usdt, table.transfer_volume_usdt, norm)
     table = pd.concat([table, market_controls(inputs['daily'], dates), chain_controls(inputs['eth_stats'], dates),
                        har_terms(table.log_rv, table.rv, cfg['volatility']['har_week_days'],
                                  cfg['volatility']['har_month_days'])], axis=1)
     table['day_of_week'] = pd.to_datetime(table.index).dayofweek
     table['available_at'] = (pd.to_datetime(table.index, utc=True) + pd.Timedelta(days=1)).astype(str)
-    for h in cfg['horizons']:
-        table[f'target_log_rv_h{h}'] = table.log_rv.shift(-h)
-    return table
+    targets = forward_targets(table.rv, cfg['horizons'], cfg['target']['horizon_definition'])
+    return pd.concat([table, targets], axis=1)
 
 
-def feature_columns(table):
-    """Everything except forward targets and bookkeeping."""
+def non_target_columns(table):
     return [c for c in table.columns if not c.startswith('target_')]
 
 
+def feature_columns(table):
+    """Union of the explicit predictor sets that exist in the table (no targets, no bookkeeping)."""
+    wanted = {c for cols in predictor_sets().values() for c in cols}
+    return [c for c in table.columns if c in wanted]
+
+
+# ----------------------------------------------------------------------------- derived reporting tables
+
+def coverage_tables(table, n_retrospective_cex=None):
+    """Daily and monthly/overall coverage of the PIT CEX set (observed share, not CEX recall)."""
+    t = table
+    vol = t.transfer_volume_usdt
+    incident = t.pit_cex_external_in_usdt + t.pit_cex_external_out_usdt + t.pit_cex_internal_usdt
+    endpoint = t.pit_cex_external_in_usdt + t.pit_cex_external_out_usdt + 2 * t.pit_cex_internal_usdt
+    daily = pd.DataFrame({
+        'n_retrospective_cex_set': n_retrospective_cex, 'n_pit_cex_available': t.n_pit_cex_endpoints,
+        'n_pit_cex_active': t.n_pit_cex_active, 'transfer_volume_usdt': vol,
+        'pit_incident_usdt': incident, 'pit_endpoint_usdt': endpoint,
+        'pit_incident_share': incident / vol.where(vol > 0),
+        'pit_endpoint_volume_share': endpoint / (2 * vol.where(vol > 0)),
+        'flow_available': t.pit_cex_netflow_usdt.notna()})
+    daily.index.name = 'date'
+    ok = daily[daily.flow_available].copy()
+    ok['period'] = pd.to_datetime(ok.index).strftime('%Y-%m')
+
+    def summarize(g, label):
+        v = g.transfer_volume_usdt.sum()
+        return dict(period=label, n_days_available=int(len(g)), transfer_volume_usdt=float(v),
+                    pit_incident_usdt=float(g.pit_incident_usdt.sum()),
+                    pit_endpoint_volume_share=float(g.pit_endpoint_usdt.sum() / (2 * v)) if v > 0 else np.nan,
+                    pit_incident_share=float(g.pit_incident_usdt.sum() / v) if v > 0 else np.nan,
+                    mean_n_pit_cex_available=float(g.n_pit_cex_available.mean()),
+                    mean_n_pit_cex_active=float(g.n_pit_cex_active.mean()))
+    rows = [summarize(g, p) for p, g in ok.groupby('period', sort=True)]
+    rows.append(summarize(ok, 'ALL'))
+    return daily.reset_index(), pd.DataFrame(rows)
+
+
+def overlap_table(table):
+    cols = ['n_cohort_members', 'has_cohort', 'n_cohort_cex_retro_overlap', 'cohort_cex_pit_overlap',
+            'n_cohort_members_active', 'n_cohort_members_active_pit', 'overlap_edge_retro_usdt',
+            'overlap_edge_pit_usdt', 'n_pit_cex_endpoints']
+    out = table[cols].copy()
+    out['pit_overlap_share_of_members'] = out.cohort_cex_pit_overlap / out.n_cohort_members.where(out.n_cohort_members > 0)
+    return out.reset_index()
+
+
+def eligibility_table(table, cfg):
+    """Why each day is (not) usable: warm-up vs missing vs genuinely observed zero flow."""
+    t = table
+    warm = cfg['normalisation']['minimum_history_days']
+    pos = pd.Series(np.arange(len(t)), index=t.index)
+
+    def z_status(z):
+        return pd.Series(np.where(z.notna(), 'ok', np.where(pos < warm, 'warmup', 'missing_input')), index=t.index)
+
+    out = pd.DataFrame(index=t.index)
+    out['has_cohort'] = t.has_cohort
+    out['n_pit_cex_endpoints'] = t.n_pit_cex_endpoints
+    out['pit_cex_flow_status'] = np.where(t.pit_cex_netflow_usdt.isna(), 'unavailable_no_labels',
+                                          np.where(t.pit_cex_external_in_usdt.add(t.pit_cex_external_out_usdt)
+                                                   .add(t.pit_cex_internal_usdt).eq(0), 'observed_zero', 'observed'))
+    out['whaleflow_pit_status'] = np.where(~t.has_cohort, 'no_cohort',
+                                           np.where(t.n_pit_cex_endpoints.eq(0), 'no_pit_labels',
+                                                    np.where(t.whale_to_cex_pit_usdt.add(t.cex_to_whale_pit_usdt).eq(0),
+                                                             'observed_zero', 'observed')))
+    out['pit_cex_z_status'] = z_status(t.pit_cex_netflow_z)
+    out['whaleflow_pit_z_status'] = z_status(t.whaleflow_pit_z)
+    out['rv_available'] = t.rv.notna()
+    for branch, sets in [('retro_cex', RETRO_CEX_PREDICTORS), ('retro_whale', RETRO_WHALE_PREDICTORS),
+                         ('pit_cex', PIT_CEX_PREDICTORS), ('pit_whale', PIT_WHALE_PREDICTORS)]:
+        ready = t[sets + CONTROL_COLUMNS].notna().all(axis=1)
+        out[f'predictors_ready_{branch}'] = ready
+        for h in cfg['horizons']:
+            out[f'eligible_{branch}_h{h}'] = ready & t[f'target_log_rv_h{h}'].notna()
+    out.index.name = 'date'
+    return out.reset_index()
+
+
+# ----------------------------------------------------------------------------- PIT checks (truncation/mutation)
+
+def truncate_history(history, cut):
+    """Registry as it would be known when day `cut` starts: later claims removed, later end dates unknown."""
+    last = pd.Timestamp(cut, tz='UTC')
+    h = history.copy()
+    avail = pd.to_datetime(h.public_available_at, utc=True)
+    start = pd.to_datetime(h.effective_from, utc=True)
+    h = h.loc[avail.lt(last) & start.lt(last)].copy()
+    end = pd.to_datetime(h.effective_to, utc=True)
+    h.loc[end.gt(last).to_numpy(), 'effective_to'] = pd.NaT
+    return h
+
+
 def truncate_inputs(inputs, cut):
-    """Inputs as they would have existed at the end of day `cut` (inclusive)."""
+    """Inputs as they would have existed at the end of day `cut` (inclusive); labels truncated too."""
     end = pd.Timestamp(cut, tz='UTC') + pd.Timedelta(days=1)
-    return dict(
+    cohort = normalise_cohort(inputs['cohort'])
+    result = dict(
         edges=inputs['edges'][inputs['edges'].time_window <= cut],
-        cohort=inputs['cohort'][inputs['cohort'].date <= cut],
+        cohort=cohort[cohort.date <= cut],
         cex=inputs['cex'],
         hourly=inputs['hourly'][pd.to_datetime(inputs['hourly'].datetime_utc, utc=True) < end],
         daily=inputs['daily'][pd.to_datetime(inputs['daily'].datetime_utc, utc=True) < end],
         eth_stats=inputs['eth_stats'][pd.to_datetime(inputs['eth_stats'].tx_date) <= pd.Timestamp(cut)])
+    if 'cex_history' in inputs:
+        result['cex_history'] = truncate_history(inputs['cex_history'], cut)
+    if 'labeler' in inputs:
+        result['labeler'] = inputs['labeler']
+    return result
 
 
-def pit_check(inputs, cfg, dates, cuts, tolerance=1e-9):
-    """Recompute with future data removed; features for days <= cut must not change.
+def _compare(full, part, upto, cols):
+    a, b = full.loc[upto, cols], part.loc[upto, cols]
+    num = a.select_dtypes('number').columns
+    diff = (a[num] - b[num]).abs()
+    scale = a[num].abs().clip(lower=1.0)
+    bad = ((diff / scale) > 1e-9) | (a[num].isna() != b[num].isna())
+    other = [c for c in cols if c not in num]
+    bad_other = (a[other] != b[other]).any() if other else pd.Series(dtype=bool)
+    return sorted(set(bad.columns[bad.any()]) | set(bad_other.index[bad_other]))
 
-    A feature that secretly reads data after D fails here. Targets are excluded
-    by construction (they are allowed to look forward).
-    """
+
+def _future_label_rows(history, edges, cut, n=20):
+    """Synthetic approved CEX claims that become public exactly at/after the cutoff of day `cut`."""
+    known = set(history.address)
+    volume = pd.concat([edges.groupby('from_address').total_value.sum(),
+                        edges.groupby('to_address').total_value.sum()]).groupby(level=0).sum()
+    picks = [a for a in volume.sort_values(ascending=False).index if a not in known][:n]
+    if not picks or history.empty:
+        return history.iloc[:0]
+    last = pd.Timestamp(cut, tz='UTC')
+    rows = []
+    for i, address in enumerate(picks):
+        r = history.iloc[[0]].copy()
+        when = last if i % 2 == 0 else last + pd.Timedelta(days=30)
+        r['address'] = address
+        r['claim_id'] = f'synthetic_future_{i}'
+        r['public_available_at'] = when
+        r['effective_from'] = when
+        r['effective_to'] = pd.NaT
+        rows.append(r)
+    return pd.concat(rows, ignore_index=True)
+
+
+def pit_check(inputs, cfg, dates, cuts):
+    """Recompute with future data AND future-only labels removed/added; features for days <= cut must not change."""
     full = build_features(inputs, cfg, dates)
-    cols = [c for c in feature_columns(full) if c != 'available_at']
+    cols = [c for c in non_target_columns(full) if c != 'available_at']
     rows = []
     for cut in cuts:
         upto = [d for d in dates if d <= cut]
         part = build_features(truncate_inputs(inputs, cut), cfg, upto)
-        a, b = full.loc[upto, cols], part.loc[upto, cols]
-        num = a.select_dtypes('number').columns
-        diff = (a[num] - b[num]).abs()
-        scale = a[num].abs().clip(lower=1.0)
-        bad = ((diff / scale) > tolerance) | (a[num].isna() != b[num].isna())
-        other = [c for c in cols if c not in num]
-        bad_other = (a[other] != b[other]).any() if other else pd.Series(dtype=bool)
-        failed = sorted(set(bad.columns[bad.any()]) | set(bad_other.index[bad_other]))
+        failed = _compare(full, part, upto, cols)
         rows.append(dict(check='pit_truncation', cut_date=cut, status='PASS' if not failed else 'FAIL',
                          detail=','.join(failed)))
+        if inputs.get('cex_history') is not None and len(inputs['cex_history']):
+            history = inputs['cex_history']
+            extra = _future_label_rows(history, inputs['edges'], cut)
+            mutated = dict(inputs, cex_history=pd.concat([history, extra], ignore_index=True))
+            base = build_features(dict(inputs), cfg, upto)
+            alt = build_features(mutated, cfg, upto)
+            failed = _compare(base, alt, upto, cols)
+            rows.append(dict(check='pit_future_label_mutation', cut_date=cut,
+                             status='PASS' if not failed else 'FAIL',
+                             detail=f'n_future_labels={len(extra)};' + ','.join(failed)))
     return pd.DataFrame(rows)
 
 
-def validate(table, cfg, dates, t12_cex=None):
+# ----------------------------------------------------------------------------- validation
+
+def label_boundary_checks(history, labeler=None):
+    """Labels whose availability / start / end sit exactly on the cutoff D (strict inequality, 1 µs resolution)."""
+    if labeler is None:
+        from src.cex_label_history import available_cex_labels as labeler
+    if history.empty:
+        return [('label_boundary_checks', False, 'empty history')]
+    day = pd.Timestamp('2025-06-15', tz='UTC')
+    eps = pd.Timedelta(microseconds=1)
+
+    def included(avail, start, end):
+        r = history.iloc[[0]].copy()
+        r['address'] = '0x' + 'ab' * 20
+        r['public_available_at'], r['effective_from'], r['effective_to'] = avail, start, end
+        return len(labeler(r, day)) == 1
+    far = day - pd.Timedelta(days=100)
+    cases = [
+        ('available_at == D excluded', not included(day, far, pd.NaT)),
+        ('available_at == D-1us included', included(day - eps, far, pd.NaT)),
+        ('effective_from == D excluded', not included(far, day, pd.NaT)),
+        ('effective_from == D-1us included', included(far, day - eps, pd.NaT)),
+        ('effective_to == D excluded', not included(far, far, day)),
+        ('effective_to == D+1us included', included(far, far, day + eps)),
+        ('effective_to null included', included(far, far, pd.NaT)),
+    ]
+    return [(f'label_boundary: {name}', ok, '') for name, ok in cases]
+
+
+def independent_asof_check(history, cex_by_day, dates):
+    """Recompute every C_D with a separate numpy implementation of the same published rule."""
+    if history.empty:
+        return all(not v for v in cex_by_day.values()), 0
+    avail = pd.to_datetime(history.public_available_at, utc=True).to_numpy('datetime64[ns]')
+    start = pd.to_datetime(history.effective_from, utc=True).to_numpy('datetime64[ns]')
+    end = pd.to_datetime(history.effective_to, utc=True).to_numpy('datetime64[ns]')
+    ok_row = (history.review_status.eq('approved') & history.human_verified.eq(True)
+              & history.entity_type.eq('CEX') & history.chain.eq('ethereum')).to_numpy()
+    address = history.address.to_numpy()
+    mismatches = 0
+    for day in dates:
+        t = np.datetime64(pd.Timestamp(day, tz='UTC').tz_convert(None), 'ns')
+        keep = ok_row & (avail < t) & (start < t) & (np.isnat(end) | (end > t))
+        if frozenset(address[keep]) != cex_by_day[day]:
+            mismatches += 1
+    return mismatches == 0, mismatches
+
+
+def known_example_checks():
+    """Hand-computed flows on a tiny graph: direction, internal/external split, conservation, NaN vs 0."""
+    day, empty_day, no_label_day = '2025-01-02', '2025-01-03', '2025-01-04'
+    dates = [day, empty_day, no_label_day]
+    edges = pd.DataFrame([
+        ('A', 'X', 100.0), ('X', 'B', 40.0), ('X', 'Y', 7.0), ('W1', 'X', 30.0), ('Y', 'W1', 10.0), ('Z', 'W1', 5.0),
+    ], columns=['from_address', 'to_address', 'total_value'])
+    edges['time_window'] = day
+    c = frozenset({'X', 'Y', 'Z'})
+    cex_by_day = {day: c, empty_day: c, no_label_day: frozenset()}
+    flow = pit_cex_netflow(edges, cex_by_day, dates)
+    cohort = pd.DataFrame({'date': [day, day, empty_day, no_label_day], 'address': ['W1', 'Z', 'W1', 'W1']})
+    whale = whale_flow(edges, cohort, dates, cex_by_day=cex_by_day)
+    row, w = flow.loc[day], whale.loc[day]
+    rev = edges.rename(columns={'from_address': 'to_address', 'to_address': 'from_address'})
+    flow_rev = pit_cex_netflow(rev, cex_by_day, dates).loc[day]
+    close = lambda a, b: bool(np.isclose(a, b))
+    return [
+        ('example_inflow', close(row.pit_cex_external_in_usdt, 130.0), ''),
+        ('example_outflow', close(row.pit_cex_external_out_usdt, 55.0), ''),
+        ('example_internal', close(row.pit_cex_internal_usdt, 7.0), ''),
+        ('example_netflow', close(row.pit_cex_netflow_usdt, 75.0), ''),
+        ('example_direction_reversal', close(flow_rev.pit_cex_netflow_usdt, -75.0), ''),
+        ('example_conservation', close(row.pit_cex_external_in_usdt + row.pit_cex_external_out_usdt
+                                       + row.pit_cex_internal_usdt, 192.0), ''),
+        ('example_labels_no_edges_is_zero', close(flow.loc[empty_day, 'pit_cex_netflow_usdt'], 0.0), ''),
+        ('example_no_labels_is_nan', bool(np.isnan(flow.loc[no_label_day, 'pit_cex_netflow_usdt'])), ''),
+        ('example_whale_to_cex', close(w.whale_to_cex_pit_usdt, 30.0), ''),
+        ('example_cex_to_whale_includes_overlap_node_as_cex', close(w.cex_to_whale_pit_usdt, 15.0), ''),
+        ('example_whaleflow', close(w.whaleflow_pit_usdt, 15.0), ''),
+        ('example_overlap_count_and_volume', int(w.cohort_cex_pit_overlap) == 1 and close(w.overlap_edge_pit_usdt, 5.0), ''),
+        ('example_cohort_no_edges_is_zero', close(whale.loc[empty_day, 'whaleflow_pit_usdt'], 0.0), ''),
+        ('example_cohort_no_labels_is_nan', bool(np.isnan(whale.loc[no_label_day, 'whaleflow_pit_usdt'])), ''),
+    ]
+
+
+def _expected_target(rv, h, definition):
+    values, n = rv.to_numpy(), len(rv)
+    out = np.full(n, np.nan)
+    for i in range(n):
+        if definition == 'single_day':
+            v = values[i + h] if i + h < n else np.nan
+        else:
+            w = values[i + 1:i + h + 1]
+            v = w.sum() if len(w) == h and np.isfinite(w).all() else np.nan
+        out[i] = np.log(v) if np.isfinite(v) and v > 0 else np.nan
+    return out
+
+
+def validate(table, cfg, dates, t12_cex=None, expected_days=None):
     rows = []
 
     def add(check, ok, detail=''):
         rows.append(dict(check=check, cut_date='', status='PASS' if ok else 'FAIL', detail=str(detail)))
 
+    def same(a, b):
+        return bool(np.allclose(a, b, equal_nan=True))
+
     add('calendar_complete_unique', list(table.index) == list(dates) and table.index.is_unique, len(table))
-    flows = table[FLOW_COLUMNS + ['transfer_volume_usdt']]
+    if expected_days is not None:
+        add('calendar_expected_days', len(table) == expected_days, f'{len(table)} vs {expected_days}')
+    flows = table[RETRO_FLOW_COLUMNS + ['transfer_volume_usdt']]
     add('flows_finite_nonnegative_except_net', bool(np.isfinite(flows).all().all()) and bool(
         (table[['cex_external_in_usdt', 'cex_external_out_usdt', 'cex_internal_usdt', 'transfer_volume_usdt']] >= 0).all().all()))
-    add('netflow_identity', bool(np.allclose(table.cex_netflow_usdt, table.cex_external_in_usdt - table.cex_external_out_usdt)))
+    add('netflow_identity', same(table.cex_netflow_usdt, table.cex_external_in_usdt - table.cex_external_out_usdt))
     add('cex_flow_not_above_volume', bool((table.cex_external_in_usdt + table.cex_external_out_usdt
                                            + table.cex_internal_usdt <= table.transfer_volume_usdt * (1 + 1e-9)).all()))
-    add('whaleflow_identity', bool(np.allclose(table.whaleflow_usdt, table.whale_to_cex_usdt - table.cex_to_whale_usdt)))
-    add('cohort_excludes_cex', bool(table.n_cohort_cex_removed.ge(0).all()),
-        f"removed_total={int(table.n_cohort_cex_removed.sum())}")
+    if 'pit_cex_netflow_usdt' in table:
+        no_label = table.n_pit_cex_endpoints.eq(0)
+        add('pit_netflow_identity', same(table.pit_cex_netflow_usdt,
+                                         table.pit_cex_external_in_usdt - table.pit_cex_external_out_usdt))
+        add('pit_flow_nan_iff_no_labels', bool((table.pit_cex_netflow_usdt.isna() == no_label).all()),
+            f'days_without_labels={int(no_label.sum())}')
+        total = table.pit_cex_external_in_usdt + table.pit_cex_external_out_usdt + table.pit_cex_internal_usdt
+        add('pit_flow_not_above_volume', bool((total.dropna() <= table.transfer_volume_usdt[total.notna()] * (1 + 1e-9)).all()))
+        scaled, z = normalise_flow(table.pit_cex_netflow_usdt, table.transfer_volume_usdt, cfg['normalisation'])
+        add('pit_scaled_z_use_pit_flow', same(scaled, table.pit_cex_netflow_scaled) and same(z, table.pit_cex_netflow_z))
+        scaled, z = normalise_flow(table.whaleflow_pit_usdt, table.transfer_volume_usdt, cfg['normalisation'])
+        add('whaleflow_pit_scaled_z_use_pit_flow', same(scaled, table.whaleflow_pit_scaled) and same(z, table.whaleflow_pit_z))
+        add('whaleflow_pit_identity', same(table.whaleflow_pit_usdt, table.whale_to_cex_pit_usdt - table.cex_to_whale_pit_usdt))
+        expect_nan = ~(table.has_cohort.astype(bool) & table.n_pit_cex_endpoints.gt(0))
+        add('whaleflow_pit_nan_iff_no_cohort_or_no_labels', bool((table.whaleflow_pit_usdt.isna() == expect_nan).all()),
+            f'nan_days={int(expect_nan.sum())}')
+        add('cohort_overlap_nonnegative', bool((table.cohort_cex_pit_overlap >= 0).all()
+                                                 and (table.cohort_cex_pit_overlap <= table.n_cohort_members).all()),
+            f"member_days={int(table.cohort_cex_pit_overlap.sum())}")
+    add('whaleflow_identity', same(table.whaleflow_usdt, table.whale_to_cex_usdt - table.cex_to_whale_usdt))
+    add('whaleflow_nan_without_cohort', bool(table.loc[~table.has_cohort.astype(bool), 'whaleflow_usdt'].isna().all()),
+        f"days_without_cohort={int((~table.has_cohort.astype(bool)).sum())}")
     rv_ok = table.rv.dropna()
     add('rv_nonnegative', bool((rv_ok >= 0).all()), f"nan_days={int(table.rv.isna().sum())}")
+    add('rv_sqrt_relation', same(table.realized_vol ** 2, table.rv))
     add('rv_full_day_bars', bool(table.loc[table.rv.notna(), 'n_hourly_returns'].eq(cfg['volatility']['bars_per_day']).all()))
+    definition = cfg['target']['horizon_definition']
     for h in cfg['horizons']:
         t = table[f'target_log_rv_h{h}']
-        ok = bool(t.iloc[-h:].isna().all()) and bool(np.allclose(t.iloc[:-h].dropna(), table.log_rv.shift(-h).iloc[:-h].dropna()))
-        add(f'target_h{h}_forward_only', ok)
+        expected = _expected_target(table.rv, h, definition)
+        add(f'target_h{h}_matches_definition_{definition}', bool(t.iloc[-h:].isna().all()) and same(t.to_numpy(), expected))
     add('available_after_day_end', bool((pd.to_datetime(table.available_at, utc=True)
                                           > pd.to_datetime(table.index, utc=True)).all()))
+    sets = predictor_sets()
+    union = {c for cols in sets.values() for c in cols}
+    add('predictor_sets_clean', bool(not any(c.startswith('target_') or c in BOOKKEEPING_COLUMNS for c in union)
+                                     and union <= set(table.columns)),
+        ','.join(sorted(union - set(table.columns))))
+    add('pit_and_retro_predictors_disjoint', not (set(PIT_CEX_PREDICTORS + PIT_WHALE_PREDICTORS)
+                                                   & set(RETRO_CEX_PREDICTORS + RETRO_WHALE_PREDICTORS)))
     if t12_cex is not None:
         t = t12_cex.set_index('date').reindex(dates)
         diff = float((t.cex_netflow_usdt - table.cex_netflow_usdt).abs().max())
-        add('matches_t12_cex_netflow', diff <= 1e-6 * max(1.0, float(table.cex_netflow_usdt.abs().max())), f'max_abs_diff={diff}')
+        add('retrospective_matches_t12_cex_netflow', diff <= 1e-6 * max(1.0, float(table.cex_netflow_usdt.abs().max())),
+            f'max_abs_diff={diff}')
     return pd.DataFrame(rows)
