@@ -83,3 +83,13 @@ python scripts/validate_t12_v2.py
 ```
 
 Các lệnh trên kiểm tra T07/T12 và gate trong scope của chúng, không tự chạy/sửa T14.
+
+## Cập nhật hợp đồng T14 ngày 24/10/2026
+
+Đã triển khai `t14_inputs_v1` theo đề xuất trong `src/t14_readiness.py`, tích hợp tại T14 và validator
+`scripts/validate_t14_release.py`. Endpoint/cohort gate T07/T12 được giữ nguyên; các cờ RQ3 upstream
+chỉ là metadata tham khảo. Thay cho việc chờ các cờ đó, T14 xuất `t14_downstream_gate.json` với
+`forecast_inputs_ready_cex` và `forecast_inputs_ready_activity_cohort` theo điều kiện kỹ thuật/scope.
+Hai cờ này chứng nhận input theo phạm vi, không chứng nhận nhà đầu tư cá nhân hoặc RQ3 đã có kết quả.
+Consumer mới phải kiểm tra version/hash/gate rồi mới dùng eligibility. Xem đặc tả T14 cho schema mới.
+Bản đóng gói hiện tại chỉ ở máy; chưa upload HF.

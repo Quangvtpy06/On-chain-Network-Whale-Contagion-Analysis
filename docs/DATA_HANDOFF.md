@@ -113,3 +113,21 @@ CEX NetFlow chỉ dùng CEX, loại DEX khỏi tập ví sàn, tách chuyển n�
 `cex_coverage.parquet` đo tỷ trọng volume của ví CEX đã biết, không đo recall
 CEX thật vì Unknown có thể còn ví sàn. Nhãn hiện tại dùng mô tả hồi cứu;
 forecast RQ3 cần nhãn PIT. Xem T12_lagged_cohort_and_CEX_report.md.
+
+## T14: scoped release và input theo revision
+
+Chuẩn bị manifest bằng `python scripts/prepare_t14_release.py --input-revision <revision-input>`
+sau khi commit source/config đã nghiệm thu. Script xác minh gate t14_inputs_v1, tất cả artifact và
+bytes của source/config trong commit, rồi ghi `data/hf_t14_release_manifest.json`. Không tự upload.
+
+Root manifest ghi `code_git_commit` và `remote_dependencies`, mỗi dependency có thể có revision riêng.
+Khi tải để tái lập, lấy source theo code_git_commit; output/config theo revision receipt phát hành;
+input theo revision của từng remote_dependency, ghi vào đúng path và kiểm tra SHA-256.
+Không mặc định input luôn là bản latest: output đã kiểm định có thể dùng snapshot nguồn bất biến trước đó.
+Bản T14 này ghim nguồn ở de42b5dc4e5c3d63161b38ad4f528d97c47f5068; đặc biệt market daily
+đã được kiểm định có hash 540b408c..., khác cách lưu/rounding của bản latest 1682966f....
+Không ghi đè nguồn chung để buộc các release khác cùng hash.
+
+Sau khi tải, chạy `python scripts/validate_t14_release.py`. Publisher hỗ trợ dependency revision và
+chỉ thay artifact trong upload_files; receipt sau upload là bằng chứng revision thực tế. Các cờ input-ready
+không chứng nhận danh tính cá nhân hoặc RQ3 đã được trả lời.

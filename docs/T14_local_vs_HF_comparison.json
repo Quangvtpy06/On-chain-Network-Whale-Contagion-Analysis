@@ -1,0 +1,931 @@
+{
+  "repo_id": "team-crypto/Market-data-crypto-project",
+  "hf_revision": "8163ab9056da671992da2bf90b188cca2e2db79c",
+  "local_release_validation": {
+    "contract_version": "t14_inputs_v1",
+    "artifacts_verified": 9,
+    "forecast_inputs_ready_cex": true,
+    "forecast_inputs_ready_activity_cohort": true,
+    "policy": {
+      "cex_scope": "observed_approved_cex_subset",
+      "cohort_scope": "unidentified_high_activity_addresses",
+      "endpoint_information_policy": "approved_public_history_asof_day_start",
+      "cohort_information_policy": "t12_v2_research_knowledge",
+      "boundary_policy": "keep_membership_cohort_side_W_minus_C",
+      "individual_ownership_inference": false,
+      "selection_policy": "frozen_without_regression_outcomes"
+    },
+    "publication_state": "local_only_pending_user_upload_instruction"
+  },
+  "only_local": [
+    "t14_downstream_gate.json",
+    "t14_release_manifest.json"
+  ],
+  "only_HF": [],
+  "parquet": [
+    {
+      "file": "t14_cex_coverage_daily.parquet",
+      "local_rows": 655,
+      "HF_rows": 655,
+      "sha256_equal": false,
+      "local_sha256": "25c4902b81ee07016c70d77be5267578449a72d6550e0f6dd407e6b3ab421f41",
+      "HF_sha256": "ac393b235821cf85ab7afa2c02848581cd88ad0d7148042cd9beec2869e57efc",
+      "only_local_columns": [],
+      "only_HF_columns": [],
+      "dtype_differences": {},
+      "differences": [],
+      "writer": {
+        "local": "parquet-cpp-arrow version 25.0.1",
+        "HF": "parquet-cpp-arrow version 26.0.0"
+      },
+      "pandas_metadata": {
+        "local": "2.2.3",
+        "HF": "3.0.6"
+      },
+      "only_local_rows": [],
+      "only_HF_rows": [],
+      "numeric_exact_differences": {},
+      "common_row_values_match": true,
+      "all_values_match": true
+    },
+    {
+      "file": "t14_cex_coverage_monthly.parquet",
+      "local_rows": 23,
+      "HF_rows": 23,
+      "sha256_equal": false,
+      "local_sha256": "c2de626c7f9896287432d0b056cbd797927aa71e058c4628646f81f35dd2288e",
+      "HF_sha256": "6ee246f2aaaa54f2eb59c87e7ff882b693296d7be8e53c811d323b500cb0095c",
+      "only_local_columns": [],
+      "only_HF_columns": [],
+      "dtype_differences": {},
+      "differences": [],
+      "writer": {
+        "local": "parquet-cpp-arrow version 25.0.1",
+        "HF": "parquet-cpp-arrow version 26.0.0"
+      },
+      "pandas_metadata": {
+        "local": "2.2.3",
+        "HF": "3.0.6"
+      },
+      "only_local_rows": [],
+      "only_HF_rows": [],
+      "numeric_exact_differences": {},
+      "common_row_values_match": true,
+      "all_values_match": true
+    },
+    {
+      "file": "t14_cohort_cex_overlap_daily.parquet",
+      "local_rows": 655,
+      "HF_rows": 655,
+      "sha256_equal": false,
+      "local_sha256": "e62b2b3c5ff095a3624e5a1a520f9b75f8b241e0ba136f6d2d472c40b260e544",
+      "HF_sha256": "bcbef605c1fdf3fb68a5e20e25f63dac505735e279c47e50eaf8a406f5040767",
+      "only_local_columns": [],
+      "only_HF_columns": [],
+      "dtype_differences": {},
+      "differences": [],
+      "writer": {
+        "local": "parquet-cpp-arrow version 25.0.1",
+        "HF": "parquet-cpp-arrow version 26.0.0"
+      },
+      "pandas_metadata": {
+        "local": "2.2.3",
+        "HF": "3.0.6"
+      },
+      "only_local_rows": [],
+      "only_HF_rows": [],
+      "numeric_exact_differences": {},
+      "common_row_values_match": true,
+      "all_values_match": true
+    },
+    {
+      "file": "t14_features_daily.parquet",
+      "local_rows": 655,
+      "HF_rows": 655,
+      "sha256_equal": false,
+      "local_sha256": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195",
+      "HF_sha256": "6f8d6f6c473d746d99cf18524559dd40a3e0dc01ac11b9433cce10ed4493319f",
+      "only_local_columns": [],
+      "only_HF_columns": [],
+      "dtype_differences": {},
+      "differences": [
+        {
+          "column": "log_rv",
+          "changed_cells": 654,
+          "examples": [
+            {
+              "key": "2025-01-02",
+              "local": "-7.338076624710806",
+              "HF": "-11.702015688789691"
+            },
+            {
+              "key": "2025-01-03",
+              "local": "-7.573892935279894",
+              "HF": "-11.484858758606585"
+            },
+            {
+              "key": "2025-01-04",
+              "local": "-7.836677620209069",
+              "HF": "-12.221438043416347"
+            }
+          ]
+        },
+        {
+          "column": "log_rv_month",
+          "changed_cells": 625,
+          "examples": [
+            {
+              "key": "2025-01-31",
+              "local": "-6.525572604354713",
+              "HF": "-10.719049858237543"
+            },
+            {
+              "key": "2025-02-01",
+              "local": "-6.518755662031733",
+              "HF": "-10.710181011877165"
+            },
+            {
+              "key": "2025-02-02",
+              "local": "-6.446496880015031",
+              "HF": "-10.668198140011752"
+            }
+          ]
+        },
+        {
+          "column": "log_rv_week",
+          "changed_cells": 648,
+          "examples": [
+            {
+              "key": "2025-01-08",
+              "local": "-7.088089317508601",
+              "HF": "-11.346579953207796"
+            },
+            {
+              "key": "2025-01-09",
+              "local": "-6.973748641943426",
+              "HF": "-11.0803493802425"
+            },
+            {
+              "key": "2025-01-10",
+              "local": "-6.838334576281939",
+              "HF": "-10.99294031655623"
+            }
+          ]
+        },
+        {
+          "column": "realized_vol",
+          "changed_cells": 654,
+          "examples": [
+            {
+              "key": "2025-01-02",
+              "local": "0.025500982137703153",
+              "HF": "0.0028769981300020503"
+            },
+            {
+              "key": "2025-01-03",
+              "local": "0.0226647037012444",
+              "HF": "0.0032069678627108453"
+            },
+            {
+              "key": "2025-01-04",
+              "local": "0.019874081961905005",
+              "HF": "0.0022189547624259843"
+            }
+          ]
+        },
+        {
+          "column": "realized_vol_5m",
+          "changed_cells": 654,
+          "examples": [
+            {
+              "key": "2025-01-02",
+              "local": "0.02479602321516506",
+              "HF": "0.006464394456559217"
+            },
+            {
+              "key": "2025-01-03",
+              "local": "0.021919796862067898",
+              "HF": "0.007171052282716356"
+            },
+            {
+              "key": "2025-01-04",
+              "local": "0.020399264931900037",
+              "HF": "0.004961686910678442"
+            }
+          ]
+        },
+        {
+          "column": "rv",
+          "changed_cells": 654,
+          "examples": [
+            {
+              "key": "2025-01-02",
+              "local": "0.0006503000899874552",
+              "HF": "8.277118240035295e-06"
+            },
+            {
+              "key": "2025-01-03",
+              "local": "0.0005136887938652016",
+              "HF": "1.0284642872460166e-05"
+            },
+            {
+              "key": "2025-01-04",
+              "local": "0.00039497913382851793",
+              "HF": "4.923760237692957e-06"
+            }
+          ]
+        },
+        {
+          "column": "rv_5m",
+          "changed_cells": 654,
+          "examples": [
+            {
+              "key": "2025-01-02",
+              "local": "0.0006148427672870045",
+              "HF": "4.1788395689993534e-05"
+            },
+            {
+              "key": "2025-01-03",
+              "local": "0.0004804774944743216",
+              "HF": "5.142399084145146e-05"
+            },
+            {
+              "key": "2025-01-04",
+              "local": "0.0004161300097618466",
+              "HF": "2.461833699959778e-05"
+            }
+          ]
+        },
+        {
+          "column": "target_log_rv_h1",
+          "changed_cells": 654,
+          "examples": [
+            {
+              "key": "2025-01-01",
+              "local": "-7.338076624710806",
+              "HF": "-11.702015688789691"
+            },
+            {
+              "key": "2025-01-02",
+              "local": "-7.573892935279894",
+              "HF": "-11.484858758606585"
+            },
+            {
+              "key": "2025-01-03",
+              "local": "-7.836677620209069",
+              "HF": "-12.221438043416347"
+            }
+          ]
+        },
+        {
+          "column": "target_log_rv_h3",
+          "changed_cells": 652,
+          "examples": [
+            {
+              "key": "2025-01-01",
+              "local": "-7.836677620209069",
+              "HF": "-12.221438043416347"
+            },
+            {
+              "key": "2025-01-02",
+              "local": "-8.23363139462674",
+              "HF": "-13.289093113527217"
+            },
+            {
+              "key": "2025-01-03",
+              "local": "-7.352755882868225",
+              "HF": "-11.78000636067203"
+            }
+          ]
+        },
+        {
+          "column": "target_log_rv_h7",
+          "changed_cells": 648,
+          "examples": [
+            {
+              "key": "2025-01-01",
+              "local": "-6.4448191630734195",
+              "HF": "-10.862606675428916"
+            },
+            {
+              "key": "2025-01-02",
+              "local": "-6.601505964729874",
+              "HF": "-10.304143210880872"
+            },
+            {
+              "key": "2025-01-03",
+              "local": "-6.526624754813894",
+              "HF": "-10.812840491358699"
+            }
+          ]
+        }
+      ],
+      "writer": {
+        "local": "parquet-cpp-arrow version 25.0.1",
+        "HF": "parquet-cpp-arrow version 26.0.0"
+      },
+      "pandas_metadata": {
+        "local": "2.2.3",
+        "HF": "3.0.6"
+      },
+      "only_local_rows": [],
+      "only_HF_rows": [],
+      "numeric_exact_differences": {
+        "log_rv": {
+          "different_exact_cells": 654,
+          "max_abs_error": 5.808456043517943,
+          "outside_tolerance": 654
+        },
+        "log_rv_month": {
+          "different_exact_cells": 625,
+          "max_abs_error": 4.420294292564542,
+          "outside_tolerance": 625
+        },
+        "log_rv_week": {
+          "different_exact_cells": 648,
+          "max_abs_error": 4.66695269643378,
+          "outside_tolerance": 648
+        },
+        "log_volume_usdt": {
+          "different_exact_cells": 10,
+          "max_abs_error": 3.552713678800501e-15,
+          "outside_tolerance": 0
+        },
+        "realized_vol": {
+          "different_exact_cells": 654,
+          "max_abs_error": 0.1596315111932445,
+          "outside_tolerance": 654
+        },
+        "realized_vol_5m": {
+          "different_exact_cells": 654,
+          "max_abs_error": 0.11998481305342738,
+          "outside_tolerance": 654
+        },
+        "rv": {
+          "different_exact_cells": 654,
+          "max_abs_error": 0.031825984612694966,
+          "outside_tolerance": 654
+        },
+        "rv_5m": {
+          "different_exact_cells": 654,
+          "max_abs_error": 0.02505954256185867,
+          "outside_tolerance": 654
+        },
+        "taker_imbalance": {
+          "different_exact_cells": 417,
+          "max_abs_error": 2.2898349882893854e-16,
+          "outside_tolerance": 0
+        },
+        "target_log_rv_h1": {
+          "different_exact_cells": 654,
+          "max_abs_error": 5.808456043517943,
+          "outside_tolerance": 654
+        },
+        "target_log_rv_h3": {
+          "different_exact_cells": 652,
+          "max_abs_error": 5.808456043517943,
+          "outside_tolerance": 652
+        },
+        "target_log_rv_h7": {
+          "different_exact_cells": 648,
+          "max_abs_error": 5.808456043517943,
+          "outside_tolerance": 648
+        }
+      },
+      "common_row_values_match": false,
+      "all_values_match": false
+    },
+    {
+      "file": "t14_sample_eligibility_daily.parquet",
+      "local_rows": 655,
+      "HF_rows": 655,
+      "sha256_equal": false,
+      "local_sha256": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+      "HF_sha256": "868d4a5cd15d330263bb99e481b9742eef1f797bd1ae0ff68ec9677957ff675b",
+      "only_local_columns": [],
+      "only_HF_columns": [],
+      "dtype_differences": {},
+      "differences": [],
+      "writer": {
+        "local": "parquet-cpp-arrow version 25.0.1",
+        "HF": "parquet-cpp-arrow version 26.0.0"
+      },
+      "pandas_metadata": {
+        "local": "2.2.3",
+        "HF": "3.0.6"
+      },
+      "only_local_rows": [],
+      "only_HF_rows": [],
+      "numeric_exact_differences": {},
+      "common_row_values_match": true,
+      "all_values_match": true
+    },
+    {
+      "file": "t14_validation.parquet",
+      "local_rows": 81,
+      "HF_rows": 64,
+      "sha256_equal": false,
+      "local_sha256": "645c91fad4e4f4aa0e1a3d20bfd98fef3949a2278bcc8a57813a873f07f456c5",
+      "HF_sha256": "a5947a5e289aa7ece396a5094e07b7788f0e0015c5b0329f407f59c47dc0977f",
+      "only_local_columns": [],
+      "only_HF_columns": [],
+      "dtype_differences": {},
+      "differences": [],
+      "writer": {
+        "local": "parquet-cpp-arrow version 25.0.1",
+        "HF": "parquet-cpp-arrow version 26.0.0"
+      },
+      "pandas_metadata": {
+        "local": "2.2.3",
+        "HF": "3.0.6"
+      },
+      "only_local_rows": [
+        "('contract_cohort_lag', '')",
+        "('contract_cohort_membership_preserved', '')",
+        "('contract_cohort_protocol_policy', '')",
+        "('contract_cohort_warmup_and_ranks', '')",
+        "('contract_cohort_warmup_status', '')",
+        "('contract_exact_available_at', '')",
+        "('contract_five_minute_return_counts', '')",
+        "('contract_five_minute_rv_independent', '')",
+        "('contract_log_rv_month_independent', '')",
+        "('contract_log_rv_week_independent', '')",
+        "('contract_minute_grid', '')",
+        "('contract_minute_positive_finite', '')",
+        "('contract_minute_return_counts', '')",
+        "('contract_minute_rv_independent', '')",
+        "('contract_target_h1_independent', '')",
+        "('contract_target_h3_independent', '')",
+        "('contract_target_h7_independent', '')"
+      ],
+      "only_HF_rows": [],
+      "numeric_exact_differences": {},
+      "common_row_values_match": true,
+      "all_values_match": false
+    }
+  ],
+  "json": {
+    "t14_reproducibility.json": {
+      "only_local_keys": [],
+      "only_HF_keys": [],
+      "changed_keys": [
+        "hashes"
+      ],
+      "local": {
+        "all_match": true,
+        "hashes": {
+          "t14_features_daily.parquet": {
+            "run1": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195",
+            "run2": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195"
+          },
+          "t14_cex_coverage_daily.parquet": {
+            "run1": "25c4902b81ee07016c70d77be5267578449a72d6550e0f6dd407e6b3ab421f41",
+            "run2": "25c4902b81ee07016c70d77be5267578449a72d6550e0f6dd407e6b3ab421f41"
+          },
+          "t14_cex_coverage_monthly.parquet": {
+            "run1": "c2de626c7f9896287432d0b056cbd797927aa71e058c4628646f81f35dd2288e",
+            "run2": "c2de626c7f9896287432d0b056cbd797927aa71e058c4628646f81f35dd2288e"
+          },
+          "t14_cohort_cex_overlap_daily.parquet": {
+            "run1": "e62b2b3c5ff095a3624e5a1a520f9b75f8b241e0ba136f6d2d472c40b260e544",
+            "run2": "e62b2b3c5ff095a3624e5a1a520f9b75f8b241e0ba136f6d2d472c40b260e544"
+          },
+          "t14_sample_eligibility_daily.parquet": {
+            "run1": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+            "run2": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb"
+          }
+        }
+      },
+      "HF": {
+        "all_match": true,
+        "hashes": {
+          "t14_features_daily.parquet": {
+            "run1": "6f8d6f6c473d746d99cf18524559dd40a3e0dc01ac11b9433cce10ed4493319f",
+            "run2": "6f8d6f6c473d746d99cf18524559dd40a3e0dc01ac11b9433cce10ed4493319f"
+          },
+          "t14_cex_coverage_daily.parquet": {
+            "run1": "ac393b235821cf85ab7afa2c02848581cd88ad0d7148042cd9beec2869e57efc",
+            "run2": "ac393b235821cf85ab7afa2c02848581cd88ad0d7148042cd9beec2869e57efc"
+          },
+          "t14_cex_coverage_monthly.parquet": {
+            "run1": "6ee246f2aaaa54f2eb59c87e7ff882b693296d7be8e53c811d323b500cb0095c",
+            "run2": "6ee246f2aaaa54f2eb59c87e7ff882b693296d7be8e53c811d323b500cb0095c"
+          },
+          "t14_cohort_cex_overlap_daily.parquet": {
+            "run1": "bcbef605c1fdf3fb68a5e20e25f63dac505735e279c47e50eaf8a406f5040767",
+            "run2": "bcbef605c1fdf3fb68a5e20e25f63dac505735e279c47e50eaf8a406f5040767"
+          },
+          "t14_sample_eligibility_daily.parquet": {
+            "run1": "868d4a5cd15d330263bb99e481b9742eef1f797bd1ae0ff68ec9677957ff675b",
+            "run2": "868d4a5cd15d330263bb99e481b9742eef1f797bd1ae0ff68ec9677957ff675b"
+          }
+        }
+      }
+    },
+    "t14_summary.json": {
+      "only_local_keys": [
+        "forecast_inputs_ready_activity_cohort",
+        "forecast_inputs_ready_cex",
+        "readiness_contract_version",
+        "ready_for_individual_investor_inference",
+        "rq3_answered",
+        "upstream_rq3_flags_informational_only"
+      ],
+      "only_HF_keys": [
+        "pit_forecast_ready_cex",
+        "pit_forecast_ready_whaleflow",
+        "upstream_rq3_gates"
+      ],
+      "changed_keys": [
+        "blocking_reasons",
+        "code_sha256",
+        "input_sha256",
+        "settings_sha256"
+      ],
+      "local": {
+        "protocol_id": "t14_v2",
+        "settings_sha256": "7e01b707e9043db0bcc9883987ed6ba500cb31cc23e7ef0c046987028c996813",
+        "code_sha256": {
+          "src/flow_volatility.py": "2129f5a26cc8b2c198ead2eb232d41809c2a403c00c7397c2e32c2343d7a7733",
+          "T14_Flow_Volatility.py": "f91ff8a68c0abdd697e9dad45ede14e54ab492076326d2a30dc83de804375a6b",
+          "src/cex_label_history.py": "892bd4f8e76728e9042bec1044369cf6ae0585521e08944f011ffeabd73dbcaa",
+          "src/t14_readiness.py": "49c89bbbbd3dfec48f0b0a5599ca50c0e97c27c472afcf1e463347e71da75898",
+          "scripts/validate_t14_release.py": "1c6854e129c485840d1803f3b4ce25730a4d136e467320258ab3a3e4ad15f593"
+        },
+        "input_sha256": {
+          "daily_edges_parquet": "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979",
+          "labels_parquet": "4bf112d171d080c739c2709d67fcf79dbbe0e922bd5727ca5770ca97dad7e00f",
+          "secondary_labels": "55e8d4031e3eb3eff6e5c0500d0f0a58e33102599d8efea468a2afaafa330570",
+          "t07_label_history": "ba5c92f65e04df37f71d9232382e80b3856ae970146938c46526e19b26a94500",
+          "t07_history_gate": "1525beb95631a256c70636c8e10b8a05f17ec0f7af1637815251d7c46d3cd724",
+          "cohort_members": "a0b8007ad7f893e35d7afc09b6a3f9bb5b809d31e892cb8a497f00fe6b797e78",
+          "t12_gate": "d9bb0a007aad49861acfdf3106e42dc4a56f5a78d85b302abbea63a386c72f39",
+          "market_1m": "46816308ad14b7491255150bd1bc484c6f54f2d4dca7a25a065f3767dabbb524",
+          "market_1m_manifest": "c13b778076c939312c406122f24182a1fd3b0665147085499746164ffc8380f0",
+          "market_1d": "540b408ce7276aec643d95c6febd348aaf25204525575877dea36aca96d40fba",
+          "eth_stats_csv": "c6cd08e4d1c8e7f822a75cf9e496362630cfcbb12fd609ead1c8f649812e636f"
+        },
+        "release_manifest_sha256": {
+          "data/hf_t07_t12_release_manifest.json": "dec10bded1f2da419bf0d408744f033ec763900ca5357438470f44327da92c1b"
+        },
+        "t12_cohort_sha256": "a0b8007ad7f893e35d7afc09b6a3f9bb5b809d31e892cb8a497f00fe6b797e78",
+        "t12_protocol_id": "t12_unidentified_activity_v2",
+        "t07_protocol_id": "t07_cex_public_history_v1",
+        "upstream": {
+          "daily_edges_parquet": {
+            "path": "data/processed/graphs/dynamic_edges_daily.parquet",
+            "sha256": "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979"
+          },
+          "daily_metrics_parquet": {
+            "path": "data/processed/graphs/graph_metrics_daily.parquet",
+            "sha256": "478f50feea3c2acd3c4e5bed07dab758e0ff98af6bc2f0bf8fd742dacd529ee2"
+          },
+          "weekly_edges_parquet": {
+            "path": "data/processed/graphs/dynamic_edges_weekly.parquet",
+            "sha256": "c16ddd27bf26ff20c61b78de3328d96b4957a637123ee76cedbdd4116044d945"
+          },
+          "weekly_metrics_parquet": {
+            "path": "data/processed/graphs/graph_metrics_weekly.parquet",
+            "sha256": "f46fc74807cec2ed10590bade02b7242f75bfa647822ffae5e3f8c4d6bee6439"
+          }
+        },
+        "days": 655,
+        "horizons": [
+          1,
+          3,
+          7
+        ],
+        "horizon_definition": "single_day",
+        "validation_passed": true,
+        "reproducible": true,
+        "rows_with_all_controls": 625,
+        "rows_with_cex_netflow_z": 625,
+        "rows_with_pit_cex_netflow_z": 625,
+        "rows_with_whaleflow_z_retrospective": 595,
+        "rows_with_whaleflow_pit_z": 595,
+        "rows_with_large_transfer": 625,
+        "days_without_cohort": 30,
+        "days_without_pit_labels": 0,
+        "t07_approved_addresses": 306,
+        "n_pit_cex_endpoint_days": 655,
+        "cohort_cex_pit_overlap_member_days": 6289,
+        "cohort_cex_pit_overlap_unique_addresses": 26,
+        "cohort_cex_retro_overlap_member_days": 10702,
+        "predictor_sets": {
+          "retrospective_cex": [
+            "cex_netflow_scaled",
+            "cex_netflow_z",
+            "large_cex_netflow_scaled",
+            "ret_1d",
+            "log_volume_usdt",
+            "log_trade_count",
+            "taker_imbalance",
+            "spread_cs_proxy",
+            "parkinson_var",
+            "eth_log_transactions",
+            "eth_log_volume",
+            "eth_log_gas_gwei",
+            "log_transfer_volume_usdt",
+            "log_rv",
+            "log_rv_week",
+            "log_rv_month",
+            "day_of_week"
+          ],
+          "retrospective_whaleflow": [
+            "whaleflow_scaled",
+            "whaleflow_z",
+            "ret_1d",
+            "log_volume_usdt",
+            "log_trade_count",
+            "taker_imbalance",
+            "spread_cs_proxy",
+            "parkinson_var",
+            "eth_log_transactions",
+            "eth_log_volume",
+            "eth_log_gas_gwei",
+            "log_transfer_volume_usdt",
+            "log_rv",
+            "log_rv_week",
+            "log_rv_month",
+            "day_of_week"
+          ],
+          "pit_cex": [
+            "pit_cex_netflow_scaled",
+            "pit_cex_netflow_z",
+            "pit_large_cex_netflow_scaled",
+            "ret_1d",
+            "log_volume_usdt",
+            "log_trade_count",
+            "taker_imbalance",
+            "spread_cs_proxy",
+            "parkinson_var",
+            "eth_log_transactions",
+            "eth_log_volume",
+            "eth_log_gas_gwei",
+            "log_transfer_volume_usdt",
+            "log_rv",
+            "log_rv_week",
+            "log_rv_month",
+            "day_of_week"
+          ],
+          "pit_whaleflow": [
+            "whaleflow_pit_scaled",
+            "whaleflow_pit_z",
+            "ret_1d",
+            "log_volume_usdt",
+            "log_trade_count",
+            "taker_imbalance",
+            "spread_cs_proxy",
+            "parkinson_var",
+            "eth_log_transactions",
+            "eth_log_volume",
+            "eth_log_gas_gwei",
+            "log_transfer_volume_usdt",
+            "log_rv",
+            "log_rv_week",
+            "log_rv_month",
+            "day_of_week"
+          ]
+        },
+        "target_columns": [
+          "target_log_rv_h1",
+          "target_log_rv_h3",
+          "target_log_rv_h7"
+        ],
+        "computation_validated": true,
+        "retrospective_analysis_ready": true,
+        "readiness_contract_version": "t14_inputs_v1",
+        "forecast_inputs_ready_cex": true,
+        "forecast_inputs_ready_activity_cohort": true,
+        "ready_for_individual_investor_inference": false,
+        "rq3_answered": false,
+        "blocking_reasons": {
+          "cex": [],
+          "activity_cohort": []
+        },
+        "t07_gate_ready_for_endpoint_lookup": true,
+        "t12_gate_ready_for_cohort_whaleflow": true,
+        "upstream_rq3_flags_informational_only": {
+          "t07": false,
+          "t12": false
+        },
+        "whaleflow_scope": "v2_activity_cohort",
+        "caveats": [
+          "Retrospective branch (cex_*, whaleflow_*, large_cex_*) uses current T07 labels: not point-in-time evidence.",
+          "PIT branch (pit_cex_*, whaleflow_pit_*, pit_large_*) uses C_D = approved public-history registry with public_available_at, effective_from < D and effective_to > D or null. This is public-information PIT, not the research-knowledge policy of T12 v2.",
+          "Days without any approved label are NaN, not zero; days with labels and no transfers are 0.",
+          "Known-CEX coverage is the observed share of the thresholded USDT network, not CEX recall; unknown addresses may be exchange wallets.",
+          "Network covers netted USDT transfers >= 500000 only, not all Ethereum flows.",
+          "spread_cs_proxy is a Corwin-Schultz high-low proxy, not a quoted spread; T06 has trades only.",
+          "Cohort = unidentified high-activity addresses (T12 v2); no individual ownership inference.",
+          "WhaleFlow PIT keeps v2 membership/rank. On the flow boundary a node in W and C_D is treated as CEX (core = W minus C_D acts as cohort side); overlap counts and edge volume are reported, not hidden. This is NOT a new top-50 cohort and the choice of scope belongs to the team.",
+          "CEX->CEX volume is reported as internal and is excluded from external NetFlow; no DEX/bridge/market maker/issuer treasury is merged into CEX."
+        ]
+      },
+      "HF": {
+        "protocol_id": "t14_v2",
+        "settings_sha256": "f010349d3ee069f596e3566ba42db320fbeca889096273caa88d0921bc3de47a",
+        "code_sha256": {
+          "src/flow_volatility.py": "2129f5a26cc8b2c198ead2eb232d41809c2a403c00c7397c2e32c2343d7a7733",
+          "T14_Flow_Volatility.py": "090346b2a662a8a6b22dc38386d608f7963da4bd2905decd6eb3a66844a0842f",
+          "src/cex_label_history.py": "892bd4f8e76728e9042bec1044369cf6ae0585521e08944f011ffeabd73dbcaa"
+        },
+        "input_sha256": {
+          "daily_edges_parquet": "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979",
+          "labels_parquet": "4bf112d171d080c739c2709d67fcf79dbbe0e922bd5727ca5770ca97dad7e00f",
+          "secondary_labels": "55e8d4031e3eb3eff6e5c0500d0f0a58e33102599d8efea468a2afaafa330570",
+          "t07_label_history": "ba5c92f65e04df37f71d9232382e80b3856ae970146938c46526e19b26a94500",
+          "t07_history_gate": "1525beb95631a256c70636c8e10b8a05f17ec0f7af1637815251d7c46d3cd724",
+          "cohort_members": "a0b8007ad7f893e35d7afc09b6a3f9bb5b809d31e892cb8a497f00fe6b797e78",
+          "t12_gate": "d9bb0a007aad49861acfdf3106e42dc4a56f5a78d85b302abbea63a386c72f39",
+          "market_1m": "ff01b316cc80a56e99b8d40cef131e246d3d73ec6f4b4f6a90f7185a9eb85fd9",
+          "market_1d": "1682966fe1a517c0f973cc7ea81f1e7ca65413b87d65ea9c37f7d44390bf1729",
+          "eth_stats_csv": "c6cd08e4d1c8e7f822a75cf9e496362630cfcbb12fd609ead1c8f649812e636f"
+        },
+        "release_manifest_sha256": {
+          "data/hf_t07_t12_release_manifest.json": "dec10bded1f2da419bf0d408744f033ec763900ca5357438470f44327da92c1b"
+        },
+        "t12_cohort_sha256": "a0b8007ad7f893e35d7afc09b6a3f9bb5b809d31e892cb8a497f00fe6b797e78",
+        "t12_protocol_id": "t12_unidentified_activity_v2",
+        "t07_protocol_id": "t07_cex_public_history_v1",
+        "upstream": {
+          "daily_edges_parquet": {
+            "path": "data/processed/graphs/dynamic_edges_daily.parquet",
+            "sha256": "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979"
+          },
+          "daily_metrics_parquet": {
+            "path": "data/processed/graphs/graph_metrics_daily.parquet",
+            "sha256": "478f50feea3c2acd3c4e5bed07dab758e0ff98af6bc2f0bf8fd742dacd529ee2"
+          },
+          "weekly_edges_parquet": {
+            "path": "data/processed/graphs/dynamic_edges_weekly.parquet",
+            "sha256": "c16ddd27bf26ff20c61b78de3328d96b4957a637123ee76cedbdd4116044d945"
+          },
+          "weekly_metrics_parquet": {
+            "path": "data/processed/graphs/graph_metrics_weekly.parquet",
+            "sha256": "f46fc74807cec2ed10590bade02b7242f75bfa647822ffae5e3f8c4d6bee6439"
+          }
+        },
+        "days": 655,
+        "horizons": [
+          1,
+          3,
+          7
+        ],
+        "horizon_definition": "single_day",
+        "validation_passed": true,
+        "reproducible": true,
+        "rows_with_all_controls": 625,
+        "rows_with_cex_netflow_z": 625,
+        "rows_with_pit_cex_netflow_z": 625,
+        "rows_with_whaleflow_z_retrospective": 595,
+        "rows_with_whaleflow_pit_z": 595,
+        "rows_with_large_transfer": 625,
+        "days_without_cohort": 30,
+        "days_without_pit_labels": 0,
+        "t07_approved_addresses": 306,
+        "n_pit_cex_endpoint_days": 655,
+        "cohort_cex_pit_overlap_member_days": 6289,
+        "cohort_cex_pit_overlap_unique_addresses": 26,
+        "cohort_cex_retro_overlap_member_days": 10702,
+        "predictor_sets": {
+          "retrospective_cex": [
+            "cex_netflow_scaled",
+            "cex_netflow_z",
+            "large_cex_netflow_scaled",
+            "ret_1d",
+            "log_volume_usdt",
+            "log_trade_count",
+            "taker_imbalance",
+            "spread_cs_proxy",
+            "parkinson_var",
+            "eth_log_transactions",
+            "eth_log_volume",
+            "eth_log_gas_gwei",
+            "log_transfer_volume_usdt",
+            "log_rv",
+            "log_rv_week",
+            "log_rv_month",
+            "day_of_week"
+          ],
+          "retrospective_whaleflow": [
+            "whaleflow_scaled",
+            "whaleflow_z",
+            "ret_1d",
+            "log_volume_usdt",
+            "log_trade_count",
+            "taker_imbalance",
+            "spread_cs_proxy",
+            "parkinson_var",
+            "eth_log_transactions",
+            "eth_log_volume",
+            "eth_log_gas_gwei",
+            "log_transfer_volume_usdt",
+            "log_rv",
+            "log_rv_week",
+            "log_rv_month",
+            "day_of_week"
+          ],
+          "pit_cex": [
+            "pit_cex_netflow_scaled",
+            "pit_cex_netflow_z",
+            "pit_large_cex_netflow_scaled",
+            "ret_1d",
+            "log_volume_usdt",
+            "log_trade_count",
+            "taker_imbalance",
+            "spread_cs_proxy",
+            "parkinson_var",
+            "eth_log_transactions",
+            "eth_log_volume",
+            "eth_log_gas_gwei",
+            "log_transfer_volume_usdt",
+            "log_rv",
+            "log_rv_week",
+            "log_rv_month",
+            "day_of_week"
+          ],
+          "pit_whaleflow": [
+            "whaleflow_pit_scaled",
+            "whaleflow_pit_z",
+            "ret_1d",
+            "log_volume_usdt",
+            "log_trade_count",
+            "taker_imbalance",
+            "spread_cs_proxy",
+            "parkinson_var",
+            "eth_log_transactions",
+            "eth_log_volume",
+            "eth_log_gas_gwei",
+            "log_transfer_volume_usdt",
+            "log_rv",
+            "log_rv_week",
+            "log_rv_month",
+            "day_of_week"
+          ]
+        },
+        "target_columns": [
+          "target_log_rv_h1",
+          "target_log_rv_h3",
+          "target_log_rv_h7"
+        ],
+        "computation_validated": true,
+        "retrospective_analysis_ready": true,
+        "pit_forecast_ready_cex": false,
+        "pit_forecast_ready_whaleflow": false,
+        "blocking_reasons": {
+          "cex": [
+            "t07_rq3_pit_gate_closed"
+          ],
+          "whaleflow": [
+            "t12_or_t07_rq3_pit_gate_closed"
+          ]
+        },
+        "t07_gate_ready_for_endpoint_lookup": true,
+        "t12_gate_ready_for_cohort_whaleflow": true,
+        "upstream_rq3_gates": {
+          "t07": false,
+          "t12_and_t07": false
+        },
+        "whaleflow_scope": "v2_activity_cohort",
+        "caveats": [
+          "Retrospective branch (cex_*, whaleflow_*, large_cex_*) uses current T07 labels: not point-in-time evidence.",
+          "PIT branch (pit_cex_*, whaleflow_pit_*, pit_large_*) uses C_D = approved public-history registry with public_available_at, effective_from < D and effective_to > D or null. This is public-information PIT, not the research-knowledge policy of T12 v2.",
+          "Days without any approved label are NaN, not zero; days with labels and no transfers are 0.",
+          "Known-CEX coverage is the observed share of the thresholded USDT network, not CEX recall; unknown addresses may be exchange wallets.",
+          "Network covers netted USDT transfers >= 500000 only, not all Ethereum flows.",
+          "spread_cs_proxy is a Corwin-Schultz high-low proxy, not a quoted spread; T06 has trades only.",
+          "Cohort = unidentified high-activity addresses (T12 v2); no individual ownership inference.",
+          "WhaleFlow PIT keeps v2 membership/rank. On the flow boundary a node in W and C_D is treated as CEX (core = W minus C_D acts as cohort side); overlap counts and edge volume are reported, not hidden. This is NOT a new top-50 cohort and the choice of scope belongs to the team.",
+          "CEX->CEX volume is reported as internal and is excluded from external NetFlow; no DEX/bridge/market maker/issuer treasury is merged into CEX."
+        ]
+      }
+    }
+  },
+  "input_provenance": {
+    "current_HF_daily_sources_checked": 655,
+    "changed_daily_sources": [],
+    "local_minute_sha256": "46816308ad14b7491255150bd1bc484c6f54f2d4dca7a25a065f3767dabbb524",
+    "HF_summary_minute_sha256": "ff01b316cc80a56e99b8d40cef131e246d3d73ec6f4b4f6a90f7185a9eb85fd9",
+    "current_HF_minute_sha256": "46816308ad14b7491255150bd1bc484c6f54f2d4dca7a25a065f3767dabbb524",
+    "HF_summary_matches_current_published_input": false,
+    "HF_reproducibility_matches_its_output_files": {
+      "t14_features_daily.parquet": true,
+      "t14_cex_coverage_daily.parquet": true,
+      "t14_cex_coverage_monthly.parquet": true,
+      "t14_cohort_cex_overlap_daily.parquet": true,
+      "t14_sample_eligibility_daily.parquet": true
+    },
+    "jan2_RV_from_original_daily_minute_files": 0.0006503000899875011,
+    "jan2_RV_local": 0.0006503000899874552,
+    "hourly_interpolation_reconstruction": {
+      "method": "Reindex published 1-hour close to 1-minute UTC grid and interpolate linearly in time, then sum squared minute/5-minute log returns.",
+      "matches_HF_rv_all_days": true,
+      "matches_HF_rv_5m_all_days": true,
+      "max_abs_RV_error": 4.7704895589362195e-18,
+      "max_abs_RV5_error": 1.7780915628762273e-17,
+      "jan2_interpolated_RV": 8.277118240035132e-06,
+      "jan2_HF_RV": 8.277118240035295e-06
+    }
+  }
+}

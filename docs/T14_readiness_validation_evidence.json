@@ -1,0 +1,267 @@
+{
+  "checks": [
+    {
+      "check": "baseline_upstream_RQ3_false_still_scoped_inputs_ready",
+      "pass": true,
+      "cex": true,
+      "activity": true,
+      "blocking": {
+        "cex": [],
+        "activity_cohort": []
+      }
+    },
+    {
+      "check": "closed_endpoint_gate",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "t07_endpoint_contract_verified"
+        ],
+        "activity_cohort": [
+          "t07_endpoint_contract_verified"
+        ]
+      }
+    },
+    {
+      "check": "closed_cohort_gate_only_closes_activity",
+      "pass": true,
+      "cex": true,
+      "activity": false,
+      "blocking": {
+        "cex": [],
+        "activity_cohort": [
+          "t12_activity_contract_verified"
+        ]
+      }
+    },
+    {
+      "check": "empty_upstream_hash_evidence",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "t07_endpoint_contract_verified"
+        ],
+        "activity_cohort": [
+          "t07_endpoint_contract_verified"
+        ]
+      }
+    },
+    {
+      "check": "scope_not_selected",
+      "pass": true,
+      "cex": true,
+      "activity": false,
+      "blocking": {
+        "cex": [],
+        "activity_cohort": [
+          "activity_scope_chosen"
+        ]
+      }
+    },
+    {
+      "check": "unknown_contract",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "contract_version"
+        ],
+        "activity_cohort": [
+          "contract_version"
+        ]
+      }
+    },
+    {
+      "check": "ownership_inference_not_allowed",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "scope_and_information_policy"
+        ],
+        "activity_cohort": [
+          "scope_and_information_policy"
+        ]
+      }
+    },
+    {
+      "check": "misrepresent_cohort_information_policy",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "scope_and_information_policy"
+        ],
+        "activity_cohort": [
+          "scope_and_information_policy"
+        ]
+      }
+    },
+    {
+      "check": "missing_required_validation_row",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "market_targets_validated"
+        ],
+        "activity_cohort": [
+          "market_targets_validated"
+        ]
+      }
+    },
+    {
+      "check": "invalid_cutoff",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "computation_validated",
+          "calendar_and_target_separation"
+        ],
+        "activity_cohort": [
+          "computation_validated",
+          "calendar_and_target_separation"
+        ]
+      }
+    },
+    {
+      "check": "future_label_leak",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "computation_validated",
+          "future_information_tests"
+        ],
+        "activity_cohort": [
+          "computation_validated",
+          "future_information_tests"
+        ]
+      }
+    },
+    {
+      "check": "invalid_cohort_lag",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "computation_validated"
+        ],
+        "activity_cohort": [
+          "computation_validated",
+          "cohort_lag_membership_validated"
+        ]
+      }
+    },
+    {
+      "check": "reproducibility_mismatch",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "computation_validated"
+        ],
+        "activity_cohort": [
+          "computation_validated"
+        ]
+      }
+    },
+    {
+      "check": "incomplete_reproduction",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "computation_validated"
+        ],
+        "activity_cohort": [
+          "computation_validated"
+        ]
+      }
+    },
+    {
+      "check": "empty_validation",
+      "pass": true,
+      "cex": false,
+      "activity": false,
+      "blocking": {
+        "cex": [
+          "computation_validated",
+          "calendar_and_target_separation",
+          "future_information_tests",
+          "cex_asof_usage_validated",
+          "cex_flow_validated",
+          "market_targets_validated"
+        ],
+        "activity_cohort": [
+          "computation_validated",
+          "calendar_and_target_separation",
+          "future_information_tests",
+          "cex_asof_usage_validated",
+          "cex_flow_validated",
+          "market_targets_validated",
+          "cohort_lag_membership_validated",
+          "overlap_boundary_validated"
+        ]
+      }
+    }
+  ],
+  "all_pass": true,
+  "upstream_gate_hashes": {
+    "data/processed/t07/cex_history/t07_cex_history_gate.json": "1525beb95631a256c70636c8e10b8a05f17ec0f7af1637815251d7c46d3cd724",
+    "data/processed/t12/v2/t12_downstream_gate.json": "d9bb0a007aad49861acfdf3106e42dc4a56f5a78d85b302abbea63a386c72f39"
+  },
+  "artifact_mutations": [
+    {
+      "check": "changed_output_rejected",
+      "pass": true
+    },
+    {
+      "check": "changed_config_rejected",
+      "pass": true
+    },
+    {
+      "check": "forged_gate_flag_even_with_updated_hash_rejected",
+      "pass": true
+    },
+    {
+      "check": "empty_gate_provenance_rejected",
+      "pass": true
+    },
+    {
+      "check": "changed_market_input_rejected",
+      "pass": true
+    }
+  ],
+  "release_verified": {
+    "contract_version": "t14_inputs_v1",
+    "artifacts_verified": 9,
+    "forecast_inputs_ready_cex": true,
+    "forecast_inputs_ready_activity_cohort": true,
+    "policy": {
+      "cex_scope": "observed_approved_cex_subset",
+      "cohort_scope": "unidentified_high_activity_addresses",
+      "endpoint_information_policy": "approved_public_history_asof_day_start",
+      "cohort_information_policy": "t12_v2_research_knowledge",
+      "boundary_policy": "keep_membership_cohort_side_W_minus_C",
+      "individual_ownership_inference": false,
+      "selection_policy": "frozen_without_regression_outcomes"
+    },
+    "publication_state": "local_only_pending_user_upload_instruction"
+  },
+  "upstream_gate_bytes_unchanged": true
+}

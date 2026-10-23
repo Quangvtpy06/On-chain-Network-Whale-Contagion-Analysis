@@ -50,3 +50,39 @@ Bảng điều kiện mẫu `t14_sample_eligibility_daily.parquet` phân loại 
 5. `t14_sample_eligibility_daily.parquet`: Trạng thái khả dụng chi tiết theo từng nhánh mô hình và từng horizon.
 6. `t14_validation.parquet`: Kết quả kiểm định tự động (bắt buộc toàn bộ PASS).
 7. `t14_summary.json` & `t14_reproducibility.json`: Metadata, checksum SHA-256 đối chiếu 2 lần chạy độc lập.
+
+## 5. Hợp đồng nghiệm thu đầu vào downstream — t14_inputs_v1
+
+T14 không đòi cờ `ready_for_rq3_pit_forecast` của T07/T12. T07 chứng nhận lịch nhãn và endpoint lookup;
+T12 chứng nhận cohort hoạt động lớn v2; T14 kiểm định việc sử dụng các tập đó để xây biến/target.
+T15/T16 trực tiếp trả lời RQ3. Cờ upstream không bị sửa và vẫn được lưu trong summary dưới tên
+`upstream_rq3_flags_informational_only`.
+
+- `forecast_inputs_ready_cex`: chỉ chứng nhận NetFlow của **tập CEX approved quan sát được**.
+- `forecast_inputs_ready_activity_cohort`: chứng nhận flow của cohort hoạt động lớn T12 v2 tới tập CEX đó,
+  theo chính sách research-knowledge của cohort và public-history của endpoint. Không gọi đây là cohort
+  nhà đầu tư cá nhân hoặc cohort public-information PIT thuần túy.
+- `ready_for_individual_investor_inference=false`, `rq3_answered=false`.
+- Các cờ chung cũ `pit_forecast_ready_cex/whaleflow` được thay bằng hai cờ scoped trên; consumer phải
+  kiểm tra `readiness_contract_version`, không suy ra trạng thái từ boolean cũ.
+
+Mỗi cờ yêu cầu đúng protocol/schema/hash upstream, config policy đóng băng, bằng chứng as-of/cutoff,
+truncation và future-label mutation tại 4 cutoff, số học flow, kiểm tra độc lập RV 1m/5m/HAR/target,
+cohort metadata `[D-30,D)`, rank/membership, overlap, warm-up và tái lập SHA-256 của 5 bảng.
+Thiếu một dòng kiểm tra bắt buộc cũng đóng nhánh. Coverage được báo để giới hạn diễn giải;
+không coi 21,2% endpoint volume coverage là recall CEX.
+
+Hai sản phẩm mới: `t14_downstream_gate.json` (điều kiện từng nhánh và hash nguồn/config/input/output)
+và `t14_release_manifest.json` (danh sách chính xác 9 artifact ngoài chính manifest). Tổng cộng 6 Parquet
+và 4 JSON. Manifest ghi source base commit cùng SHA-256 working tree, không giả định source đã push.
+File phút gộp phải khớp manifest nguồn bên cạnh nó; pipeline kiểm tra input/source/config/gate không đổi
+trong khi tính.
+
+Sau khi chạy, dùng `python scripts/validate_t14_release.py` trước khi T15/T16 đọc dữ liệu. Validator
+kiểm tra đủ artifact, hash, bằng chứng tái lập, tính lại predicate readiness từ validation và gate upstream;
+không upload hoặc thay gate. Eligibility chỉ biểu thị complete-case theo nhánh/horizon; cần kiểm tra
+readiness trước, rồi mới chọn eligibility và predictor_sets. Split thời gian/đánh giá horizon chồng lấn
+thuộc T18/T15/T16 và phải chốt trước mô hình.
+
+Bản đóng gói ngày 24/10/2026 chỉ phát hành tại máy, `upload_performed=false`;
+chưa upload HF hoặc push GitHub theo phạm vi công việc hiện tại.

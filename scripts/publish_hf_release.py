@@ -67,10 +67,15 @@ def main():
     parent = api.repo_info(repo, repo_type=kind).sha
     # Scoped releases bind already-published upstream data without replacing it.
     dependencies=manifest.get('remote_dependencies',[])
-    upstream={item.path:item for item in api.get_paths_info(repo,[r['path'] for r in dependencies],repo_type=kind,revision=parent)} if dependencies else {}
+    upstream = {}
+    for dependency_revision in {row.get('revision', parent) for row in dependencies}:
+        paths = [row['path'] for row in dependencies if row.get('revision', parent) == dependency_revision]
+        upstream.update({(dependency_revision, item.path): item for item in
+                         api.get_paths_info(repo, paths, repo_type=kind, revision=dependency_revision)})
     for row in dependencies:
         path=ROOT/row['path']
-        if not path.is_file() or digest(path)!=row['sha256'] or row['path'] not in upstream or not remote_matches(upstream[row['path']],path,row['sha256']):
+        key = (row.get('revision', parent), row['path'])
+        if not path.is_file() or digest(path)!=row['sha256'] or key not in upstream or not remote_matches(upstream[key],path,row['sha256']):
             raise ValueError('Remote upstream differs from accepted input: '+row['path'])
     raw = manifest.get('raw_input', manifest.get('raw_input_already_on_remote', {}))
     if raw.get('path') and raw.get('sha256') and raw['path'] not in seen:
@@ -96,7 +101,8 @@ def main():
     destination = ROOT/'.release'; destination.mkdir(exist_ok=True)
     receipt = dict(repo_id=repo, revision=revision, verified_files=len(records), changed_files=len(changed),
         manifest_sha256=digest(manifest_path), commit_url=commit.commit_url if commit else
-        f'https://huggingface.co/datasets/{repo}/tree/{revision}', remote_deletions=0)
+        f'https://huggingface.co/datasets/{repo}/tree/{revision}', remote_deletions=0,
+        code_git_commit=manifest.get('code_git_commit'), remote_dependencies=dependencies)
     (destination/args.receipt_name).write_text(json.dumps(receipt, indent=2), encoding='utf-8')
     print(json.dumps(receipt, indent=2), flush=True)
 

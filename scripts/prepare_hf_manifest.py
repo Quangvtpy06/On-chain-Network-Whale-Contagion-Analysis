@@ -4,10 +4,12 @@ Chỉ liệt kê artifact chuẩn đã được nghiệm thu. Test/cache và out
 """
 import hashlib
 import json
+import sys
 from pathlib import Path
 import yaml
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 
 def file_hash(path):
@@ -241,15 +243,17 @@ def main():
         t14=read_json(t14_dir/'t14_summary.json')
         t14_repro=read_json(t14_dir/'t14_reproducibility.json')
         standard['t14']=[(t14_dir/name).relative_to(ROOT).as_posix() for name in [
-            't14_features_daily.parquet','t14_validation.parquet','t14_summary.json','t14_reproducibility.json']]
-        # Cohort WhaleFlow columns are exploratory while the T12 gate is closed; see t14_summary.json.
-        accepted['t14']=bool(accepted.get('t12') and t14.get('validation_passed') and t14.get('reproducible') and
-            t14_repro.get('all_match') and t14.get('settings_sha256')==file_hash(t14_settings_path) and
-            bool(t14.get('code_sha256')) and all((ROOT/path).is_file() and file_hash(ROOT/path)==expected
-                for path,expected in t14.get('code_sha256',{}).items()) and
-            len(t14_repro.get('hashes',{}))==1 and all(
-                (t14_dir/name).is_file() and file_hash(t14_dir/name)==proof.get('run1')==proof.get('run2')
-                for name,proof in t14_repro.get('hashes',{}).items()))
+            't14_features_daily.parquet','t14_cex_coverage_daily.parquet','t14_cex_coverage_monthly.parquet',
+            't14_cohort_cex_overlap_daily.parquet','t14_sample_eligibility_daily.parquet',
+            't14_validation.parquet','t14_summary.json','t14_reproducibility.json',
+            't14_downstream_gate.json','t14_release_manifest.json']]
+        # T14 certifies scoped inputs against T07 history/T12 v2; legacy T12 RQ3 flags are not prerequisites.
+        try:
+            from scripts.validate_t14_release import validate_release
+            validate_release()
+            accepted['t14']=bool(t14.get('computation_validated'))
+        except (ValueError, OSError, KeyError):
+            accepted['t14']=False
     upload=[];blocked=[];missing=[]
     for task,files in standard.items():
         for rel in files:
@@ -276,7 +280,10 @@ def main():
             cohort_protocol_id=v2_gate.get('protocol_id') if accepted.get('t12_v2') else None,
             cohort_path=v2_gate.get('cohort_path') if accepted.get('t12_v2') else None,
             t14_independent_branches_allowed=['cex_netflow','lagged_large_transfer_events','network_concentration'],
-            rq3_cex_pit_forecast=False),
+            rq3_cex_pit_forecast=False,
+            t14_readiness_contract_version=read_json(ROOT/'data/processed/t14/t14_summary.json').get('readiness_contract_version'),
+            t14_forecast_inputs_ready_cex=bool(accepted.get('t14') and read_json(ROOT/'data/processed/t14/t14_summary.json').get('forecast_inputs_ready_cex')),
+            t14_forecast_inputs_ready_activity_cohort=bool(accepted.get('t14') and read_json(ROOT/'data/processed/t14/t14_summary.json').get('forecast_inputs_ready_activity_cohort'))),
         upload_files=upload,blocked_upload_files=blocked,missing_files=missing,
         raw_input=dict(path=config['data']['interim_raw_transfers'],sha256=raw_sha256),
         excluded=['.cache/**','**/__pycache__/**','**/test_tmp*/**','**/repro_run*/**',

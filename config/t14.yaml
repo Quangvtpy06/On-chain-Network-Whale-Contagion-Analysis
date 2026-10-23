@@ -3,6 +3,15 @@
 # do not tune them on regression coefficients or p-values (see docs/T14 spec).
 # Bumped from t14_v1: WhaleFlow/CEX definitions changed (PIT branch on C_D), so v1 outputs must not be mixed in.
 protocol_id: t14_v2
+readiness_contract_version: t14_inputs_v1
+readiness_policy:
+  cex_scope: observed_approved_cex_subset
+  cohort_scope: unidentified_high_activity_addresses
+  endpoint_information_policy: approved_public_history_asof_day_start
+  cohort_information_policy: t12_v2_research_knowledge
+  boundary_policy: keep_membership_cohort_side_W_minus_C
+  individual_ownership_inference: false
+  selection_policy: frozen_without_regression_outcomes
 output_dir: data/processed/t14
 inputs:
   daily_edges_parquet: data/processed/graphs/dynamic_edges_daily.parquet
@@ -16,6 +25,7 @@ inputs:
   cohort_members: data/processed/t12/v2/primary/cohort_members_daily.parquet
   t12_gate: data/processed/t12/v2/t12_downstream_gate.json
   market_1m: market/processed/ohlcv_1m/ETHUSDT_1m_2025-2026.parquet
+  market_1m_manifest: market/processed/ohlcv_1m/ETHUSDT_1m_2025-2026.manifest.json
   market_1d: market/processed/ohlcv_1d/ETHUSDT_1d_2025-2026.parquet
   eth_stats_csv: eth_stats_from_2025.csv
 # Optional reference for the retrospective reconciliation check only (skipped if absent).

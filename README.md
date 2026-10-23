@@ -231,4 +231,13 @@ for u, v, data in list(G_t.edges(data=True))[:3]:
     print(f"{u} -> {v} | Volume: {data['weight']:,.2f} USDT | Txs: {data['transaction_count']}")
 ```
 
+### T14 — nghiệm thu đầu vào theo phạm vi
+
+Chạy `python T14_Flow_Volatility.py`, rồi `python scripts/validate_t14_release.py`.
+Hợp đồng `t14_inputs_v1` cấp riêng `forecast_inputs_ready_cex` và
+`forecast_inputs_ready_activity_cohort`; không sửa cờ RQ3 T07/T12 và không chứng nhận danh tính cá nhân.
+T15/T16 kiểm tra gate/hash trước khi dùng eligibility/predictor_sets. Xem
+[đặc tả T14](docs/T14_flow_volatility_specification.md). Bản output hiện chỉ được đóng gói tại máy,
+chưa upload lên HF.
+
 

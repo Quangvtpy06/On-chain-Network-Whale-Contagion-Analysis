@@ -13,6 +13,7 @@ env/
 
 # Shared datasets live on Hugging Face, not in the GitHub code repository.
 /data/
+/market/
 /eth_stats_from_2025.csv
 /.release/
 

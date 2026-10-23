@@ -1,0 +1,743 @@
+{
+    "review_date":  "2026-10-23",
+    "review_scope":  "Recheck of T14 after a85434e; source is not modified.",
+    "cli_exit_code":  0,
+    "regression_checks":  {
+                              "source_commit":  "a85434ecf5c0b972d036eb189d0c340fa9de34bf",
+                              "hf_revision":  "5cd5603bd8493e60c6adabb96200266769929c40",
+                              "checks":  [
+                                             {
+                                                 "check":  "thirty_flow_history_days_corrected",
+                                                 "pass":  true,
+                                                 "detail":  30
+                                             },
+                                             {
+                                                 "check":  "first_30_days_no_cohort",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "zscore_starts_2025_03_02",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "underlying_feature_hash_unchanged_from_hourly_run",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "all_missing_rv_and_targets_rejected",
+                                                 "pass":  true,
+                                                 "detail":  [
+                                                                "rv_sufficient_coverage",
+                                                                "rv_nonnegative",
+                                                                "rv_sqrt_relation",
+                                                                "rv_full_day_bars",
+                                                                "target_h1_sufficient_coverage",
+                                                                "target_h3_sufficient_coverage",
+                                                                "target_h7_sufficient_coverage"
+                                                            ]
+                                             },
+                                             {
+                                                 "check":  "all_missing_targets_only_rejected",
+                                                 "pass":  true,
+                                                 "detail":  [
+                                                                "target_h1_sufficient_coverage",
+                                                                "target_h1_matches_definition_single_day",
+                                                                "target_h3_sufficient_coverage",
+                                                                "target_h3_matches_definition_single_day",
+                                                                "target_h7_sufficient_coverage",
+                                                                "target_h7_matches_definition_single_day"
+                                                            ]
+                                             },
+                                             {
+                                                 "check":  "unit_past_only_warmup_30",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "unit_zero_variance",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "unit_missing_current_raw",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "minute_function_1440_returns_day2",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "minute_formula_independent",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "minute_function_288_sensitivity_returns_day2",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "minute_off_grid_30_seconds_rejected",
+                                                 "pass":  false,
+                                                 "detail":  {
+                                                                "actual":  "accepted"
+                                                            }
+                                             },
+                                             {
+                                                 "check":  "truncation_preserves_minute_input",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "minute_duplicate_rejected",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             },
+                                             {
+                                                 "check":  "minute_nonpositive_rejected",
+                                                 "pass":  true,
+                                                 "detail":  null
+                                             }
+                                         ],
+                              "default_input_keys":  [
+                                                         "edges",
+                                                         "cohort",
+                                                         "cex",
+                                                         "cex_history",
+                                                         "hourly",
+                                                         "daily",
+                                                         "eth_stats"
+                                                     ],
+                              "default_bars_per_day":  24,
+                              "default_minute_output_present":  false,
+                              "default_5m_output_present":  false,
+                              "whaleflow_scope":  null,
+                              "feature_rows":  655,
+                              "z_status_counts":  {
+                                                      "ok":  595,
+                                                      "no_cohort":  30,
+                                                      "insufficient_flow_history":  30
+                                                  },
+                              "source_hashes":  {
+                                                    "src/flow_volatility.py":  "4b5229414e927c6125f8bd454cb2ce6a720275c4d0abeabe90097748d52d8a0b",
+                                                    "T14_Flow_Volatility.py":  "1b779e651beba028586832f50956ce8a86e3d8233048798a3a057274fabd96bc",
+                                                    "config/t14.yaml":  "17c6133e36574ce3edad4e12fc126a9bb6224cfa578c095b8e45aab5aae97910"
+                                                }
+                          },
+    "production_summary":  {
+                               "protocol_id":  "t14_v2",
+                               "settings_sha256":  "17c6133e36574ce3edad4e12fc126a9bb6224cfa578c095b8e45aab5aae97910",
+                               "code_sha256":  {
+                                                   "src/flow_volatility.py":  "4b5229414e927c6125f8bd454cb2ce6a720275c4d0abeabe90097748d52d8a0b",
+                                                   "T14_Flow_Volatility.py":  "1b779e651beba028586832f50956ce8a86e3d8233048798a3a057274fabd96bc",
+                                                   "src/cex_label_history.py":  "892bd4f8e76728e9042bec1044369cf6ae0585521e08944f011ffeabd73dbcaa"
+                                               },
+                               "input_sha256":  {
+                                                    "daily_edges_parquet":  "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979",
+                                                    "labels_parquet":  "4bf112d171d080c739c2709d67fcf79dbbe0e922bd5727ca5770ca97dad7e00f",
+                                                    "secondary_labels":  "55e8d4031e3eb3eff6e5c0500d0f0a58e33102599d8efea468a2afaafa330570",
+                                                    "t07_label_history":  "ba5c92f65e04df37f71d9232382e80b3856ae970146938c46526e19b26a94500",
+                                                    "t07_history_gate":  "1525beb95631a256c70636c8e10b8a05f17ec0f7af1637815251d7c46d3cd724",
+                                                    "cohort_members":  "a0b8007ad7f893e35d7afc09b6a3f9bb5b809d31e892cb8a497f00fe6b797e78",
+                                                    "t12_gate":  "d9bb0a007aad49861acfdf3106e42dc4a56f5a78d85b302abbea63a386c72f39",
+                                                    "market_1h":  "00c55e50d65306baa8a3120067f87cc25f1fc7670f0b8d53ebcf0db08c823081",
+                                                    "market_1d":  "540b408ce7276aec643d95c6febd348aaf25204525575877dea36aca96d40fba",
+                                                    "eth_stats_csv":  "c6cd08e4d1c8e7f822a75cf9e496362630cfcbb12fd609ead1c8f649812e636f"
+                                                },
+                               "release_manifest_sha256":  {
+                                                               "data/hf_t07_t12_release_manifest.json":  "dec10bded1f2da419bf0d408744f033ec763900ca5357438470f44327da92c1b"
+                                                           },
+                               "t12_cohort_sha256":  "a0b8007ad7f893e35d7afc09b6a3f9bb5b809d31e892cb8a497f00fe6b797e78",
+                               "t12_protocol_id":  "t12_unidentified_activity_v2",
+                               "t07_protocol_id":  "t07_cex_public_history_v1",
+                               "upstream":  {
+                                                "daily_edges_parquet":  {
+                                                                            "path":  "data/processed/graphs/dynamic_edges_daily.parquet",
+                                                                            "sha256":  "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979"
+                                                                        },
+                                                "daily_metrics_parquet":  {
+                                                                              "path":  "data/processed/graphs/graph_metrics_daily.parquet",
+                                                                              "sha256":  "478f50feea3c2acd3c4e5bed07dab758e0ff98af6bc2f0bf8fd742dacd529ee2"
+                                                                          },
+                                                "weekly_edges_parquet":  {
+                                                                             "path":  "data/processed/graphs/dynamic_edges_weekly.parquet",
+                                                                             "sha256":  "c16ddd27bf26ff20c61b78de3328d96b4957a637123ee76cedbdd4116044d945"
+                                                                         },
+                                                "weekly_metrics_parquet":  {
+                                                                               "path":  "data/processed/graphs/graph_metrics_weekly.parquet",
+                                                                               "sha256":  "f46fc74807cec2ed10590bade02b7242f75bfa647822ffae5e3f8c4d6bee6439"
+                                                                           }
+                                            },
+                               "days":  655,
+                               "horizons":  [
+                                                1,
+                                                3,
+                                                7
+                                            ],
+                               "horizon_definition":  "single_day",
+                               "validation_passed":  true,
+                               "reproducible":  true,
+                               "rows_with_all_controls":  625,
+                               "rows_with_cex_netflow_z":  625,
+                               "rows_with_pit_cex_netflow_z":  625,
+                               "rows_with_whaleflow_z_retrospective":  595,
+                               "rows_with_whaleflow_pit_z":  595,
+                               "rows_with_large_transfer":  625,
+                               "days_without_cohort":  30,
+                               "days_without_pit_labels":  0,
+                               "t07_approved_addresses":  306,
+                               "n_pit_cex_endpoint_days":  655,
+                               "cohort_cex_pit_overlap_member_days":  6289,
+                               "cohort_cex_pit_overlap_unique_addresses":  26,
+                               "cohort_cex_retro_overlap_member_days":  10702,
+                               "predictor_sets":  {
+                                                      "retrospective_cex":  [
+                                                                                "cex_netflow_scaled",
+                                                                                "cex_netflow_z",
+                                                                                "large_cex_netflow_scaled",
+                                                                                "ret_1d",
+                                                                                "log_volume_usdt",
+                                                                                "log_trade_count",
+                                                                                "taker_imbalance",
+                                                                                "spread_cs_proxy",
+                                                                                "parkinson_var",
+                                                                                "eth_log_transactions",
+                                                                                "eth_log_volume",
+                                                                                "eth_log_gas_gwei",
+                                                                                "log_transfer_volume_usdt",
+                                                                                "log_rv",
+                                                                                "log_rv_week",
+                                                                                "log_rv_month",
+                                                                                "day_of_week"
+                                                                            ],
+                                                      "retrospective_whaleflow":  [
+                                                                                      "whaleflow_scaled",
+                                                                                      "whaleflow_z",
+                                                                                      "ret_1d",
+                                                                                      "log_volume_usdt",
+                                                                                      "log_trade_count",
+                                                                                      "taker_imbalance",
+                                                                                      "spread_cs_proxy",
+                                                                                      "parkinson_var",
+                                                                                      "eth_log_transactions",
+                                                                                      "eth_log_volume",
+                                                                                      "eth_log_gas_gwei",
+                                                                                      "log_transfer_volume_usdt",
+                                                                                      "log_rv",
+                                                                                      "log_rv_week",
+                                                                                      "log_rv_month",
+                                                                                      "day_of_week"
+                                                                                  ],
+                                                      "pit_cex":  [
+                                                                      "pit_cex_netflow_scaled",
+                                                                      "pit_cex_netflow_z",
+                                                                      "pit_large_cex_netflow_scaled",
+                                                                      "ret_1d",
+                                                                      "log_volume_usdt",
+                                                                      "log_trade_count",
+                                                                      "taker_imbalance",
+                                                                      "spread_cs_proxy",
+                                                                      "parkinson_var",
+                                                                      "eth_log_transactions",
+                                                                      "eth_log_volume",
+                                                                      "eth_log_gas_gwei",
+                                                                      "log_transfer_volume_usdt",
+                                                                      "log_rv",
+                                                                      "log_rv_week",
+                                                                      "log_rv_month",
+                                                                      "day_of_week"
+                                                                  ],
+                                                      "pit_whaleflow":  [
+                                                                            "whaleflow_pit_scaled",
+                                                                            "whaleflow_pit_z",
+                                                                            "ret_1d",
+                                                                            "log_volume_usdt",
+                                                                            "log_trade_count",
+                                                                            "taker_imbalance",
+                                                                            "spread_cs_proxy",
+                                                                            "parkinson_var",
+                                                                            "eth_log_transactions",
+                                                                            "eth_log_volume",
+                                                                            "eth_log_gas_gwei",
+                                                                            "log_transfer_volume_usdt",
+                                                                            "log_rv",
+                                                                            "log_rv_week",
+                                                                            "log_rv_month",
+                                                                            "day_of_week"
+                                                                        ]
+                                                  },
+                               "target_columns":  [
+                                                      "target_log_rv_h1",
+                                                      "target_log_rv_h3",
+                                                      "target_log_rv_h7"
+                                                  ],
+                               "computation_validated":  true,
+                               "retrospective_analysis_ready":  true,
+                               "pit_forecast_ready_cex":  false,
+                               "pit_forecast_ready_whaleflow":  false,
+                               "blocking_reasons":  {
+                                                        "cex":  [
+                                                                    "t07_rq3_pit_gate_closed"
+                                                                ],
+                                                        "whaleflow":  [
+                                                                          "whaleflow_scope_not_chosen",
+                                                                          "t12_or_t07_rq3_pit_gate_closed"
+                                                                      ]
+                                                    },
+                               "t07_gate_ready_for_endpoint_lookup":  true,
+                               "t12_gate_ready_for_cohort_whaleflow":  true,
+                               "upstream_rq3_gates":  {
+                                                          "t07":  false,
+                                                          "t12_and_t07":  false
+                                                      },
+                               "whaleflow_scope":  null,
+                               "caveats":  [
+                                               "Retrospective branch (cex_*, whaleflow_*, large_cex_*) uses current T07 labels: not point-in-time evidence.",
+                                               "PIT branch (pit_cex_*, whaleflow_pit_*, pit_large_*) uses C_D = approved public-history registry with public_available_at, effective_from \u003c D and effective_to \u003e D or null. This is public-information PIT, not the research-knowledge policy of T12 v2.",
+                                               "Days without any approved label are NaN, not zero; days with labels and no transfers are 0.",
+                                               "Known-CEX coverage is the observed share of the thresholded USDT network, not CEX recall; unknown addresses may be exchange wallets.",
+                                               "Network covers netted USDT transfers \u003e= 500000 only, not all Ethereum flows.",
+                                               "spread_cs_proxy is a Corwin-Schultz high-low proxy, not a quoted spread; T06 has trades only.",
+                                               "Cohort = unidentified high-activity addresses (T12 v2); no individual ownership inference.",
+                                               "WhaleFlow PIT keeps v2 membership/rank. On the flow boundary a node in W and C_D is treated as CEX (core = W minus C_D acts as cohort side); overlap counts and edge volume are reported, not hidden. This is NOT a new top-50 cohort and the choice of scope belongs to the team.",
+                                               "CEX-\u003eCEX volume is reported as internal and is excluded from external NetFlow; no DEX/bridge/market maker/issuer treasury is merged into CEX."
+                                           ]
+                           },
+    "production_validation":  [
+                                  {
+                                      "check":  "calendar_complete_unique",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "655"
+                                  },
+                                  {
+                                      "check":  "calendar_expected_days",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "655 vs 655"
+                                  },
+                                  {
+                                      "check":  "flows_finite_nonnegative_except_net",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "netflow_identity",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "cex_flow_not_above_volume",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "pit_netflow_identity",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "pit_flow_nan_iff_no_labels",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "days_without_labels=0"
+                                  },
+                                  {
+                                      "check":  "pit_flow_not_above_volume",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "pit_scaled_z_use_pit_flow",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "whaleflow_pit_scaled_z_use_pit_flow",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "whaleflow_pit_identity",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "whaleflow_pit_nan_iff_no_cohort_or_no_labels",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "nan_days=30"
+                                  },
+                                  {
+                                      "check":  "cohort_overlap_nonnegative",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "member_days=6289"
+                                  },
+                                  {
+                                      "check":  "whaleflow_identity",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "whaleflow_nan_without_cohort",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "days_without_cohort=30"
+                                  },
+                                  {
+                                      "check":  "rv_sufficient_coverage",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "valid_days=654/655 (min required: 589)"
+                                  },
+                                  {
+                                      "check":  "rv_nonnegative",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "nan_days=1"
+                                  },
+                                  {
+                                      "check":  "rv_sqrt_relation",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "rv_full_day_bars",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "target_h1_sufficient_coverage",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "valid_targets=654/654"
+                                  },
+                                  {
+                                      "check":  "target_h1_matches_definition_single_day",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "target_h3_sufficient_coverage",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "valid_targets=652/652"
+                                  },
+                                  {
+                                      "check":  "target_h3_matches_definition_single_day",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "target_h7_sufficient_coverage",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "valid_targets=648/648"
+                                  },
+                                  {
+                                      "check":  "target_h7_matches_definition_single_day",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "available_after_day_end",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "predictor_sets_clean",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "pit_and_retro_predictors_disjoint",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "retrospective_matches_t12_cex_netflow",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "max_abs_diff=1.430511474609375e-06"
+                                  },
+                                  {
+                                      "check":  "independent_asof_subset",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "mismatching_days=0"
+                                  },
+                                  {
+                                      "check":  "history_addresses_lowercase",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "label_boundary: available_at == D excluded",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "label_boundary: available_at == D-1us included",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "label_boundary: effective_from == D excluded",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "label_boundary: effective_from == D-1us included",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "label_boundary: effective_to == D excluded",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "label_boundary: effective_to == D+1us included",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "label_boundary: effective_to null included",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_inflow",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_outflow",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_internal",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_netflow",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_direction_reversal",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_conservation",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_labels_no_edges_is_zero",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_no_labels_is_nan",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_whale_to_cex",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_cex_to_whale_includes_overlap_node_as_cex",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_whaleflow",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_overlap_count_and_volume",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_cohort_no_edges_is_zero",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "example_cohort_no_labels_is_nan",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "overlap_matches_handoff_reference",
+                                      "cut_date":  "",
+                                      "status":  "PASS",
+                                      "detail":  "got 26 addresses/6289 member-days; expected 26/6289"
+                                  },
+                                  {
+                                      "check":  "adapter_matches_load_cex_for_cutoff",
+                                      "cut_date":  "2025-01-01",
+                                      "status":  "PASS",
+                                      "detail":  "n=306"
+                                  },
+                                  {
+                                      "check":  "adapter_matches_load_cex_for_cutoff",
+                                      "cut_date":  "2025-11-24",
+                                      "status":  "PASS",
+                                      "detail":  "n=306"
+                                  },
+                                  {
+                                      "check":  "adapter_matches_load_cex_for_cutoff",
+                                      "cut_date":  "2026-10-17",
+                                      "status":  "PASS",
+                                      "detail":  "n=306"
+                                  },
+                                  {
+                                      "check":  "pit_truncation",
+                                      "cut_date":  "2025-06-13",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "pit_future_label_mutation",
+                                      "cut_date":  "2025-06-13",
+                                      "status":  "PASS",
+                                      "detail":  "n_future_labels=20;"
+                                  },
+                                  {
+                                      "check":  "pit_truncation",
+                                      "cut_date":  "2025-11-24",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "pit_future_label_mutation",
+                                      "cut_date":  "2025-11-24",
+                                      "status":  "PASS",
+                                      "detail":  "n_future_labels=20;"
+                                  },
+                                  {
+                                      "check":  "pit_truncation",
+                                      "cut_date":  "2026-05-07",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "pit_future_label_mutation",
+                                      "cut_date":  "2026-05-07",
+                                      "status":  "PASS",
+                                      "detail":  "n_future_labels=20;"
+                                  },
+                                  {
+                                      "check":  "pit_truncation",
+                                      "cut_date":  "2026-09-15",
+                                      "status":  "PASS",
+                                      "detail":  ""
+                                  },
+                                  {
+                                      "check":  "pit_future_label_mutation",
+                                      "cut_date":  "2026-09-15",
+                                      "status":  "PASS",
+                                      "detail":  "n_future_labels=20;"
+                                  }
+                              ],
+    "reproducibility":  {
+                            "all_match":  true,
+                            "hashes":  {
+                                           "t14_features_daily.parquet":  {
+                                                                              "run1":  "e49a08b1437fe109c337bfef26ce3bcdc903bee6f66f8d5529415180d7b3f249",
+                                                                              "run2":  "e49a08b1437fe109c337bfef26ce3bcdc903bee6f66f8d5529415180d7b3f249"
+                                                                          },
+                                           "t14_cex_coverage_daily.parquet":  {
+                                                                                  "run1":  "25c4902b81ee07016c70d77be5267578449a72d6550e0f6dd407e6b3ab421f41",
+                                                                                  "run2":  "25c4902b81ee07016c70d77be5267578449a72d6550e0f6dd407e6b3ab421f41"
+                                                                              },
+                                           "t14_cex_coverage_monthly.parquet":  {
+                                                                                    "run1":  "c2de626c7f9896287432d0b056cbd797927aa71e058c4628646f81f35dd2288e",
+                                                                                    "run2":  "c2de626c7f9896287432d0b056cbd797927aa71e058c4628646f81f35dd2288e"
+                                                                                },
+                                           "t14_cohort_cex_overlap_daily.parquet":  {
+                                                                                        "run1":  "e62b2b3c5ff095a3624e5a1a520f9b75f8b241e0ba136f6d2d472c40b260e544",
+                                                                                        "run2":  "e62b2b3c5ff095a3624e5a1a520f9b75f8b241e0ba136f6d2d472c40b260e544"
+                                                                                    },
+                                           "t14_sample_eligibility_daily.parquet":  {
+                                                                                        "run1":  "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+                                                                                        "run2":  "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb"
+                                                                                    }
+                                       }
+                        },
+    "review_output_hashes":  {
+                                 "t14_cex_coverage_daily.parquet":  "25c4902b81ee07016c70d77be5267578449a72d6550e0f6dd407e6b3ab421f41",
+                                 "t14_cex_coverage_monthly.parquet":  "c2de626c7f9896287432d0b056cbd797927aa71e058c4628646f81f35dd2288e",
+                                 "t14_cohort_cex_overlap_daily.parquet":  "e62b2b3c5ff095a3624e5a1a520f9b75f8b241e0ba136f6d2d472c40b260e544",
+                                 "t14_features_daily.parquet":  "e49a08b1437fe109c337bfef26ce3bcdc903bee6f66f8d5529415180d7b3f249",
+                                 "t14_reproducibility.json":  "49da123534bd061ba2dfa07b251c7f893b968244d3ad549344221377bb243b7d",
+                                 "t14_sample_eligibility_daily.parquet":  "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+                                 "t14_summary.json":  "41a09a5f2d9781d3ce821d0e8e05f6ee3cd6e1259111bc3a87ed8f5dff8d8a21",
+                                 "t14_validation.parquet":  "907266f92de427f3d49a535d68b4851a7df2630048257d2ea505f04620d5dbcb"
+                             },
+    "downloaded_market_inputs":  [
+                                     {
+                                         "path":  "market/processed/ohlcv_1h/ETHUSDT_1h_2025-2026.parquet",
+                                         "sha256":  "00c55e50d65306baa8a3120067f87cc25f1fc7670f0b8d53ebcf0db08c823081"
+                                     },
+                                     {
+                                         "path":  "market/processed/ohlcv_1d/ETHUSDT_1d_2025-2026.parquet",
+                                         "sha256":  "540b408ce7276aec643d95c6febd348aaf25204525575877dea36aca96d40fba"
+                                     }
+                                 ],
+    "temporary_review_files_removed":  true
+}

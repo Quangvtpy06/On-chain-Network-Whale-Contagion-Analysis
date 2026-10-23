@@ -7,7 +7,9 @@ Run from the project root after T05-T07, T08 and T12 v2 have been accepted:
 Gates are verified structurally (protocol_id, cohort sha256, every input/output hash), not by one
 boolean. The tables are computed twice (second run in .cache/), hashes are compared, truncation and
 future-label mutation tests run, and readiness is reported per branch:
-computation_validated / retrospective_analysis_ready / pit_forecast_ready_cex / pit_forecast_ready_whaleflow.
+computation_validated / retrospective_analysis_ready / forecast_inputs_ready_cex /
+forecast_inputs_ready_activity_cohort. Certification is scoped to approved endpoints/activity cohorts,
+not individual ownership or an answered RQ3. No upload is performed.
 `--skip-reproducibility` is for exploration and never marks the output ready. This script only reads the
 T07/T12 gates; it never edits their flags.
 """
@@ -15,10 +17,13 @@ import argparse
 import json
 import shutil
 import uuid
+import subprocess
+from pathlib import Path
 
 import pandas as pd
 
 from src import flow_volatility as fv
+from src import t14_readiness as readiness
 from src.graph_config import ROOT, project_path, read_config, relative_path
 from src.node_centrality import sha256, verified_t08_inputs, write_json
 
@@ -96,6 +101,12 @@ def load_inputs(cfg, settings):
     """Read every input after the gates verified it. Retrospective labels stay in a separate set."""
     load_verified_gates(settings)
     paths = {k: project_path(v) for k, v in settings['inputs'].items()}
+    minute_manifest = json.loads(paths['market_1m_manifest'].read_text(encoding='utf-8'))
+    if project_path(minute_manifest['output']['path']) != paths['market_1m'] or \
+            sha256(paths['market_1m']) != minute_manifest['output']['sha256']:
+        raise ValueError('Minute input differs from its published provenance manifest')
+    if len(minute_manifest.get('sources', [])) != cfg['project']['total_days']:
+        raise ValueError('Minute input provenance does not contain the full daily calendar')
     history = pd.read_parquet(paths['t07_label_history'])
 
     labels = pd.read_parquet(paths['labels_parquet'])
@@ -111,13 +122,15 @@ def load_inputs(cfg, settings):
         for column in ['entity_name', 'entity_type', 'confidence', 'source_url']:
             labels.loc[present, column] = getattr(row, column)
 
-    cohort = pd.read_parquet(paths['cohort_members'], columns=['date', 'address'])
+    cohort_metadata = pd.read_parquet(paths['cohort_members'])
+    cohort = cohort_metadata[['date', 'address']]
     return dict(
         edges=pd.read_parquet(
             paths['daily_edges_parquet'],
             columns=['time_window', 'from_address', 'to_address', 'total_value']
         ),
         cohort=fv.normalise_cohort(cohort),
+        cohort_metadata=cohort_metadata,
         cex=fv.cex_set(labels),
         cex_history=history,
         minute=pd.read_parquet(
@@ -166,6 +179,8 @@ def main():
 
     cfg = read_config()
     settings = read_config(SETTINGS)
+    if settings.get('readiness_contract_version') != readiness.VERSION:
+        raise ValueError('Unsupported T14 readiness contract version')
     folder = project_path(settings['output_dir'])
     provenance = verified_t08_inputs(cfg)
     dates = list(fv.day_index(cfg['project']['start_date'], cfg['project']['end_date']))
@@ -173,6 +188,12 @@ def main():
         raise ValueError('Calendar length does not match config')
 
     t12_gate, t07_gate = load_verified_gates(settings)
+    input_hashes = {relative_path(project_path(v)): sha256(project_path(v))
+                    for v in settings['inputs'].values()}
+    source_hashes = {relative_path(p): sha256(p) for p in [ROOT / 'src/flow_volatility.py',
+        ROOT / 'T14_Flow_Volatility.py', ROOT / 'src/cex_label_history.py',
+        ROOT / 'src/t14_readiness.py', ROOT / 'scripts/validate_t14_release.py']}
+    settings_hash = sha256(SETTINGS)
     gates = dict(t12=t12_gate, t07=t07_gate)
     scope = settings.get('whaleflow_scope')
     if scope is not None and scope not in SUPPORTED_SCOPES:
@@ -208,7 +229,8 @@ def main():
                           detail=f'got {len(unique_overlap)} addresses/{overlap_member_days} member-days; '
                                  f"expected {ref['unique_addresses']}/{ref['member_days']}"))
     rows += [pd.DataFrame(extra), pd.DataFrame(adapter_rows(history, cex_by_day, dates)),
-             fv.pit_check(inputs, settings, dates, cuts)]
+             fv.pit_check(inputs, settings, dates, cuts),
+             readiness.contract_data_checks(inputs, table, settings, dates)]
     validation = pd.concat(rows, ignore_index=True)
     validation.to_parquet(folder / 't14_validation.parquet', index=False)
 
@@ -229,28 +251,28 @@ def main():
         same = all(h['run1'] == h['run2'] for h in hashes.values())
     if verified_t08_inputs(cfg) != provenance:
         raise ValueError('T08 inputs changed during T14')
+    readiness.verify_hash_map(ROOT, input_hashes, 'T14 inputs during computation')
+    readiness.verify_hash_map(ROOT, source_hashes, 'T14 sources during computation')
+    if sha256(SETTINGS) != settings_hash:
+        raise ValueError('T14 settings changed during computation')
+    final_t12, final_t07 = load_verified_gates(settings)
+    if final_t12 != t12_gate or final_t07 != t07_gate:
+        raise ValueError('Upstream gates changed during T14')
 
     passed = bool(validation.status.eq('PASS').all())
     validated = bool(passed and same)
     t07_open = bool(t07_gate['ready_for_t14_endpoint_lookup'])
     t12_open = bool(t12_gate['ready_for_cohort_whaleflow'])
-    cex_rq3 = bool(t07_gate['ready_for_rq3_pit_forecast'])
-    whale_rq3 = bool(t12_gate['ready_for_rq3_pit_forecast'] and t07_gate['ready_for_rq3_pit_forecast'])
-    blocking = dict(
-        cex=[r for r, bad in [('computation_not_validated_or_not_reproduced', not validated),
-                              ('t07_endpoint_gate_closed', not t07_open),
-                              ('t07_rq3_pit_gate_closed', not cex_rq3)] if bad],
-        whaleflow=[r for r, bad in [('computation_not_validated_or_not_reproduced', not validated),
-                                    ('t12_cohort_gate_closed', not t12_open),
-                                    ('whaleflow_scope_not_chosen', not scope_ok),
-                                    ('t12_or_t07_rq3_pit_gate_closed', not whale_rq3)] if bad])
+    contract = readiness.build_readiness(settings, gates, validation, hashes)
     prov_files = [project_path(settings['release_manifest'])] if settings.get('release_manifest') else []
     summary = dict(
         protocol_id=settings['protocol_id'],
         settings_sha256=sha256(SETTINGS),
         code_sha256={relative_path(p): sha256(p) for p in [ROOT / 'src/flow_volatility.py',
                                                            ROOT / 'T14_Flow_Volatility.py',
-                                                           ROOT / 'src/cex_label_history.py']},
+                                                           ROOT / 'src/cex_label_history.py',
+                                                           ROOT / 'src/t14_readiness.py',
+                                                           ROOT / 'scripts/validate_t14_release.py']},
         input_sha256={k: sha256(project_path(v)) for k, v in settings['inputs'].items()},
         release_manifest_sha256={relative_path(p): sha256(p) for p in prov_files if p.exists()},
         t12_cohort_sha256=t12_gate['cohort_sha256'], t12_protocol_id=t12_gate['protocol_id'],
@@ -275,11 +297,14 @@ def main():
         target_columns=[c for c in table.columns if c.startswith('target_')],
         computation_validated=validated,
         retrospective_analysis_ready=bool(validated and t12_gate.get('ready_for_descriptive_retrospective_sensitivity')),
-        pit_forecast_ready_cex=bool(validated and t07_open and cex_rq3),
-        pit_forecast_ready_whaleflow=bool(validated and t12_open and scope_ok and whale_rq3),
-        blocking_reasons=blocking,
+        readiness_contract_version=readiness.VERSION,
+        forecast_inputs_ready_cex=contract['forecast_inputs_ready_cex'],
+        forecast_inputs_ready_activity_cohort=contract['forecast_inputs_ready_activity_cohort'],
+        ready_for_individual_investor_inference=False, rq3_answered=False,
+        blocking_reasons=contract['blocking_reasons'],
         t07_gate_ready_for_endpoint_lookup=t07_open, t12_gate_ready_for_cohort_whaleflow=t12_open,
-        upstream_rq3_gates=dict(t07=cex_rq3, t12_and_t07=whale_rq3),
+        upstream_rq3_flags_informational_only=dict(t07=t07_gate.get('ready_for_rq3_pit_forecast'),
+                                                  t12=t12_gate.get('ready_for_rq3_pit_forecast')),
         whaleflow_scope=scope,
         caveats=[
             'Retrospective branch (cex_*, whaleflow_*, large_cex_*) uses current T07 labels: not point-in-time evidence.',
@@ -300,6 +325,30 @@ def main():
         ])
     write_json(folder / 't14_summary.json', summary)
     write_json(folder / 't14_reproducibility.json', dict(all_match=same, hashes=hashes))
+    contract.update(protocol_id=settings['protocol_id'], source_sha256=summary['code_sha256'],
+                    config_sha256={relative_path(SETTINGS): sha256(SETTINGS)}, input_sha256=input_hashes,
+                    output_sha256={name: sha256(folder / name) for name in REPRODUCED +
+                        ['t14_validation.parquet', 't14_summary.json', 't14_reproducibility.json']},
+                    upstream_protocols=dict(t07=t07_gate['protocol_id'], t12=t12_gate['protocol_id']))
+    write_json(folder / 't14_downstream_gate.json', contract)
+    artifacts = REPRODUCED + ['t14_validation.parquet', 't14_summary.json',
+                              't14_reproducibility.json', 't14_downstream_gate.json']
+    release = dict(repo_id=cfg['huggingface']['repo_id'], repo_type='dataset',
+        tasks_accepted={'t14_computation': validated}, upload_performed=False,
+        publication_state='local_only_pending_user_upload_instruction',
+        readiness_contract_version=readiness.VERSION, policy=contract['policy'],
+        forecast_inputs_ready_cex=contract['forecast_inputs_ready_cex'],
+        forecast_inputs_ready_activity_cohort=contract['forecast_inputs_ready_activity_cohort'],
+        source_base_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
+        source_state='working_tree_pinned_by_sha256',
+        source_sha256=summary['code_sha256'], config_sha256=contract['config_sha256'],
+        input_sha256=input_hashes, blocked_upload_files=[] if validated else artifacts, missing_files=[],
+        upload_files=[dict(path=relative_path(folder / name), sha256=sha256(folder / name),
+                           bytes=(folder / name).stat().st_size) for name in artifacts],
+        remote_dependencies=[dict(path=path, sha256=digest) for path, digest in input_hashes.items()
+                             if Path(path).suffix in {'.parquet', '.json', '.csv'}],
+        note='Scoped input certification only, not individual ownership or a completed RQ3 result. No upload performed.')
+    write_json(folder / 't14_release_manifest.json', release)
     print(json.dumps({k: summary[k] for k in summary
                       if k not in ('predictor_sets', 'input_sha256', 'code_sha256', 'upstream', 'caveats')},
                      indent=2, ensure_ascii=False), flush=True)
