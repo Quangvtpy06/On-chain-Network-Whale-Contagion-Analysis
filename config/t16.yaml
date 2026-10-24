@@ -1,0 +1,25 @@
+protocol_id: t16_event_blocks_v2
+output_dir: data/processed/t16
+t14_dir: data/processed/t14
+contract_version: t14_inputs_v1
+t11_snapshot: data/processed/t11/snapshot_metrics_daily.parquet
+t11_summary: data/processed/t11/t11_summary.json
+t11_reproducibility: data/processed/t11/t11_reproducibility.json
+window_days: 5
+# All values frozen before this rerun, not selected by effect size or p-value.
+lookback_days: 90
+minimum_history_days: 30
+large_transfer_quantile: 0.95
+concentration_quantile: 0.90
+flow_z_threshold: 2.0
+response_variables: [log_rv, log_volume_usdt, spread_cs_proxy, ret_1d]
+bootstrap:
+  seed: 20261025
+  resamples: 2000
+  alpha: 0.05
+  minimum_events: 5
+  primary_block_events: 3
+  sensitivity_block_events: [1, 5]
+# Primary: greedily keep earliest event, then require >2*k days between centers.
+# Sensitivity: retain overlapping events, resample contiguous event blocks jointly.
+selection_policies: [nonoverlap, all_events_sensitivity]

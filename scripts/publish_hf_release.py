@@ -56,7 +56,15 @@ def main():
         t11_figures={'data/figures/t11/'+name for name in [
             't11_modularity_timeseries.png','t11_concentration_timeseries.png',
             't11_rq4_stress_comparison.png','t11_community_map_2026-10-17.png']}
-        if path.suffix not in {'.parquet', '.json', '.yaml'} and rel != 'eth_stats_from_2025.csv' and rel not in t11_figures:
+        analysis_assets = set()
+        if manifest.get('tasks_accepted', {}).get('t15') is True:
+            analysis_assets.update({'data/processed/t15/t15_flow_coefficients.png', 'data/processed/t15/t15_report.md'})
+        if manifest.get('tasks_accepted', {}).get('t16') is True:
+            analysis_assets.add('data/processed/t16/t16_report.md')
+            analysis_assets.update('data/processed/t16/t16_'+name+'_response.png' for name in
+                                   ['large_transfer', 'cex_net_inflow', 'activity_cohort_net_inflow', 'concentration'])
+        if (path.suffix not in {'.parquet', '.json', '.yaml'} and rel != 'eth_stats_from_2025.csv'
+                and rel not in t11_figures and rel not in analysis_assets):
             raise ValueError(f'Unexpected release file type: {rel}')
         if digest(path) != record['sha256']:
             raise ValueError(f'Artifact changed after acceptance: {rel}')

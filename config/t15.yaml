@@ -1,0 +1,26 @@
+protocol_id: t15_matched_hac_v2
+output_dir: data/processed/t15
+t14_dir: data/processed/t14
+contract_version: t14_inputs_v1
+horizons: [1, 3, 7]
+minimum_observations: 60
+controls: [ret_1d, log_volume_usdt, log_rv, log_rv_week, log_rv_month]
+extended_controls: [log_trade_count, taker_imbalance, spread_cs_proxy, parkinson_var]
+# Frozen before re-estimation; no variable selection by regression outcomes.
+branches:
+  activity_cohort:
+    predictor: whaleflow_pit_z
+    predictor_set: pit_whaleflow
+    eligibility: pit_whale
+    readiness: forecast_inputs_ready_activity_cohort
+    retrospective_predictor: whaleflow_z
+    retrospective_set: retrospective_whaleflow
+    retrospective_eligibility: retro_whale
+  cex:
+    predictor: pit_cex_netflow_z
+    predictor_set: pit_cex
+    eligibility: pit_cex
+    readiness: forecast_inputs_ready_cex
+    retrospective_predictor: cex_netflow_z
+    retrospective_set: retrospective_cex
+    retrospective_eligibility: retro_cex

@@ -239,4 +239,25 @@ Hợp đồng `t14_inputs_v1` cấp riêng `forecast_inputs_ready_cex` và
 T15/T16 kiểm tra gate/hash trước khi dùng eligibility/predictor_sets. Xem
 [đặc tả T14](docs/T14_flow_volatility_specification.md). Gói đã được phát hành lên GitHub/HF; xem [receipt và revision đầu vào](docs/T14_release_receipt.md).
 
+### T15/T16 — hồi quy và phản ứng quanh sự kiện
+
+```bash
+python T15_Volatility_Regression.py
+python T16_Event_Study.py
+python scripts/validate_t15_t16_release.py
+python scripts/prepare_t15_t16_release.py
+```
+
+T15 dùng OLS/HAC, so baseline và flow trên cùng ngày/cùng control, tách activity cohort và CEX;
+báo cả p thô và Holm. T16 tách CEX NetFlow khỏi flow cohort, chọn cửa sổ UTC không chồng cho
+phân tích chính, bootstrap block và báo độ nhạy. Cả hai xác minh release T14 trước khi đọc eligibility.
+Output bảng chỉ Parquet tại `data/processed/t15` và `data/processed/t16`, kèm report, PNG và JSON hash.
+Activity cohort là địa chỉ hoạt động lớn chưa định danh; không chứng nhận nhà đầu tư cá nhân.
+
+Các kết quả là liên hệ trong mẫu và phản ứng mô tả; chưa phải bằng chứng causal hoặc forecast ngoài mẫu.
+Sau sửa lỗi ngày 25/10, cả sáu kiểm định flow chính T15 chưa đạt mức 5% sau Holm.
+Xem [đặc tả T15](docs/T15_specification.md), [đặc tả T16](docs/T16_specification.md) và
+[báo cáo sửa/kiểm định](docs/T15_T16_fix_completion_report.md).
+Lệnh prepare chỉ tạo manifest `data/hf_t15_t16_release_manifest.json`, không upload.
+
 
