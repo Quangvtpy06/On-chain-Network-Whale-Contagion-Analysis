@@ -239,4 +239,39 @@ Hợp đồng `t14_inputs_v1` cấp riêng `forecast_inputs_ready_cex` và
 T15/T16 kiểm tra gate/hash trước khi dùng eligibility/predictor_sets. Xem
 [đặc tả T14](docs/T14_flow_volatility_specification.md). Gói đã được phát hành lên GitHub/HF; xem [receipt và revision đầu vào](docs/T14_release_receipt.md).
 
+---
+
+## 📈 T15 — Hồi Quy Dự Báo Biến Động (Volatility Regression)
+
+Mô hình hồi quy OLS đánh giá mối liên hệ dự báo (predictive association, lead-lag) giữa dòng tiền cá voi (`WhaleFlow`) và biến động giá thực hiện trong tương lai của ETH (`target_log_rv_h{h}` với $h \in \{1, 3, 7\}$ ngày), kiểm soát theo cấu trúc HAR và các yếu tố thanh khoản/thị trường. Sai số chuẩn được hiệu chỉnh Newey-West HAC.
+
+Lệnh thực thi:
+```bash
+python T15_Volatility_Regression.py
+```
+
+### Kết quả chính (Nhánh Point-In-Time — `whaleflow_pit_z`)
+
+| Horizon ($h$) | Số quan sát ($n$) | $R^2$ (PIT Model) | $R^2$ (HAR Baseline) | Hệ số $\beta$ | HAC SE | $t$-stat | $p$-value | Ý nghĩa ($\alpha = 0.05$) |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **$h = 1$ ngày** | 594 | **0.4493** | 0.4402 | +0.0230 | 0.0224 | 1.027 | 0.3046 | *Không có ý nghĩa* |
+| **$h = 3$ ngày** | 592 | **0.2341** | 0.2192 | +0.0204 | 0.0265 | 0.771 | 0.4406 | *Không có ý nghĩa* |
+| **$h = 7$ ngày** | 588 | **0.2933** | 0.3009 | +0.0141 | 0.0161 | 0.875 | 0.3817 | *Không có ý nghĩa* |
+
+### Nhánh Đối chứng Hồi cứu (Retrospective Robustness — `whaleflow_z`)
+*(Chỉ dùng cho mục đích so sánh phương pháp; không dùng làm bằng chứng dự báo chính do có rò rỉ thông tin nhãn ví tương lai)*
+
+| Horizon ($h$) | Số quan sát ($n$) | $R^2$ | Hệ số $\beta$ (retro) | HAC SE | $t$-stat | $p$-value | Ý nghĩa ($\alpha = 0.05$) |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **$h = 1$ ngày** | 594 | 0.4492 | +0.0229 | 0.0256 | 0.894 | 0.3714 | *Không có ý nghĩa* |
+| **$h = 3$ ngày** | 592 | 0.2373 | +0.0469 | 0.0352 | 1.333 | 0.1825 | *Không có ý nghĩa* |
+| **$h = 7$ ngày** | 588 | 0.2954 | +0.0367 | 0.0315 | 1.165 | 0.2439 | *Không có ý nghĩa* |
+
+> **Lưu ý kinh tế lượng & Caveats:**
+> - Các hệ số chỉ phản ánh **predictive association (mối liên hệ lead-lag)**, tuyệt đối **không suy diễn quan hệ nhân quả (causal effect)**.
+> - Việc kiểm định trên nhiều horizon ($h=1, 3, 7$) cấu thành bài toán **multiple hypothesis testing**, cần lưu ý nguy cơ false discovery.
+> - Cả nhánh PIT lẫn retrospective đều cho thấy `WhaleFlow` không có ý nghĩa thống kê vượt trội so với các thành phần biến động trễ HAR truyền thống.
+> - Kết quả chi tiết lưu tại `data/market_data/data/processed/t15/t15_regression_report.md` và `t15_volatility_regression_results.parquet`.
+
+
 
