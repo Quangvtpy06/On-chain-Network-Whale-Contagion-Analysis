@@ -1,0 +1,49 @@
+# T19 - ma tran feature node-window (T09, T10, T11), nhan T07, split theo thoi gian.
+# Moi gia tri duoc dong bang TRUOC khi chay T20. Khong chinh theo ket qua mo hinh,
+# F1 hay chi so tren tap test. Doi gia tri sau khi da co ket qua = protocol_id moi + ghi chu lech.
+protocol_id: t19_v1
+output_dir: data/processed/t19
+
+# window_type: weekly la bang chinh (cua so tuan ISO, bo tuan le khoi split); daily la bang phu.
+window_types: [weekly, daily]
+primary_window_type: weekly
+
+inputs:
+  t07_labels: data/processed/t07/t07_complete_wallet_labels.parquet
+  t09_nodes: data/processed/t09/node_metrics_{window}.parquet
+  t09_snapshot: data/processed/t09/snapshot_metrics_{window}.parquet
+  t10_nodes: data/processed/t10/node_metrics_{window}.parquet
+  t11_nodes: data/processed/t11/community_nodes_{window}.parquet
+  t11_snapshot: data/processed/t11/snapshot_metrics_{window}.parquet
+
+# Nhan T07 la nhan HOI CUU (thu thap 2026-10-20), khong co ngay kha dung lich su.
+# T19 la bai toan phan loai node tren feature cung cua so, khong phai du bao theo thoi diem.
+# Nhan chi nam trong cot label_*; khong co feature nao duoc tinh tu nhan.
+label:
+  # Chi dia chi co entity_type thuoc nhom nay (da gan thuc the) moi thanh mau co nhan.
+  # Unknown/Contract/Other khong phai lop am: giu trong bang voi label_status rieng, khong dua vao huan luyen.
+  exclude_entity_types: [Unknown, Contract, Other]
+  exclude_label_conflict: true
+  exclude_zero_address: true
+  # Lop phai co it nhat bay nhieu dia chi co nhan trong bang (dem theo dia chi, khong theo hang).
+  min_addresses_per_class: 50
+  # Moi lop nen co it nhat bay nhieu dia chi phan biet trong tung split; thieu thi chi bao cao.
+  min_addresses_per_class_per_split: 10
+
+# Split theo thu tu cua so, chi dung cua so du (eligible_for_regression). Ty le dong bang truoc.
+# gap_windows cua so bo trong giua cac split de cac cua so ke nhau khong giong nhau.
+split:
+  fractions: {train: 0.6, validation: 0.2, test: 0.2}
+  gap_windows: {weekly: 1, daily: 7}
+
+features:
+  # Tren moi cua so, xep hang phan tram trong cung cua so (khong dung cua so khac).
+  rank_columns: [degree, weighted_degree_usdt, pagerank, betweenness, eigenvector]
+  # Lag chi dung cua so truoc; dia chi vang mat = khong co canh >= nguong = 0 (khong phai NaN).
+  lag_windows: 1
+  # Cot ngu canh cua so (giong nhau cho moi node) khong dua vao feature mac dinh vi cho phep nho thoi gian.
+  window_context: []
+
+leakage_checks:
+  cut_fractions: [0.25, 0.5, 0.75]
+  tolerance: 1.0e-9
