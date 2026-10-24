@@ -1,6 +1,6 @@
 # Hoàn tất sửa T15/T16 — 25/10/2026
 
-Đã thay hai script trên nhánh `feature/t15-t16-analysis` phiên bản `182cea7` bằng entrypoint có cấu hình và các module tính toán/kiểm định. Bản sửa nằm trong working tree local trên nền main mới nhất đã tải; chưa commit/push GitHub hoặc upload Hugging Face.
+Đã thay hai script cũ trên nhánh `feature/t15-t16-analysis` phiên bản `182cea7` bằng entrypoint có cấu hình và các module tính toán/kiểm định. Bản sửa đã push trực tiếp lên **main** tại commit `f334ff5d3c9d9003878505bfb1abd52cefe38b11`; output đã phát hành lên HF và tải lại xác minh. Xem [biên nhận phát hành](T15_T16_release_receipt.md). Nhánh feature cũ không phải bản nghiệm thu.
 
 ## T15
 
@@ -45,6 +45,6 @@ Kết quả cuối, SHA-256 và danh sách ca kiểm tra được giữ tại [T
 - Tiến trình validator riêng với hash seed `137`: cả T15/T16 PASS; 18 kiểm tra ma trận OLS/HAC và 3 kiểm tra quantile/lookup độc lập PASS.
 - Đã xem biểu đồ hệ số T15 và biểu đồ cohort T16; manifest local có 22 file đúng hash. Không xuất CSV mới.
 
-Output mới ở `data/processed/t15` và `data/processed/t16`, bảng chỉ Parquet, có biểu đồ/report và JSON provenance. Giữ validator dữ liệu thật, xóa script/dữ liệu test tạm sau nghiệm thu. Manifest chuẩn bị tại `data/hf_t15_t16_release_manifest.json`; chưa upload. Các bài kiểm tra giả là bằng chứng lịch sử của lần này, không được coi là vẫn tồn tại cho các lần chạy sau.
+Output mới ở `data/processed/t15` và `data/processed/t16`, bảng chỉ Parquet, có biểu đồ/report và JSON provenance. Giữ validator dữ liệu thật, đã xóa script/dữ liệu test tạm sau nghiệm thu. Manifest `data/hf_t15_t16_release_manifest.json` đã phát hành cùng output; tổng cộng 23 file, tính cả manifest, đều tải lại khớp SHA-256. Các bài kiểm tra giả là bằng chứng lịch sử của lần này, không được coi là vẫn tồn tại cho các lần chạy sau.
 
 Xem [đặc tả T15](T15_specification.md), [đặc tả T16](T16_specification.md). Review ngày 24/10 giữ nguyên như lịch sử trước sửa; báo cáo này mô tả phiên bản thay thế.

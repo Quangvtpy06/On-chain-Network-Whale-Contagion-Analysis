@@ -1,0 +1,216 @@
+{
+  "repo_id": "team-crypto/Market-data-crypto-project",
+  "revision": "d3cc595be2d452467e823596749a63723dfa2e1d",
+  "verified_files": 23,
+  "changed_files": 23,
+  "manifest_sha256": "82d3724694ad26ddb8ea386b205f10bf9208abdbdd31b45d5b7d386d0f610ae5",
+  "commit_url": "https://huggingface.co/datasets/team-crypto/Market-data-crypto-project/commit/d3cc595be2d452467e823596749a63723dfa2e1d",
+  "remote_deletions": 0,
+  "code_git_commit": "f334ff5d3c9d9003878505bfb1abd52cefe38b11",
+  "remote_dependencies": [
+    {
+      "path": "data/processed/t11/snapshot_metrics_daily.parquet",
+      "sha256": "0b79d6750588025ed4750347a9915a2bfe1f0fcc7d885e1b666b8302ab613ed4",
+      "revision": "87bfe944925467fa74083ec0377c6b2579692bf0"
+    },
+    {
+      "path": "data/processed/t11/t11_reproducibility.json",
+      "sha256": "86eb56ad72ed1202ca166d690b2967be1e2a752c0d252b2d90862ab8b1f46309",
+      "revision": "87bfe944925467fa74083ec0377c6b2579692bf0"
+    },
+    {
+      "path": "data/processed/t11/t11_summary.json",
+      "sha256": "2de05cda9f02473c43cec283b92772c09cd86c5c30591a9f22a32c8088834510",
+      "revision": "87bfe944925467fa74083ec0377c6b2579692bf0"
+    },
+    {
+      "path": "data/processed/t14/t14_downstream_gate.json",
+      "sha256": "583d10de4da96c1df5a59d994e52c4e94c5c6fb9e41f8d87c6161d54d932b767",
+      "revision": "87bfe944925467fa74083ec0377c6b2579692bf0"
+    },
+    {
+      "path": "data/processed/t14/t14_features_daily.parquet",
+      "sha256": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195",
+      "revision": "87bfe944925467fa74083ec0377c6b2579692bf0"
+    },
+    {
+      "path": "data/processed/t14/t14_release_manifest.json",
+      "sha256": "80976aab91a0f6214c78d3467b857f43718c8947dfb09c822d216159b4c5af46",
+      "revision": "87bfe944925467fa74083ec0377c6b2579692bf0"
+    },
+    {
+      "path": "data/processed/t14/t14_sample_eligibility_daily.parquet",
+      "sha256": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+      "revision": "87bfe944925467fa74083ec0377c6b2579692bf0"
+    },
+    {
+      "path": "data/processed/t14/t14_summary.json",
+      "sha256": "5c1e8c4813d05d864bc725bdd6cbf5f3a10299b480aa8602bdde70ef970917f2",
+      "revision": "87bfe944925467fa74083ec0377c6b2579692bf0"
+    }
+  ],
+  "download_verification": {
+    "all_match": true,
+    "verified_files": 23,
+    "parquet_readable": 9,
+    "files": [
+      {
+        "path": "data/processed/t15/t15_volatility_regression_results.parquet",
+        "bytes": 23969,
+        "sha256": "a0af9f4bd1630efc9110fbf6abcdac0eac0a70a753138e2c18a3d367661e68c5",
+        "matches": true,
+        "parquet_rows": 192,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t15/t15_volatility_regression_summary.parquet",
+        "bytes": 12889,
+        "sha256": "37ae3b541073e5eccd311fb1fd8728ffbe574f3656a62ff730635c6fa3df5a5d",
+        "matches": true,
+        "parquet_rows": 18,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t15/t15_sample_membership.parquet",
+        "bytes": 13892,
+        "sha256": "5ddd3cb12b23c86fb6ea671d88d3575a3e3bec052046fd2e99a2276eefdbe9f6",
+        "matches": true,
+        "parquet_rows": 3930,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t15/t15_validation.parquet",
+        "bytes": 4107,
+        "sha256": "006392734ad29dbc7187f265181405d2bd3ecea4549ef2a5993d0f5091b004a1",
+        "matches": true,
+        "parquet_rows": 6,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t15/t15_report.md",
+        "bytes": 1620,
+        "sha256": "03d5b1ce9801504feb3d0790afc0432f402fd62836b65e1ae28d3465bd14ece6",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t15/t15_flow_coefficients.png",
+        "bytes": 51607,
+        "sha256": "627b782f344e695f482d24fc5c4228e27d96ef3597ecb58e77a02f2f23504b13",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t15/t15_summary.json",
+        "bytes": 5415,
+        "sha256": "fe431f6178441afe2acc3658d94e5defa6eed545191edc44b5efe4fcce78e11a",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t15/t15_independent_review.json",
+        "bytes": 6067,
+        "sha256": "41dce5f5ad97784871b18b8ae206ece5413fa897cdb0ea79b33aeceea1613be3",
+        "matches": true
+      },
+      {
+        "path": "config/t15.yaml",
+        "bytes": 964,
+        "sha256": "88c030cda5f2f2060862ef61a9b50d94d83f138d2e5fe51e00504e697b0fa882",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t16/t16_event_study_results.parquet",
+        "bytes": 34923,
+        "sha256": "c4fc9190ce35c4ca5e1f2c657126332d02d961b354535945cea35534627dc8bc",
+        "matches": true,
+        "parquet_rows": 1056,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t16/t16_event_selection.parquet",
+        "bytes": 49656,
+        "sha256": "22ae02460bda49fe3ef47b7ad6eb170945aa285a7a5b38c61251b681f60058fe",
+        "matches": true,
+        "parquet_rows": 5240,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t16/t16_event_windows.parquet",
+        "bytes": 41964,
+        "sha256": "8359f7c0c275247f221da6df8d62be748c5e41fa9d89e9c61092d7dbcfde6086",
+        "matches": true,
+        "parquet_rows": 2222,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t16/t16_event_candidates.parquet",
+        "bytes": 43241,
+        "sha256": "229b1cd983badddd29f323d850615facecec7b08048e54c0705be6f0da236d8a",
+        "matches": true,
+        "parquet_rows": 2620,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t16/t16_validation.parquet",
+        "bytes": 3110,
+        "sha256": "9be8a4f7eef9bdffc53a1e34940eb03a1f415a38bbf5d45f93c15000bb304b08",
+        "matches": true,
+        "parquet_rows": 4,
+        "parquet_readable": true
+      },
+      {
+        "path": "data/processed/t16/t16_report.md",
+        "bytes": 1682,
+        "sha256": "8169b18903c5af2c44fbbf878d1a380180767d1586377efd1dbd9f0a23f3a97c",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t16/t16_activity_cohort_net_inflow_response.png",
+        "bytes": 250797,
+        "sha256": "ee7af303511d4d4a6548821c0766bc2b27518759c1f95c2e06857ce690e54ed3",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t16/t16_cex_net_inflow_response.png",
+        "bytes": 244265,
+        "sha256": "6e3d4ccc4023dd0ea4bb07695884725367215de19bd78f365b5cd94b6bba5a26",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t16/t16_concentration_response.png",
+        "bytes": 249165,
+        "sha256": "29a766e7bd90594727c264b22f09a9b8ce8a1c7c8a0eeec2cd0a46a14a78aa1a",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t16/t16_large_transfer_response.png",
+        "bytes": 246776,
+        "sha256": "d9cbffe124008d2f10ed58372508e47074ab172e4b3298eeff5f320b5456b6ec",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t16/t16_summary.json",
+        "bytes": 6122,
+        "sha256": "85d1866c98f5175b725fd5ad8e202b404b2003a1beff5a734b65e6c44f85d041",
+        "matches": true
+      },
+      {
+        "path": "data/processed/t16/t16_independent_review.json",
+        "bytes": 4189,
+        "sha256": "7e8d6087d37c3a74bf6f9f1b09faed863ecd597788b4493d6cfd41a6f4471f81",
+        "matches": true
+      },
+      {
+        "path": "config/t16.yaml",
+        "bytes": 954,
+        "sha256": "2e6e69d7b3d45aaacf4f787040f726830e843a74844cd7f036767c53423e76fc",
+        "matches": true
+      },
+      {
+        "path": "data/hf_t15_t16_release_manifest.json",
+        "bytes": 7112,
+        "sha256": "82d3724694ad26ddb8ea386b205f10bf9208abdbdd31b45d5b7d386d0f610ae5",
+        "matches": true
+      }
+    ]
+  },
+  "scope": "Validated in-sample flow associations and descriptive event responses, not causal/OOS/individual-investor evidence."
+}

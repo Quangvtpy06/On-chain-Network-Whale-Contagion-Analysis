@@ -259,5 +259,7 @@ Sau sửa lỗi ngày 25/10, cả sáu kiểm định flow chính T15 chưa đ�
 Xem [đặc tả T15](docs/T15_specification.md), [đặc tả T16](docs/T16_specification.md) và
 [báo cáo sửa/kiểm định](docs/T15_T16_fix_completion_report.md).
 Lệnh prepare chỉ tạo manifest `data/hf_t15_t16_release_manifest.json`, không upload.
+Code nghiệm thu đã có trên **main**; output đã phát hành và tải lại kiểm tra 23/23 file khớp.
+Xem [biên nhận T15/T16 và revision cần dùng](docs/T15_T16_release_receipt.md); nhánh feature cũ không phải bản nghiệm thu.
 
 
