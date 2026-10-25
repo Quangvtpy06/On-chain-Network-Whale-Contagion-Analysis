@@ -24,14 +24,20 @@ from src.forecast_inputs import (ROOT, file_hash, hash_paths, json_write, load_t
                                  relative_path, require, verify_hashes)
 
 SOURCE_FILES = ['src/forecast_inputs.py', 'src/robustness.py', 'T17_Robustness.py', 'src/volatility_regression.py',
-                'src/event_study.py', 'src/flow_volatility.py', 'src/graph_ml_features.py', 'src/analysis_release.py']
+                'src/event_study.py', 'src/flow_volatility.py', 'src/graph_ml_features.py', 'src/analysis_release.py',
+                'config/t15.yaml', 'config/t16.yaml']
 EDGES_KEY = 'data/processed/graphs/dynamic_edges_daily.parquet'
 
 
 def required_files(cfg):
-    t16 = local_path(cfg['t16_config'])
-    cfg16 = read_config(t16)
-    names = [local_path(cfg['t15_results_dir']) / 't15_volatility_regression_summary.parquet',
+    t15_cfg_file = local_path(cfg['t15_config'])
+    t16_cfg_file = local_path(cfg['t16_config'])
+    cfg16 = read_config(t16_cfg_file)
+    names = [t15_cfg_file, t16_cfg_file,
+             local_path(cfg['t15_results_dir']) / 't15_summary.json',
+             local_path(cfg['t15_results_dir']) / 't15_volatility_regression_summary.parquet',
+             local_path(cfg['t15_results_dir']) / 't15_sample_membership.parquet',
+             local_path(cfg['t16_results_dir']) / 't16_summary.json',
              local_path(cfg['t16_results_dir']) / 't16_event_selection.parquet',
              local_path(cfg['t16_results_dir']) / 't16_event_candidates.parquet',
              local_path(cfg['t11_weekly_snapshot']), local_path(cfg['t11_summary']), local_path(cfg['daily_edges_parquet']),
@@ -47,10 +53,26 @@ def preflight(cfg):
 
 def load(cfg):
     features, eligibility, summary, gate, hashes = load_t14(cfg)
-    cfg15, cfg16 = read_config(local_path(cfg['t15_config'])), read_config(local_path(cfg['t16_config']))
+    t15_cfg_path = local_path(cfg['t15_config'])
+    t16_cfg_path = local_path(cfg['t16_config'])
+    cfg15, cfg16 = read_config(t15_cfg_path), read_config(t16_cfg_path)
     t14_cfg = read_config(ROOT / 'config/t14.yaml')
     files = required_files(cfg)
     before = hash_paths(files)
+
+    t15_summary = json.loads((local_path(cfg['t15_results_dir']) / 't15_summary.json').read_text(encoding='utf-8'))
+    t16_summary = json.loads((local_path(cfg['t16_results_dir']) / 't16_summary.json').read_text(encoding='utf-8'))
+    t15_cfg_hash = file_hash(t15_cfg_path)
+    t16_cfg_hash = file_hash(t16_cfg_path)
+    expected_t15_hash = t15_summary.get('source_config_sha256', {}).get('config/t15.yaml')
+    expected_t16_hash = t16_summary.get('source_config_sha256', {}).get('config/t16.yaml')
+    require(t15_cfg_hash == expected_t15_hash,
+            f'config/t15.yaml hash {t15_cfg_hash} mismatch with accepted T15 release ({expected_t15_hash})')
+    require(t16_cfg_hash == expected_t16_hash,
+            f'config/t16.yaml hash {t16_cfg_hash} mismatch with accepted T16 release ({expected_t16_hash})')
+    hashes['config/t15.yaml'] = t15_cfg_hash
+    hashes['config/t16.yaml'] = t16_cfg_hash
+
     concentration, t11 = events.load_concentration(cfg16, features.date)
     edges_hash = file_hash(local_path(cfg['daily_edges_parquet']))
     require(edges_hash == gate['input_sha256'][EDGES_KEY] == t11['inputs']['daily_edges_parquet']['sha256'],
@@ -58,20 +80,39 @@ def load(cfg):
     t11_summary = json.loads(local_path(cfg['t11_summary']).read_text(encoding='utf-8'))
     require(t11_summary.get('ready_for_downstream') is True and t11_summary.get('independent_review_pass') is True,
             'T11 is not validated for downstream')
-    weekly = pd.read_parquet(local_path(cfg['t11_weekly_snapshot']))
+
+    weekly_path = local_path(cfg['t11_weekly_snapshot'])
+    weekly_hash = file_hash(weekly_path)
+    t11_repro = json.loads(local_path(cfg16['t11_reproducibility']).read_text(encoding='utf-8'))
+    weekly_pair = t11_repro.get('hashes', {}).get(weekly_path.name, {})
+    require(t11_repro.get('all_match') is True and weekly_pair.get('run1') == weekly_pair.get('run2') == weekly_hash,
+            f'T11 weekly snapshot differs from reproduced artifact hash: {weekly_hash} vs {weekly_pair.get("run1")}')
+    weekly = pd.read_parquet(weekly_path)
+    weekly_shape = t11_summary.get('shapes', {}).get('weekly', {})
+    require(len(weekly) == weekly_shape.get('snapshots', 94),
+            f'T11 weekly snapshot count mismatch: {len(weekly)} vs {weekly_shape.get("snapshots")}')
+    require('community_concentration_index' in weekly, 'Missing community_concentration_index in T11 weekly snapshot')
+    require(weekly.window_type.eq('weekly').all(), 'T11 snapshot must be weekly')
+    require(weekly['community_concentration_index'].between(0, 1).all(), 'Invalid T11 weekly concentration values')
+    require(np.isclose(weekly['community_concentration_index'].mean(), weekly_shape.get('mean_cci', 0.0811926715724106), atol=1e-6),
+            f'T11 weekly mean CCI mismatch with accepted T11 summary: {weekly["community_concentration_index"].mean()} vs {weekly_shape.get("mean_cci")}')
+
     edges = pd.read_parquet(local_path(cfg['daily_edges_parquet']), columns=['time_window', 'from_address', 'to_address', 'total_value'])
     results = dict(t15=pd.read_parquet(local_path(cfg['t15_results_dir']) / 't15_volatility_regression_summary.parquet'),
+                   t15_membership=pd.read_parquet(local_path(cfg['t15_results_dir']) / 't15_sample_membership.parquet'),
                    t16_selection=pd.read_parquet(local_path(cfg['t16_results_dir']) / 't16_event_selection.parquet'),
                    t16_candidates=pd.read_parquet(local_path(cfg['t16_results_dir']) / 't16_event_candidates.parquet'))
     hashes = dict(hashes, **before)
     return dict(features=features, eligibility=eligibility, gate=gate, hashes=hashes, cfg15=cfg15, cfg16=cfg16, t14_cfg=t14_cfg,
+                t15_summary=t15_summary, t16_summary=t16_summary, t11_summary=t11_summary,
+                t15_cfg_hash=t15_cfg_hash, t16_cfg_hash=t16_cfg_hash, weekly_hash=weekly_hash,
                 concentration=concentration, weekly=weekly, edges=edges, results=results)
 
 
 def compute(cfg, loaded):
     f, e, gate = loaded['features'], loaded['eligibility'], loaded['gate']
     cfg15, cfg16, norm = loaded['cfg15'], loaded['cfg16'], loaded['t14_cfg']['normalisation']
-    regression = rb.run_regressions(f, e, cfg15, cfg, norm)
+    regression, sample_dates = rb.run_regressions(f, e, cfg15, cfg, norm, return_dates=True)
     dates = f.date.dt.strftime('%Y-%m-%d').tolist()
     counts = rb.large_edge_counts(loaded['edges'], dates, cfg['events']['large_edge_percentile'], loaded['t14_cfg'])
     weekly = rb.weekly_concentration_frame(loaded['weekly'], f.date)
@@ -85,17 +126,31 @@ def compute(cfg, loaded):
     plan_table = pd.DataFrame(plan_rows)
     plan_table['reason'] = plan_table['reason'].fillna('') if 'reason' in plan_table else ''
     return dict(regression=regression, summary=summary, events=event_rows, plan=plan_table, base_tables=base_tables,
-                base_count=counts[float(loaded['t14_cfg']['large_transfer']['percentile'])])
+                base_count=counts[float(loaded['t14_cfg']['large_transfer']['percentile'])],
+                sample_dates=sample_dates)
 
 
 def validation(cfg, loaded, out):
     f, e = loaded['features'], loaded['eligibility']
     cfg15, norm, tol = loaded['cfg15'], loaded['t14_cfg']['normalisation'], float(cfg['tolerance'])
     independent = rb.independent_hac_checks(f, e, cfg15, norm, out['regression'])
-    rows = rb.structural_checks(f, out['regression'], cfg15, norm, tol, edge_counts=out['base_count'], independent=independent)
-    rows += rb.reconcile_t15(out['regression'], loaded['results']['t15'], cfg15['horizons'], tol)
+    rows = rb.structural_checks(f, out['regression'], cfg15, norm, tol, edge_counts=out['base_count'],
+                                independent=independent, sample_dates=out.get('sample_dates'), cfg17=cfg)
+    rows += rb.reconcile_t15(out['regression'], loaded['results']['t15'], cfg15['horizons'], tol,
+                             t15_membership=loaded['results'].get('t15_membership'),
+                             sample_dates=out.get('sample_dates'))
     rows += rb.reconcile_t16(out['base_tables'], loaded['results']['t16_selection'], loaded['results']['t16_candidates'])
     rows += rb.trailing_leak_checks(f, norm, cfg['flow_window']['trailing_days'], cfg['leakage_cut_fractions'], tol)
+    rows.append(dict(check='t15_config_hash_matches_accepted_release', scope='config',
+                     status='PASS' if loaded['t15_cfg_hash'] == loaded['t15_summary'].get('source_config_sha256', {}).get('config/t15.yaml') else 'FAIL',
+                     detail=loaded['t15_cfg_hash']))
+    rows.append(dict(check='t16_config_hash_matches_accepted_release', scope='config',
+                     status='PASS' if loaded['t16_cfg_hash'] == loaded['t16_summary'].get('source_config_sha256', {}).get('config/t16.yaml') else 'FAIL',
+                     detail=loaded['t16_cfg_hash']))
+    rows.append(dict(check='t11_weekly_snapshot_matches_accepted_reproducibility', scope='t11',
+                     status='PASS', detail=loaded['weekly_hash']))
+    rows.append(dict(check='t11_weekly_concentration_matches_accepted_summary', scope='t11',
+                     status='PASS', detail=f"mean_cci={loaded['weekly']['community_concentration_index'].mean():.8f}"))
     rows.append(dict(check='token_axis_not_run_and_declared', scope='token', status='PASS', detail='other_tokens=[]'))
     df = pd.DataFrame(rows)
     df['detail'] = df['detail'].astype(str)

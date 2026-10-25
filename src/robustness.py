@@ -113,14 +113,14 @@ def regression_plan(cfg17, base_horizons):
     return plan
 
 
-def run_regressions(features, eligibility, cfg15, cfg17, norm, fit=None):
+def run_regressions(features, eligibility, cfg15, cfg17, norm, fit=None, return_dates=False):
     """OLS/HAC with and without the flow on the same days; one row per scenario and branch."""
     fit = fit or regression.fit_hac
     controls = cfg15['controls'] + cfg15['extended_controls']
     base_h = list(cfg15['horizons'])
     finite(features, controls + ['rv', 'transfer_volume_usdt'])   # columns exist, no infinity
     plan = regression_plan(cfg17, base_h)
-    targets, flows, rows = {}, {}, []
+    targets, flows, rows, sample_dates = {}, {}, [], {}
     for scenario in plan:
         h, definition, k = scenario['horizon_h'], scenario['definition'], scenario['flow_window_days']
         if (definition, h) not in targets:
@@ -135,6 +135,7 @@ def run_regressions(features, eligibility, cfg15, cfg17, norm, fit=None):
             work['cutoff'] = pd.to_datetime(features.available_at, utc=True).dt.as_unit('ns')
             selected = ready & finite(work, controls + ['flow_z', 'target'])
             sample = work.loc[selected]
+            sample_dates[(scenario['scenario_id'], branch)] = pd.to_datetime(sample.date).dt.normalize().tolist()
             row = dict(scenario, branch=branch, n_obs=int(len(sample)), status='ok', error='',
                        sample_start=sample.date.min() if len(sample) else pd.NaT,
                        sample_end=sample.date.max() if len(sample) else pd.NaT)
@@ -156,6 +157,8 @@ def run_regressions(features, eligibility, cfg15, cfg17, norm, fit=None):
     table['p_holm_axis'] = np.nan
     for axis, group in table[table.status.eq('ok')].groupby('axis'):
         table.loc[group.index, 'p_holm_axis'] = holm(group.p_value.to_numpy())
+    if return_dates:
+        return table, sample_dates
     return table
 
 
@@ -310,7 +313,7 @@ def large_edge_counts(edges, dates, percentiles, t14_cfg):
 
 
 # ----------------------------------------------------------------------------- reconciliation and validation
-def reconcile_t15(table, t15_summary, base_horizons, tolerance):
+def reconcile_t15(table, t15_summary, base_horizons, tolerance, t15_membership=None, sample_dates=None):
     rows = []
     primary = t15_summary[t15_summary.model.eq('primary')].set_index(['branch', 'horizon_h'])
     baseline = t15_summary[t15_summary.model.eq('matched_baseline')].set_index(['branch', 'horizon_h'])
@@ -321,6 +324,16 @@ def reconcile_t15(table, t15_summary, base_horizons, tolerance):
                 and abs(r.p_value - a.p_value) <= tolerance and abs(r.r2_baseline - b.r2) <= tolerance)
         rows.append(dict(check='base_scenario_reproduces_accepted_t15', scope=f'{r.branch}:h{r.horizon_h}',
                          status='PASS' if same else 'FAIL', detail=''))
+        if t15_membership is not None and sample_dates is not None:
+            t15_dates = set(pd.to_datetime(t15_membership[t15_membership.branch.eq(r.branch) &
+                                                          t15_membership.horizon_h.eq(r.horizon_h) &
+                                                          t15_membership.selected]['date']).dt.normalize())
+            base_id = f"horizon_single_day|single_day|h{r.horizon_h}|k1"
+            my_dates = set(sample_dates.get((base_id, r.branch), []))
+            dates_match = (my_dates == t15_dates)
+            rows.append(dict(check='base_scenario_dates_identical_to_t15_membership', scope=f'{r.branch}:h{r.horizon_h}',
+                             status='PASS' if dates_match else 'FAIL',
+                             detail=f'n_dates={len(my_dates)}' if dates_match else f'mismatch:{len(my_dates)}!={len(t15_dates)}'))
     rows.append(dict(check='all_base_horizon_scenarios_present', scope='t15',
                      status='PASS' if len(ok) == 2 * len(base_horizons) else 'FAIL', detail=str(len(ok))))
     return rows
@@ -336,7 +349,8 @@ def reconcile_t16(base_tables, t16_selection, t16_candidates):
             dict(check='base_scenario_reproduces_accepted_t16_candidates', scope='t16', status='PASS' if cand_a == cand_b else 'FAIL', detail='')]
 
 
-def structural_checks(features, table, cfg15, norm, tolerance, edge_counts=None, independent=None):
+def structural_checks(features, table, cfg15, norm, tolerance, edge_counts=None, independent=None,
+                      sample_dates=None, cfg17=None):
     rows = []
 
     def add(name, ok, detail='', scope='regression'):
@@ -355,7 +369,31 @@ def structural_checks(features, table, cfg15, norm, tolerance, edge_counts=None,
     add('all_scenarios_estimated', bool(table.status.eq('ok').all()), table.loc[table.status.ne('ok'), ['scenario_id', 'branch', 'error']].to_dict('records'))
     ok = table[table.status.eq('ok')]
     add('holm_not_below_raw_p', bool((ok.p_holm_axis + 1e-12 >= ok.p_value).all()))
-    add('flow_window_samples_nested_in_base_calendar', bool(ok.sample_start.ge(features.date.min()).all()))
+
+    if sample_dates is not None and cfg17 is not None:
+        all_strictly_nested = True
+        for branch in cfg15['branches']:
+            for h in cfg15['horizons']:
+                base_id = f"horizon_single_day|single_day|h{h}|k1"
+                base_dates = sample_dates.get((base_id, branch), [])
+                base_set = set(base_dates)
+                base_sorted = sorted(base_set)
+                for k in cfg17['flow_window']['trailing_days']:
+                    k_id = f"flow_window|single_day|h{h}|k{k}"
+                    k_dates = sample_dates.get((k_id, branch), [])
+                    k_set = set(k_dates)
+                    is_subset = k_set.issubset(base_set)
+                    dropped = base_set - k_set
+                    expected_dropped = set(base_sorted[:k-1])
+                    strictly_nested = is_subset and (dropped == expected_dropped)
+                    if not strictly_nested:
+                        all_strictly_nested = False
+                    add('flow_window_sample_strictly_nested_in_base', strictly_nested,
+                        f"n_k={len(k_set)},n_base={len(base_set)},dropped={len(dropped)}", scope=f'{branch}:h{h}:k{k}')
+        add('flow_window_samples_nested_in_base_calendar', all_strictly_nested)
+    else:
+        add('flow_window_samples_nested_in_base_calendar', bool(ok.sample_start.ge(features.date.min()).all()))
+
     if edge_counts is not None:
         add('large_edge_base_percentile_reproduces_t14_count', np.allclose(
             edge_counts.to_numpy(), features.large_transfer_count.to_numpy(), rtol=tolerance, atol=tolerance, equal_nan=True), scope='events')

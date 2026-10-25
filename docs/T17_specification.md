@@ -11,7 +11,9 @@ Protocol `t17_robustness_v1`, cấu hình `config/t17.yaml`, mã `src/robustness
 ## Điều kiện chạy: tái tạo bản nghiệm thu trước
 
 Kịch bản gốc (base) phải khớp đúng kết quả đã nghiệm thu, nếu không T17 báo FAIL và không dùng grid:
-- T15: cùng `n_obs`, `R²` (baseline và primary), hệ số và p thô cho 2 nhánh × h = 1/3/7, sai số ≤ `tolerance`.
+- Hash cấu hình: `config/t15.yaml` và `config/t16.yaml` khớp chính xác `source_config_sha256` của bản nghiệm thu `t15_summary.json` và `t16_summary.json`.
+- Xác minh T11 tuần: `snapshot_metrics_weekly.parquet` khớp hash tái lập trong `t11_reproducibility.json`, số lượng tuần và giá trị trung bình CCI khớp `t11_summary.json`.
+- T15: cùng `n_obs`, `R²` (baseline và primary), hệ số và p thô cho 2 nhánh × h = 1/3/7, sai số ≤ `tolerance`. Tập ngày kịch bản gốc khớp chính xác 100% tập ngày đã chọn trong `t15_sample_membership.parquet`.
 - T16: cùng tập ngày sự kiện được chọn (mọi loại và chính sách) và cùng số ứng viên.
 - z-score flow `k=1` khớp cột T14; mục tiêu single-day tính lại khớp cột `target_log_rv_h*` của T14; `large_transfer_count` ở percentile gốc khớp T14.
 
@@ -35,7 +37,8 @@ Sự kiện: mỗi kịch bản chạy lại `events.compute` của T16 với th
 - Tái tạo T15/T16 (trên).
 - Giải ngoài: tính lại beta và SE HAC của vài kịch bản bằng đại số ma trận, so với `fit_hac`.
 - Truncation và mutation của flow cửa sổ k ngày tại nhiều điểm cắt: giá trị trước điểm cắt không đổi khi bỏ hoặc sửa tương lai.
-- Mọi kịch bản ước lượng thành công; Holm không nhỏ hơn p thô; mẫu k ngày lồng trong mẫu gốc.
+- Mọi kịch bản ước lượng thành công; Holm không nhỏ hơn p thô.
+- **Đối chiếu tập ngày mẫu lồng**: kiểm tra tập hợp ngày thực tế $S_k \subset S_{\text{base}}$ với mọi kịch bản $k \in \{3, 7\}$; tập ngày bị giảm $S_{\text{base}} \setminus S_k$ chính xác là $k-1$ ngày đầu tiên của mẫu cơ sở; không có ngày ngoại lai hay khoảng trống bất thường.
 - Chạy hai lần, so hash nội dung các bảng; hash nguồn/config/input kiểm lại sau khi tính.
 
 ## Sản phẩm (`data/processed/t17/`)
