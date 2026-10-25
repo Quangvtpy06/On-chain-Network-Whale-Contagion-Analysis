@@ -276,5 +276,6 @@ với controls/HAR, train mean và persistence trên cùng mẫu. T16 phân chia
 giữ rõ trạng thái nhóm không đủ sự kiện. Đây là backtest hồi cứu; test không được coi là chưa từng xem.
 Output chỉ Parquet, cùng biểu đồ/report/JSON tại `data/processed/t18`; prepare không tự upload.
 Xem [đặc tả](docs/T18_specification.md) và [báo cáo hoàn thành](docs/T18_completion_report.md).
+T18 đã phát hành trên main/HF và tải lại xác minh 17/17 file khớp; xem [biên nhận/revision](docs/T18_release_receipt.md).
 
 

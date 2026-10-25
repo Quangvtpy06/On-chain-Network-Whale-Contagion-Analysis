@@ -1,0 +1,277 @@
+{
+  "repo_id": "team-crypto/Market-data-crypto-project",
+  "revision": "3bfb61848e1ac9bcfb0809d3aef334d1885a84a1",
+  "verified_files": 17,
+  "changed_files": 17,
+  "manifest_sha256": "ce195bf1159e52cc39d73f5bdfca576b83f6544f701589b10e2fd53568a2c380",
+  "commit_url": "https://huggingface.co/datasets/team-crypto/Market-data-crypto-project/commit/3bfb61848e1ac9bcfb0809d3aef334d1885a84a1",
+  "remote_deletions": 0,
+  "code_git_commit": "c1c3017977c815afb181e871a88d944fc50d263d",
+  "remote_dependencies": [
+    {
+      "path": "config/t15.yaml",
+      "sha256": "88c030cda5f2f2060862ef61a9b50d94d83f138d2e5fe51e00504e697b0fa882",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "config/t16.yaml",
+      "sha256": "2e6e69d7b3d45aaacf4f787040f726830e843a74844cd7f036767c53423e76fc",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t14/t14_downstream_gate.json",
+      "sha256": "583d10de4da96c1df5a59d994e52c4e94c5c6fb9e41f8d87c6161d54d932b767",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t14/t14_features_daily.parquet",
+      "sha256": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t14/t14_release_manifest.json",
+      "sha256": "80976aab91a0f6214c78d3467b857f43718c8947dfb09c822d216159b4c5af46",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t14/t14_sample_eligibility_daily.parquet",
+      "sha256": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t14/t14_summary.json",
+      "sha256": "5c1e8c4813d05d864bc725bdd6cbf5f3a10299b480aa8602bdde70ef970917f2",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t15/t15_flow_coefficients.png",
+      "sha256": "627b782f344e695f482d24fc5c4228e27d96ef3597ecb58e77a02f2f23504b13",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t15/t15_independent_review.json",
+      "sha256": "41dce5f5ad97784871b18b8ae206ece5413fa897cdb0ea79b33aeceea1613be3",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t15/t15_report.md",
+      "sha256": "03d5b1ce9801504feb3d0790afc0432f402fd62836b65e1ae28d3465bd14ece6",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t15/t15_sample_membership.parquet",
+      "sha256": "5ddd3cb12b23c86fb6ea671d88d3575a3e3bec052046fd2e99a2276eefdbe9f6",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t15/t15_summary.json",
+      "sha256": "fe431f6178441afe2acc3658d94e5defa6eed545191edc44b5efe4fcce78e11a",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t15/t15_validation.parquet",
+      "sha256": "006392734ad29dbc7187f265181405d2bd3ecea4549ef2a5993d0f5091b004a1",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t15/t15_volatility_regression_results.parquet",
+      "sha256": "a0af9f4bd1630efc9110fbf6abcdac0eac0a70a753138e2c18a3d367661e68c5",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t15/t15_volatility_regression_summary.parquet",
+      "sha256": "37ae3b541073e5eccd311fb1fd8728ffbe574f3656a62ff730635c6fa3df5a5d",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_activity_cohort_net_inflow_response.png",
+      "sha256": "ee7af303511d4d4a6548821c0766bc2b27518759c1f95c2e06857ce690e54ed3",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_cex_net_inflow_response.png",
+      "sha256": "6e3d4ccc4023dd0ea4bb07695884725367215de19bd78f365b5cd94b6bba5a26",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_concentration_response.png",
+      "sha256": "29a766e7bd90594727c264b22f09a9b8ce8a1c7c8a0eeec2cd0a46a14a78aa1a",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_event_candidates.parquet",
+      "sha256": "229b1cd983badddd29f323d850615facecec7b08048e54c0705be6f0da236d8a",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_event_selection.parquet",
+      "sha256": "22ae02460bda49fe3ef47b7ad6eb170945aa285a7a5b38c61251b681f60058fe",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_event_study_results.parquet",
+      "sha256": "c4fc9190ce35c4ca5e1f2c657126332d02d961b354535945cea35534627dc8bc",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_event_windows.parquet",
+      "sha256": "8359f7c0c275247f221da6df8d62be748c5e41fa9d89e9c61092d7dbcfde6086",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_independent_review.json",
+      "sha256": "7e8d6087d37c3a74bf6f9f1b09faed863ecd597788b4493d6cfd41a6f4471f81",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_large_transfer_response.png",
+      "sha256": "d9cbffe124008d2f10ed58372508e47074ab172e4b3298eeff5f320b5456b6ec",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_report.md",
+      "sha256": "8169b18903c5af2c44fbbf878d1a380180767d1586377efd1dbd9f0a23f3a97c",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_summary.json",
+      "sha256": "85d1866c98f5175b725fd5ad8e202b404b2003a1beff5a734b65e6c44f85d041",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    },
+    {
+      "path": "data/processed/t16/t16_validation.parquet",
+      "sha256": "9be8a4f7eef9bdffc53a1e34940eb03a1f415a38bbf5d45f93c15000bb304b08",
+      "revision": "d3cc595be2d452467e823596749a63723dfa2e1d"
+    }
+  ],
+  "download_verification": {
+    "all_match": true,
+    "verified_files": 17,
+    "parquet_readable": 10,
+    "files": [
+      {
+        "path": "data/processed/t18/t18_sample_membership.parquet",
+        "sha256": "0380bec1a279b57f0d82478ca46a212109e31c87fac484ac2c0747454a030eed",
+        "bytes": 43913,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 3930
+      },
+      {
+        "path": "data/processed/t18/t18_coefficients.parquet",
+        "sha256": "e976d20a251ff4209cc1e0e592d0c0f58f2fde82371b3ccb086f7c59c7026b4c",
+        "bytes": 22689,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 150
+      },
+      {
+        "path": "data/processed/t18/t18_predictions.parquet",
+        "sha256": "db425d590229dc291fb2da36eb15e30ddd663a0c3b20c0a02926ee9aaf99b35f",
+        "bytes": 39454,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 3930
+      },
+      {
+        "path": "data/processed/t18/t18_metrics.parquet",
+        "sha256": "62da1b96cefd69c2fdfe344953aa7638093c20f3b5c18cde4f2024ccd4f06c12",
+        "bytes": 9594,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 30
+      },
+      {
+        "path": "data/processed/t18/t18_daily_losses.parquet",
+        "sha256": "3932da60975da24f9eea61518e4283847add716292571567cb9c471f589e1373",
+        "bytes": 72274,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 3820
+      },
+      {
+        "path": "data/processed/t18/t18_loss_comparison.parquet",
+        "sha256": "df12691d65a166cb2657d2291da7ea380ab1077b4d0a31ba46fe96f44599ca0f",
+        "bytes": 7364,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 6
+      },
+      {
+        "path": "data/processed/t18/t18_event_partition.parquet",
+        "sha256": "f41d75f96787c192274cc21e285d25bd1f55b9bcc0f02572de9a82e318b532c9",
+        "bytes": 14363,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 202
+      },
+      {
+        "path": "data/processed/t18/t18_event_counts.parquet",
+        "sha256": "1d417541c8883bff16e68b16e288512252d2785aad7f0b75ea3663ee3ac67811",
+        "bytes": 3833,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 24
+      },
+      {
+        "path": "data/processed/t18/t18_event_statistics.parquet",
+        "sha256": "50ea47f741344792e26bc57d627b42ab55a059859ff7122255449936d88ff6b3",
+        "bytes": 21447,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 768
+      },
+      {
+        "path": "data/processed/t18/t18_validation.parquet",
+        "sha256": "835acd4ade945734a644025f93809f1eed8118a1c2865bc1fab7c09e258e182b",
+        "bytes": 3648,
+        "matches": true,
+        "parquet_readable": true,
+        "n_rows": 76
+      },
+      {
+        "path": "data/processed/t18/t18_report.md",
+        "sha256": "d6e24f9860478c5ef4cec0a22fec9b22aa0a2b20d25931148a294b7f8757bcba",
+        "bytes": 2496,
+        "matches": true
+      },
+      {
+        "path": "data/processed/t18/t18_oos_rmse.png",
+        "sha256": "de9918e495878a9380218b104d902bf519280b025beb11739703a80a2576dabb",
+        "bytes": 119840,
+        "matches": true
+      },
+      {
+        "path": "data/processed/t18/t18_event_holdout_counts.png",
+        "sha256": "9b798261f3fc77f98d333f88e41ff3ea9d84d451cf78a8b56a430bab97950621",
+        "bytes": 43320,
+        "matches": true
+      },
+      {
+        "path": "data/processed/t18/t18_summary.json",
+        "sha256": "6adc9be62ce38f1bf9aa1b49865c19a259f443db2358bdfca478ea3baa72f46b",
+        "bytes": 10597,
+        "matches": true
+      },
+      {
+        "path": "data/processed/t18/t18_independent_review.json",
+        "sha256": "f15eaa6d1e23b8d03641b0bf15a419da0962f6b8aaac261b6742fcd1c1e9a76c",
+        "bytes": 8622,
+        "matches": true
+      },
+      {
+        "path": "config/t18.yaml",
+        "sha256": "9e73c2f11bea848f78274a392931da1a632281b2723ce14c9969e2f30f193795",
+        "bytes": 879,
+        "matches": true
+      },
+      {
+        "path": "data/hf_t18_release_manifest.json",
+        "sha256": "ce195bf1159e52cc39d73f5bdfca576b83f6544f701589b10e2fd53568a2c380",
+        "bytes": 9905,
+        "matches": true
+      }
+    ]
+  },
+  "scope": "Purged retrospective pseudo-OOS, not an untouched holdout or causal evidence."
+}
