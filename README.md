@@ -262,4 +262,19 @@ Lệnh prepare chỉ tạo manifest `data/hf_t15_t16_release_manifest.json`, kh�
 Code nghiệm thu đã có trên **main**; output đã phát hành và tải lại kiểm tra 23/23 file khớp.
 Xem [biên nhận T15/T16 và revision cần dùng](docs/T15_T16_release_receipt.md); nhánh feature cũ không phải bản nghiệm thu.
 
+### T18 — purged fixed-origin pseudo-OOS
+
+```bash
+python T18_Time_Split_Backtest.py
+python scripts/validate_t18_release.py
+python scripts/prepare_t18_release.py
+```
+
+T18 là pipeline riêng trên bản T14/T15/T16 đã nghiệm thu. Train/test được chia theo thời gian,
+chỉ dùng nhãn đã khả dụng tại lúc fit và giữ hệ số cố định trong test. Hai nhánh flow được so
+với controls/HAR, train mean và persistence trên cùng mẫu. T16 phân chia toàn bộ response window,
+giữ rõ trạng thái nhóm không đủ sự kiện. Đây là backtest hồi cứu; test không được coi là chưa từng xem.
+Output chỉ Parquet, cùng biểu đồ/report/JSON tại `data/processed/t18`; prepare không tự upload.
+Xem [đặc tả](docs/T18_specification.md) và [báo cáo hoàn thành](docs/T18_completion_report.md).
+
 

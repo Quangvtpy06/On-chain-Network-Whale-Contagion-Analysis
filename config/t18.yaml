@@ -1,0 +1,27 @@
+# Frozen before executing this implementation; not chosen from OOS scores.
+protocol_id: t18_purged_fixed_origin_v2
+output_dir: data/processed/t18
+t14_dir: data/processed/t14
+contract_version: t14_inputs_v1
+t15_config: config/t15.yaml
+t16_config: config/t16.yaml
+t15_dir: data/processed/t15
+t16_dir: data/processed/t16
+split:
+  train_feature_end: '2026-06-08'
+  test_feature_start: '2026-06-09'
+  fit_at: '2026-06-10T00:00:00Z'
+  evaluation_at: '2026-10-18T00:00:00Z'
+  policy: fixed_coefficients
+  holdout_status: retrospective_pseudo_oos_already_inspected
+minimum_test_observations: 30
+har_controls: [log_rv, log_rv_week, log_rv_month]
+loss_bootstrap:
+  seed: 20261025
+  resamples: 5000
+  block_days: 7
+  alpha: 0.05
+event_partition:
+  require_entire_response_window_in_split: true
+  selection_policies: [nonoverlap, all_events_sensitivity]
+leakage_check_cut_date: '2026-08-01'

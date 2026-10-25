@@ -63,6 +63,9 @@ def main():
             analysis_assets.add('data/processed/t16/t16_report.md')
             analysis_assets.update('data/processed/t16/t16_'+name+'_response.png' for name in
                                    ['large_transfer', 'cex_net_inflow', 'activity_cohort_net_inflow', 'concentration'])
+        if manifest.get('tasks_accepted', {}).get('t18') is True:
+            analysis_assets.update('data/processed/t18/'+name for name in
+                                   ['t18_report.md','t18_oos_rmse.png','t18_event_holdout_counts.png'])
         if (path.suffix not in {'.parquet', '.json', '.yaml'} and rel != 'eth_stats_from_2025.csv'
                 and rel not in t11_figures and rel not in analysis_assets):
             raise ValueError(f'Unexpected release file type: {rel}')
