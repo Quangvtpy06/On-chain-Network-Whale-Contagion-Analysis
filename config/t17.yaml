@@ -1,0 +1,47 @@
+# T17 - robustness / sensitivity cua T15 (hoi quy) va T16 (event study).
+# Moi gia tri dong bang TRUOC khi chay. Khong chon kich ban theo dau he so, p-value hay
+# do lon phan ung. Moi kich ban duoc bao cao day du; doi gia tri sau khi co ket qua = protocol_id moi.
+protocol_id: t17_robustness_v1
+output_dir: data/processed/t17
+t14_dir: data/processed/t14
+contract_version: t14_inputs_v1
+
+# Ket qua da nghiem thu cua T15/T16: T17 phai tai tao dung kich ban goc (base) truoc khi so sanh.
+t15_config: config/t15.yaml
+t16_config: config/t16.yaml
+t15_results_dir: data/processed/t15
+t16_results_dir: data/processed/t16
+
+# Do thi tuan cua T11 (cua so do thi dai hon): dung cho kich ban concentration theo tuan.
+t11_weekly_snapshot: data/processed/t11/snapshot_metrics_weekly.parquet
+t11_summary: data/processed/t11/t11_summary.json
+# Canh theo ngay cua T08 (hash phai khop input cua T14): dung de doi dinh nghia large transfer.
+daily_edges_parquet: data/processed/graphs/dynamic_edges_daily.parquet
+
+# 1) Horizon cua T15. h co so [1,3,7] lay tu config/t15.yaml va luon chay lai de doi chieu.
+horizon:
+  extra_single_day: [2, 5, 10, 14]      # log RV cua dung ngay D+h
+  cumulative: [1, 3, 7, 14]             # log tong RV cua D+1..D+h (dinh nghia khac, KHONG tron voi single_day)
+
+# 2) Do dai cua so do thi/dong tien (T15): tong dong tien rong cua k ngay lien tiep, chuan hoa lai chi bang qua khu.
+#    k=1 la co so. Day la tong cac ngay da net, KHONG phai do thi k ngay duoc net lai.
+flow_window:
+  trailing_days: [3, 7]
+
+# 3) Nguong percentile / z cua T16 (moi lan doi mot tham so, cac tham so khac giu co so).
+events:
+  large_transfer_quantile: [0.90, 0.99]       # co so 0.95 (config/t16.yaml)
+  concentration_quantile: [0.85, 0.95]        # co so 0.90
+  flow_z_threshold: [1.5, 2.5]                # co so 2.0, ap dung cho hai su kien dong tien rong
+  large_edge_percentile: [0.90, 0.99]         # dinh nghia canh lon cua T14 (co so 0.95), can canh theo ngay
+  # 4) Cua so do thi T11 theo tuan: chi so tuan chi dung vao ngay Chu nhat ket thuc tuan (kha dung luc ket thuc tuan).
+  weekly_concentration: true
+  weekly_minimum_history_values: 8            # so tuan hop le toi thieu trong cua so lich su 90 ngay
+
+# Token khac USDT: chua co du lieu T04-T14 nao ngoai USDT, nen KHONG chay. Ghi ro trong output.
+token:
+  other_tokens: []
+
+# Kiem tra doi chieu voi ban nghiem thu
+tolerance: 1.0e-9
+leakage_cut_fractions: [0.3, 0.6, 0.9]
