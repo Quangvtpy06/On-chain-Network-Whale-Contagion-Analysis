@@ -15,7 +15,12 @@ fsspec
 networkx
 scipy
 statsmodels
-# trực quan hóa và dashboard
+# Graph ML T20-T22 (PyTorch Geometric dùng PyTorch CPU/GPU của môi trường)
+scikit-learn
+torch
+torch-geometric
+gensim
+# trực quan hóa và dashboard_t24_t27
 matplotlib
 plotly
 pyvis

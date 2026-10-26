@@ -66,6 +66,12 @@ def main():
         if manifest.get('tasks_accepted', {}).get('t18') is True:
             analysis_assets.update('data/processed/t18/'+name for name in
                                    ['t18_report.md','t18_oos_rmse.png','t18_event_holdout_counts.png'])
+        if manifest.get('tasks_accepted', {}).get('t17') is True:
+            analysis_assets.update('data/processed/t17/'+name for name in
+                                   ['t17_report.md','t17_regression_robustness.png'])
+        if manifest.get('tasks_accepted', {}).get('rq4_stress_lead') is True:
+            analysis_assets.update('data/processed/rq4_stress_lead/'+name for name in
+                                   ['rq4_stress_lead_report.md','rq4_stress_lead.png'])
         if (path.suffix not in {'.parquet', '.json', '.yaml'} and rel != 'eth_stats_from_2025.csv'
                 and rel not in t11_figures and rel not in analysis_assets):
             raise ValueError(f'Unexpected release file type: {rel}')

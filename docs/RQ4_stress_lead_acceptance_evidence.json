@@ -1,0 +1,207 @@
+{
+  "protocol_id": "rq4_t13_stress_t11_lead_v1",
+  "date": "2026-10-26",
+  "code_git_base_commit": "f402d166b2db2faca22f963c4cee66ac2fad07b3",
+  "code_git_commit": null,
+  "source_config_sha256": {
+    "RQ4_Stress_Lead.py": "c805a1a0911d61933e8de5e0ed36f0e80ea2f340e1f73184faeb33bed437af7f",
+    "src/rq4_stress_lead.py": "218da13a5f484c75ebb051b3eedae6bbc56cbd12cc431badefa05702692f6483",
+    "scripts/validate_rq4_stress_lead.py": "c177c49dc6b54a0810198b67428adfd8deb5a8194eab321559079bdb9aca3352",
+    "config/rq4_stress_lead.yaml": "e9e3f9d5775bcc58fb4422e7712c3962765357070e200c95410fc0e1c20e8c24"
+  },
+  "input_sha256": {
+    "data/processed/t13/rv_daily_regimes.parquet": "837f17049e9358a421caf0845b24817c599e9197a8909aef4bc09cb2698c22bb",
+    "docs/T13_release_manifest.json": "ba111fe264dddeb02098f4ccc823f136be54009dc6981010efefa0d595a6d49a",
+    "data/processed/t11/snapshot_metrics_daily.parquet": "0b79d6750588025ed4750347a9915a2bfe1f0fcc7d885e1b666b8302ab613ed4",
+    "data/processed/t11/t11_summary.json": "2de05cda9f02473c43cec283b92772c09cd86c5c30591a9f22a32c8088834510",
+    "data/processed/t11/t11_review.json": "b02282e844513f774207926dc3dd49a1ebddac63cf7a13a5dba967cac40cffff",
+    "data/processed/t11/t11_reproducibility.json": "86eb56ad72ed1202ca166d690b2967be1e2a752c0d252b2d90862ab8b1f46309"
+  },
+  "stress_definition": {
+    "source": "T13_RV_P90_full_period",
+    "threshold": 0.048694850425840486,
+    "days": 66,
+    "episodes": 23,
+    "eligible_episodes": 23,
+    "pinned_hf_revision": "ad3d2603bb3ff1e15033d1f98cd2520151d64dbb"
+  },
+  "primary_results": [
+    {
+      "metric": "hhi_community_volume",
+      "analysis": "primary_calendar_block",
+      "n_stress_episodes": 23,
+      "n_quiet_anchors": 434,
+      "n_matched_pairs": 0,
+      "event_pre_mean": 0.13922044700451802,
+      "control_pre_mean": 0.1333380794847345,
+      "difference": 0.005882367519783521,
+      "relative_difference_pct": 4.411618603264026,
+      "ci_lower": -0.003418743700353207,
+      "ci_upper": 0.016732914182386587,
+      "p_increase": 0.13017396520695862,
+      "p_two_sided": 0.2453509298140372,
+      "valid_bootstrap_draws": 5000,
+      "bootstrap_unit": "14_calendar_days",
+      "p_increase_holm": 0.26034793041391724,
+      "evidence_of_pre_stress_increase_5pct": false
+    },
+    {
+      "metric": "community_concentration_index",
+      "analysis": "primary_calendar_block",
+      "n_stress_episodes": 23,
+      "n_quiet_anchors": 434,
+      "n_matched_pairs": 0,
+      "event_pre_mean": 0.09729914662695395,
+      "control_pre_mean": 0.09538626899948673,
+      "difference": 0.0019128776274672243,
+      "relative_difference_pct": 2.005401456133605,
+      "ci_lower": -0.0036511468142381015,
+      "ci_upper": 0.008307043465395882,
+      "p_increase": 0.2585482903419316,
+      "p_two_sided": 0.521495700859828,
+      "valid_bootstrap_draws": 5000,
+      "bootstrap_unit": "14_calendar_days",
+      "p_increase_holm": 0.26034793041391724,
+      "evidence_of_pre_stress_increase_5pct": false
+    }
+  ],
+  "sensitivity_results": [
+    {
+      "metric": "hhi_community_volume",
+      "analysis": "matched_weekday_60d_sensitivity",
+      "n_stress_episodes": 23,
+      "n_quiet_anchors": 434,
+      "n_matched_pairs": 23,
+      "event_pre_mean": 0.13922044700451802,
+      "control_pre_mean": 0.1329032999157222,
+      "difference": 0.00631714708879582,
+      "relative_difference_pct": 4.753190547414327,
+      "ci_lower": 0.0007490372886122204,
+      "ci_upper": 0.012991122615846654,
+      "p_increase": 0.028994201159768047,
+      "p_two_sided": 0.03999200159968006,
+      "valid_bootstrap_draws": 5000,
+      "bootstrap_unit": "3_adjacent_episodes",
+      "p_increase_holm": 0.05798840231953609,
+      "evidence_of_pre_stress_increase_5pct": false
+    },
+    {
+      "metric": "community_concentration_index",
+      "analysis": "matched_weekday_60d_sensitivity",
+      "n_stress_episodes": 23,
+      "n_quiet_anchors": 434,
+      "n_matched_pairs": 23,
+      "event_pre_mean": 0.09729914662695395,
+      "control_pre_mean": 0.093566258090491,
+      "difference": 0.003732888536462946,
+      "relative_difference_pct": 3.989566979212471,
+      "ci_lower": -9.111277441812711e-05,
+      "ci_upper": 0.007672551512300515,
+      "p_increase": 0.02979404119176165,
+      "p_two_sided": 0.057588482303539294,
+      "valid_bootstrap_draws": 5000,
+      "bootstrap_unit": "3_adjacent_episodes",
+      "p_increase_holm": 0.05798840231953609,
+      "evidence_of_pre_stress_increase_5pct": false
+    }
+  ],
+  "pipeline_validation_checks": 16,
+  "pipeline_validation_failures": 0,
+  "synthetic_tests": [
+    {
+      "name": "test_close_stress_days_one_episode",
+      "status": "PASS"
+    },
+    {
+      "name": "test_only_past_days_in_pre_mean",
+      "status": "PASS"
+    },
+    {
+      "name": "test_quiet_control_rejects_nearby_future_stress",
+      "status": "PASS"
+    },
+    {
+      "name": "test_partial_tail_not_event_anchor",
+      "status": "PASS"
+    },
+    {
+      "name": "test_bootstrap_deterministic_and_inference_direction",
+      "status": "PASS"
+    },
+    {
+      "name": "test_matched_pair_no_reuse_and_weekday",
+      "status": "PASS"
+    },
+    {
+      "name": "test_holm_at_least_raw",
+      "status": "PASS"
+    }
+  ],
+  "deleted_test_source_sha256": "8aa0f15f6e5fea81ef6a2b20f00b7a9986e4bd2f9f7ce04dcabf0b2bd861422c",
+  "independent_review_sha256": "daad0d42f27fa6d9ca36f3a4cdb87e7574ac648872d38d61e4e1992778970318",
+  "independent_checks": [
+    {
+      "check": "independent_onsets_quiet_three_day_means_and_pairs",
+      "metric": "hhi_community_volume",
+      "status": "PASS"
+    },
+    {
+      "check": "independent_onsets_quiet_three_day_means_and_pairs",
+      "metric": "community_concentration_index",
+      "status": "PASS"
+    }
+  ],
+  "two_cli_processes": {
+    "rq4_lead_results.parquet": {
+      "run1_sha256": "076d7f3745ab412f7f88ab5d28fd30da551ac376a322a0c21fa0fd4768ba6106",
+      "run2_sha256": "076d7f3745ab412f7f88ab5d28fd30da551ac376a322a0c21fa0fd4768ba6106",
+      "identical": true
+    },
+    "rq4_matched_controls.parquet": {
+      "run1_sha256": "aff8d6cb63cd1c659bec3fa7b0705b9e8fb3ac2fe228598a103d5aa47d3c0c24",
+      "run2_sha256": "aff8d6cb63cd1c659bec3fa7b0705b9e8fb3ac2fe228598a103d5aa47d3c0c24",
+      "identical": true
+    },
+    "rq4_stress_anchor_days.parquet": {
+      "run1_sha256": "4c0ae3a98e965f749cceabdff3a3ed58b9e1199e54a36e8006a870f12b4f4c00",
+      "run2_sha256": "4c0ae3a98e965f749cceabdff3a3ed58b9e1199e54a36e8006a870f12b4f4c00",
+      "identical": true
+    },
+    "rq4_stress_episodes.parquet": {
+      "run1_sha256": "edca7de0491d3a8c73df4e4f0353fc172e87cb8900a6bf4353e761e735874ae4",
+      "run2_sha256": "edca7de0491d3a8c73df4e4f0353fc172e87cb8900a6bf4353e761e735874ae4",
+      "identical": true
+    },
+    "rq4_stress_lead.png": {
+      "run1_sha256": "2909403fc15533e1c49749696f25d74ef5899b9571ac0040746cfd6ef9e3973b",
+      "run2_sha256": "2909403fc15533e1c49749696f25d74ef5899b9571ac0040746cfd6ef9e3973b",
+      "identical": true
+    },
+    "rq4_stress_lead_independent_review.json": {
+      "run1_sha256": "daad0d42f27fa6d9ca36f3a4cdb87e7574ac648872d38d61e4e1992778970318",
+      "run2_sha256": "daad0d42f27fa6d9ca36f3a4cdb87e7574ac648872d38d61e4e1992778970318",
+      "identical": true
+    },
+    "rq4_stress_lead_report.md": {
+      "run1_sha256": "f24d94bc67a18fbcf7674bba3a8e5ebda9c893f4095506ed0244a21b8d5d52cc",
+      "run2_sha256": "f24d94bc67a18fbcf7674bba3a8e5ebda9c893f4095506ed0244a21b8d5d52cc",
+      "identical": true
+    },
+    "rq4_stress_lead_summary.json": {
+      "run1_sha256": "9118a1f762b86220d77dfe4ad619e45ed671b38ab175d06b06bf7872eb1a37c5",
+      "run2_sha256": "9118a1f762b86220d77dfe4ad619e45ed671b38ab175d06b06bf7872eb1a37c5",
+      "identical": true
+    },
+    "rq4_validation.parquet": {
+      "run1_sha256": "6b3b15a99ece62044b772cf063b850e891ab6512ce2a495d9289e053c667b22f",
+      "run2_sha256": "6b3b15a99ece62044b772cf063b850e891ab6512ce2a495d9289e053c667b22f",
+      "identical": true
+    }
+  },
+  "original_upstream_inputs_unchanged": true,
+  "remote_dependencies_pinned_and_sha_verified": 5,
+  "artifact_manifest_sha256": "04506856360cfb3b3d06afdb776b9cd0eb918acadea5776a6844af8aa272fbe4",
+  "upload_performed": false,
+  "temporary_test_code_and_data_removed": true,
+  "synthetic_tests_are_historical_evidence_not_a_retained_suite": true
+}

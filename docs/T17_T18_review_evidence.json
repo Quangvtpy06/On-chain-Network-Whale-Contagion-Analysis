@@ -1,0 +1,200 @@
+{
+  "review_date": "2026-10-25",
+  "t17_git_commit": "7ba2c04e731eccb8fa45103bcb68fcb43fcbb800",
+  "t18_git_commit": "841eaa6a095841f15f17815054fb7def1b10cd96",
+  "t17": {
+    "execution_pass": true,
+    "release_acceptance": "changes_required",
+    "validation_counts": {
+      "PASS": 52
+    },
+    "regression_rows": 40,
+    "event_rows": 30,
+    "separate_process_hash_seeds": [
+      73,
+      137
+    ],
+    "all_8_outputs_match": {
+      "t17_event_robustness.parquet": {
+        "run1": "ad89108a4b2f60db78341fb58dc19f8b7fd4033ecd59e8149fcc0d85b0061da6",
+        "run2": "ad89108a4b2f60db78341fb58dc19f8b7fd4033ecd59e8149fcc0d85b0061da6"
+      },
+      "t17_regression_robustness.parquet": {
+        "run1": "b2ca3e2ef147c1f3b214f492cefa64db2ec68e7123cba37cfa70ed6e63ca294c",
+        "run2": "b2ca3e2ef147c1f3b214f492cefa64db2ec68e7123cba37cfa70ed6e63ca294c"
+      },
+      "t17_regression_robustness.png": {
+        "run1": "2661e8e1ee1fc28831831271fb87890942320a245bfcf1f2eb9facf93ef54dd8",
+        "run2": "2661e8e1ee1fc28831831271fb87890942320a245bfcf1f2eb9facf93ef54dd8"
+      },
+      "t17_regression_summary.parquet": {
+        "run1": "defa6ef2552678f0826994a4f1e5cb13f2ee791bb6643bbb84bd7c7c66707f71",
+        "run2": "defa6ef2552678f0826994a4f1e5cb13f2ee791bb6643bbb84bd7c7c66707f71"
+      },
+      "t17_report.md": {
+        "run1": "38fa980bb889c74236b1d2e513853e6b11e75d35b5dc849230fd1e66268cd721",
+        "run2": "38fa980bb889c74236b1d2e513853e6b11e75d35b5dc849230fd1e66268cd721"
+      },
+      "t17_scenario_plan.parquet": {
+        "run1": "54e53af1cdec2ccf5ee84fce63e8e2e90bf0804a5136ed0e0e87c8fdb39a1f06",
+        "run2": "54e53af1cdec2ccf5ee84fce63e8e2e90bf0804a5136ed0e0e87c8fdb39a1f06"
+      },
+      "t17_summary.json": {
+        "run1": "d1c8726e39dd35f039439b4f986e77ae7c9c78f3ef85646fddf0272395856b57",
+        "run2": "d1c8726e39dd35f039439b4f986e77ae7c9c78f3ef85646fddf0272395856b57"
+      },
+      "t17_validation.parquet": {
+        "run1": "c9636067859edda5ca1cafcaf5bf89b8311db0efd536aea92abd8a3c190dd5bc",
+        "run2": "c9636067859edda5ca1cafcaf5bf89b8311db0efd536aea92abd8a3c190dd5bc"
+      }
+    },
+    "token_axis": {
+      "status": "not_run",
+      "other_tokens": [],
+      "reason": "No data for tokens other than USDT in T04-T14."
+    },
+    "input_sha256": {
+      "data/processed/t14/t14_features_daily.parquet": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195",
+      "data/processed/t14/t14_sample_eligibility_daily.parquet": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+      "data/processed/t14/t14_summary.json": "5c1e8c4813d05d864bc725bdd6cbf5f3a10299b480aa8602bdde70ef970917f2",
+      "data/processed/t14/t14_downstream_gate.json": "583d10de4da96c1df5a59d994e52c4e94c5c6fb9e41f8d87c6161d54d932b767",
+      "data/processed/t14/t14_release_manifest.json": "80976aab91a0f6214c78d3467b857f43718c8947dfb09c822d216159b4c5af46",
+      "data/processed/t15/t15_volatility_regression_summary.parquet": "37ae3b541073e5eccd311fb1fd8728ffbe574f3656a62ff730635c6fa3df5a5d",
+      "data/processed/t16/t16_event_selection.parquet": "22ae02460bda49fe3ef47b7ad6eb170945aa285a7a5b38c61251b681f60058fe",
+      "data/processed/t16/t16_event_candidates.parquet": "229b1cd983badddd29f323d850615facecec7b08048e54c0705be6f0da236d8a",
+      "data/processed/t11/snapshot_metrics_weekly.parquet": "acd4230742a022c8b9c2a4f5449f400faeecf0182e64d2a8667357a5bc8137a4",
+      "data/processed/t11/t11_summary.json": "2de05cda9f02473c43cec283b92772c09cd86c5c30591a9f22a32c8088834510",
+      "data/processed/graphs/dynamic_edges_daily.parquet": "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979",
+      "data/processed/t11/snapshot_metrics_daily.parquet": "0b79d6750588025ed4750347a9915a2bfe1f0fcc7d885e1b666b8302ab613ed4",
+      "data/processed/t11/t11_reproducibility.json": "86eb56ad72ed1202ca166d690b2967be1e2a752c0d252b2d90862ab8b1f46309"
+    },
+    "source_config_sha256": {
+      "src/forecast_inputs.py": "30b4cd70a1cd301279baee5dab14e0a424f74529f70abd2dd1dd9de782651652",
+      "src/robustness.py": "3801b5fa03765260bfa5accdb09109933c4eae1a4dbee58d259f98aa8394b9b0",
+      "T17_Robustness.py": "c756173db6df43a3c057a9cc75fdac05306dcd149433a3b7e61995f168cf8807",
+      "src/volatility_regression.py": "7f3e65f6ced77adb3bd883565da56b283a3382da36755dfe7af95841deaf653e",
+      "src/event_study.py": "7d7a66612ff709b40965ae82013abe1063d5d2cd655d8968fa354d62c271742b",
+      "src/flow_volatility.py": "2129f5a26cc8b2c198ead2eb232d41809c2a403c00c7397c2e32c2343d7a7733",
+      "src/graph_ml_features.py": "83df16b4bcc42e9db32db7927fc0b2a4cf8b792426fbf3b16c1bebe4b70962dc",
+      "src/analysis_release.py": "ffa6a41ed9047ab6a829eb27bae5096cb93502e269a0a20e4f453bdf3f647d96",
+      "config/t17.yaml": "b9235ee99480833e476f69f6d46d980ba48b9607b99add371ee8df216e7ed1f0"
+    },
+    "controlled_checks": {
+      "missing_t15_t16_config_hashes": [
+        "config/t15.yaml",
+        "config/t16.yaml"
+      ],
+      "modified_weekly_artifact_accepted": true,
+      "weekly_fixture_original_sha256": "acd4230742a022c8b9c2a4f5449f400faeecf0182e64d2a8667357a5bc8137a4",
+      "weekly_fixture_modified_sha256": "92f49cc119a704dfeed159656b92af1882763b02b4ea0a5e4c72507212b0ab83",
+      "weekly_modified_time_window": "2025-W12",
+      "original_cci": 0.09217125370468905,
+      "modified_cci": 0.09317125370468905,
+      "nested_sample_check_accepts_invalid_sample_end": true,
+      "t18_purged_matched_baselines": [
+        {
+          "h": 1,
+          "r2_vs_test_mean": {
+            "matched_baseline": 0.24969472404051696,
+            "with_activity_flow": 0.2524860293265643
+          }
+        },
+        {
+          "h": 3,
+          "r2_vs_test_mean": {
+            "matched_baseline": -0.06559218312366188,
+            "with_activity_flow": -0.06362257134039839
+          }
+        },
+        {
+          "h": 7,
+          "r2_vs_test_mean": {
+            "matched_baseline": 0.14401669435857145,
+            "with_activity_flow": 0.14467223008199825
+          }
+        }
+      ]
+    }
+  },
+  "t18": {
+    "new_commit_contains": [
+      "config/t18_train_test_split.yaml",
+      "t18_leakage_audit_report.md"
+    ],
+    "execution_script_present": false,
+    "reported_numbers_reproduced_with_unpurged_train": [
+      {
+        "h": 1,
+        "train_n": 464,
+        "test_n": 130,
+        "unpurged_oos_r2": 0.25248602932658437,
+        "first_test_forecast_origin": "2026-06-10 00:00:00+00:00",
+        "unavailable_training_labels_at_first_forecast": 0,
+        "purged_oos_r2": 0.25248602932658437,
+        "first_unsafe_train_dates": []
+      },
+      {
+        "h": 3,
+        "train_n": 464,
+        "test_n": 128,
+        "unpurged_oos_r2": -0.06476915999057709,
+        "first_test_forecast_origin": "2026-06-10 00:00:00+00:00",
+        "unavailable_training_labels_at_first_forecast": 2,
+        "purged_oos_r2": -0.06362257134037663,
+        "first_unsafe_train_dates": [
+          "2026-06-07",
+          "2026-06-08"
+        ]
+      },
+      {
+        "h": 7,
+        "train_n": 464,
+        "test_n": 124,
+        "unpurged_oos_r2": 0.1556797159497918,
+        "first_test_forecast_origin": "2026-06-10 00:00:00+00:00",
+        "unavailable_training_labels_at_first_forecast": 6,
+        "purged_oos_r2": 0.14467223008199248,
+        "first_unsafe_train_dates": [
+          "2026-06-03",
+          "2026-06-04",
+          "2026-06-05",
+          "2026-06-06",
+          "2026-06-07",
+          "2026-06-08"
+        ]
+      }
+    ],
+    "current_t16_nonoverlap_event_counts": {
+      "activity_cohort_net_inflow": {
+        "test": 0,
+        "train": 7
+      },
+      "cex_net_inflow": {
+        "test": 0,
+        "train": 12
+      },
+      "concentration": {
+        "test": 6,
+        "train": 25
+      },
+      "large_transfer": {
+        "test": 3,
+        "train": 11
+      }
+    },
+    "current_t16_selected_windows_crossing_boundary": [
+      {
+        "event_type": "concentration",
+        "date": "2026-06-11 00:00:00+00:00"
+      }
+    ],
+    "source_sha256": {
+      "t18_leakage_audit_report.md": "e94337303184995576eb19951def03d102d38396262bb0ded612166e46a6bf31",
+      "config\\t18_train_test_split.yaml": "baa1f9882bf60b7f89898af0a812877b6e77b3e3941f458e5d5f283c281ed878"
+    },
+    "acceptance": "not_passed"
+  },
+  "temporary_files_removed_after_review": true,
+  "upstream_artifacts_unmodified": true,
+  "push_performed": false
+}

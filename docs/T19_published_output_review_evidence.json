@@ -1,0 +1,714 @@
+{
+  "hf_revision": "25becf91d38a38ef7998d26b3b148e4109ef1f05",
+  "code_commit": "b59985d305c9492f2d00cf5bf70c2f1f7de2a864",
+  "download_checks": [
+    {
+      "path": "config/t19.yaml",
+      "sha256": "73323c3c676e572f1b55b2a03c1dea00640d55370e6cf8754e90d862a36c6154",
+      "bytes": 2530,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_feature_dictionary.parquet",
+      "sha256": "44d0c60cd06e9d46db58f6f1858a0f31a4cdefc0f7807e81726fce96f7bf0d66",
+      "bytes": 3415,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_label_summary_daily.parquet",
+      "sha256": "e8dadf91f6b9584717fcf1a4530bc05f05e31c90b20cc030d323b9ac8fc7f6cf",
+      "bytes": 4224,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_label_summary_weekly.parquet",
+      "sha256": "211117517076408d8f3c6dd9a48265beadd54258c8c0e14d985ed70a6883918d",
+      "bytes": 4219,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_node_features_daily.parquet",
+      "sha256": "5eff069cb719abf55580927a63ecaa4aa38e39b5e5753ab988ca159d8547ce35",
+      "bytes": 122078886,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_node_features_weekly.parquet",
+      "sha256": "5c7582ea9f9d81047a7ec60d153e82fece05d3de83c98550c5edb7b1f2130d33",
+      "bytes": 71325993,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_repro.json",
+      "sha256": "42d7ad234c75336f308882ad73f2f2ad8f6398d7f1ecbc9188de8ac7144bffc0",
+      "bytes": 1310,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_split_windows_daily.parquet",
+      "sha256": "6826ea6211bb048e6aa4863e39e1feef0a088f0c50ea4432cd7b60ab888123ee",
+      "bytes": 23731,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_split_windows_weekly.parquet",
+      "sha256": "e040af3cf0f50cccc496b492747719484f43f94207e840ab1dfe602b518db086",
+      "bytes": 8056,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_summary.json",
+      "sha256": "7512c72b149a0f8fd02fed6c178882154541f3819c7f781e0017ac901fa0f56e",
+      "bytes": 5487,
+      "matches": true
+    },
+    {
+      "path": "data/processed/t19/t19_validation.parquet",
+      "sha256": "3ea10b737b8cdb3837f30d9276c27823eae2b8e3267389f68459a2c9f3624bfe",
+      "bytes": 4242,
+      "matches": true
+    }
+  ],
+  "windows": {
+    "weekly": {
+      "rows": 388557,
+      "windows": 94,
+      "features": 41,
+      "upstream_hashes_match": {
+        "t07_labels": true,
+        "t09_nodes": true,
+        "t09_snapshot": true,
+        "t10_nodes": true,
+        "t11_nodes": true,
+        "t11_snapshot": true
+      },
+      "comparisons": {
+        "features": {
+          "published_hash": "5686a8aa4a820be0e6eae93a54f215820bfcb0bf26f0e6e4af65ac3cbdeffc4a",
+          "recomputed_hash": "5686a8aa4a820be0e6eae93a54f215820bfcb0bf26f0e6e4af65ac3cbdeffc4a",
+          "recorded_in_memory_hash": "d255566a995dacaf4ddfc5e819b2e55483409aaa8c706b1afa2c56ae7d750da8",
+          "recorded_matches_loaded_hash": false,
+          "recorded_matches_fresh_hash": false,
+          "exact_content_hash_equal": true,
+          "values_match": true,
+          "dtype_differences": {}
+        },
+        "split": {
+          "published_hash": "72dca08b83abc1bd7eccbd29fc7bc00edde5265eca49429ad11a354d3a830218",
+          "recomputed_hash": "72dca08b83abc1bd7eccbd29fc7bc00edde5265eca49429ad11a354d3a830218",
+          "recorded_in_memory_hash": "d3ee7e7b07d380f9a9f080e9dd823c66dc96a69b49f5522af2f948ffc66adbde",
+          "recorded_matches_loaded_hash": false,
+          "recorded_matches_fresh_hash": false,
+          "exact_content_hash_equal": true,
+          "values_match": true,
+          "dtype_differences": {}
+        },
+        "label_summary": {
+          "published_hash": "a5418d632edb072b9c195ff4e0e018ea70bf6f53d3c94a0da6f3fc177fab09f0",
+          "recomputed_hash": "a5418d632edb072b9c195ff4e0e018ea70bf6f53d3c94a0da6f3fc177fab09f0",
+          "recorded_in_memory_hash": "e873890b64cd0255ae32a41b3916ab9c10d9f74866ef382d997ac5736575ba8a",
+          "recorded_matches_loaded_hash": false,
+          "recorded_matches_fresh_hash": false,
+          "exact_content_hash_equal": true,
+          "values_match": true,
+          "dtype_differences": {}
+        }
+      },
+      "rerun_invariant_checks": [
+        {
+          "check": "source_row_counts_equal_and_nothing_lost",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "{'n_t09': 388557, 'n_t10': 388557, 'n_t11': 388557, 'n_merged': 388557}"
+        },
+        {
+          "check": "keys_unique",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "t11_node_volume_and_degree_equal_t09",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "calendar_contiguous_non_overlapping",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "94 windows"
+        },
+        {
+          "check": "node_windows_covered_by_snapshot",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "pagerank_sums_to_one_per_window",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "max_abs_dev=3.33e-16"
+        },
+        {
+          "check": "metrics_nonnegative",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "clustering_at_most_one",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "weighted_degree_equals_in_plus_out",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "net_inflow_equals_in_minus_out",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "in_share_within_0_1",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "community_volume_share_matches_t11_giant_ratio",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "features_have_no_infinity",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "feature_missing_rates_reported",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "{}"
+        },
+        {
+          "check": "feature_columns_exclude_ids_labels_split_and_t07",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "[]"
+        },
+        {
+          "check": "available_at_equals_window_end",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "split_windows_chronological_with_gap",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "{'test': {'min': 75, 'max': 92}, 'train': {'min': 1, 'max': 54}, 'validation': {'min': 56, 'max': 73}}"
+        },
+        {
+          "check": "train_ends_before_validation_starts_and_validation_before_test",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "partial_windows_excluded_from_split",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "every_row_has_split_state",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "address_seen_in_train_matches_train_rows",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "label_class_present_iff_labeled",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "one_label_per_address",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "labeled_classes_are_the_chosen_classes",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "['CEX', 'DEX']"
+        },
+        {
+          "check": "no_excluded_type_in_labels",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "label_status_share_of_rows",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "{'unattributed_or_excluded_type': 0.964466, 'labeled': 0.030845, 'rare_class': 0.004445, 'label_conflict': 0.000242, 'zero_address': 3e-06}"
+        },
+        {
+          "check": "every_class_has_enough_addresses_in_every_split",
+          "scope": "weekly",
+          "status": "PASS",
+          "detail": "[]"
+        }
+      ],
+      "independent_lag_samples": 200,
+      "independent_volume_conservation": true,
+      "label_summary": [
+        {
+          "split": "train",
+          "label_class": "CEX",
+          "n_rows": 6091,
+          "n_addresses": 377,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": null
+        },
+        {
+          "split": "train",
+          "label_class": "DEX",
+          "n_rows": 937,
+          "n_addresses": 44,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": null
+        },
+        {
+          "split": "validation",
+          "label_class": "CEX",
+          "n_rows": 2039,
+          "n_addresses": 261,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9038744482589505
+        },
+        {
+          "split": "validation",
+          "label_class": "DEX",
+          "n_rows": 255,
+          "n_addresses": 24,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9882352941176471
+        },
+        {
+          "split": "test",
+          "label_class": "CEX",
+          "n_rows": 2017,
+          "n_addresses": 224,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.8745661874070402
+        },
+        {
+          "split": "test",
+          "label_class": "DEX",
+          "n_rows": 182,
+          "n_addresses": 24,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.967032967032967
+        }
+      ],
+      "unseen_test": {
+        "CEX": {
+          "rows": 253,
+          "addresses": 51
+        },
+        "DEX": {
+          "rows": 6,
+          "addresses": 6
+        }
+      },
+      "parquet_pandas_version": "3.0.6",
+      "readiness": {
+        "computation_validated": true,
+        "node_classification_ready": true,
+        "class_coverage_ok": true,
+        "n_classes": 2,
+        "pit_label_forecast": false,
+        "pit_label_forecast_note": "T07 labels are retrospective (collected 2026-10-20): no historical availability date. This table supports node classification on same-window features, not label forecasting.",
+        "split_note": "Time-ordered split with a gap; same address may appear in several splits: report metrics on all test rows and on rows with address_seen_in_train == False."
+      }
+    },
+    "daily": {
+      "rows": 712519,
+      "windows": 655,
+      "features": 41,
+      "upstream_hashes_match": {
+        "t07_labels": true,
+        "t09_nodes": true,
+        "t09_snapshot": true,
+        "t10_nodes": true,
+        "t11_nodes": true,
+        "t11_snapshot": true
+      },
+      "comparisons": {
+        "features": {
+          "published_hash": "e0e538fab1d0d10cb95425ab76ea9f6951bfae190cd54df1be2f1203639812c4",
+          "recomputed_hash": "e0e538fab1d0d10cb95425ab76ea9f6951bfae190cd54df1be2f1203639812c4",
+          "recorded_in_memory_hash": "8862f80acf446a0ca2ea694fa832f50921eddd27be1a14fae1a54ff69d04a188",
+          "recorded_matches_loaded_hash": false,
+          "recorded_matches_fresh_hash": false,
+          "exact_content_hash_equal": true,
+          "values_match": true,
+          "dtype_differences": {}
+        },
+        "split": {
+          "published_hash": "2049200fdc0278fd02394d3ac73fe456f07c978e67a97202f3c05ed0118c185b",
+          "recomputed_hash": "2049200fdc0278fd02394d3ac73fe456f07c978e67a97202f3c05ed0118c185b",
+          "recorded_in_memory_hash": "91d30a4f2ca67efaf647167238c9d5cc59f4781ca61d9fd4a183a74184b5ff76",
+          "recorded_matches_loaded_hash": false,
+          "recorded_matches_fresh_hash": false,
+          "exact_content_hash_equal": true,
+          "values_match": true,
+          "dtype_differences": {}
+        },
+        "label_summary": {
+          "published_hash": "fc43a476d73a3586f233cfdc5a489c6ce2e841b3c573a34ff69357aac9756ad3",
+          "recomputed_hash": "fc43a476d73a3586f233cfdc5a489c6ce2e841b3c573a34ff69357aac9756ad3",
+          "recorded_in_memory_hash": "a8329c073ac85cf62ca3a5094828b3a86524cb6578b1a66be5a283d93f4b31f9",
+          "recorded_matches_loaded_hash": false,
+          "recorded_matches_fresh_hash": false,
+          "exact_content_hash_equal": true,
+          "values_match": true,
+          "dtype_differences": {}
+        }
+      },
+      "rerun_invariant_checks": [
+        {
+          "check": "source_row_counts_equal_and_nothing_lost",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "{'n_t09': 712519, 'n_t10': 712519, 'n_t11': 712519, 'n_merged': 712519}"
+        },
+        {
+          "check": "keys_unique",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "t11_node_volume_and_degree_equal_t09",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "calendar_contiguous_non_overlapping",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "655 windows"
+        },
+        {
+          "check": "node_windows_covered_by_snapshot",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "pagerank_sums_to_one_per_window",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "max_abs_dev=4.44e-16"
+        },
+        {
+          "check": "metrics_nonnegative",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "clustering_at_most_one",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "weighted_degree_equals_in_plus_out",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "net_inflow_equals_in_minus_out",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "in_share_within_0_1",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "community_volume_share_matches_t11_giant_ratio",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "features_have_no_infinity",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "feature_missing_rates_reported",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "{}"
+        },
+        {
+          "check": "feature_columns_exclude_ids_labels_split_and_t07",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "[]"
+        },
+        {
+          "check": "available_at_equals_window_end",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "split_windows_chronological_with_gap",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "{'test': {'min': 527, 'max': 654}, 'train': {'min': 0, 'max': 384}, 'validation': {'min': 392, 'max': 519}}"
+        },
+        {
+          "check": "train_ends_before_validation_starts_and_validation_before_test",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "partial_windows_excluded_from_split",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "every_row_has_split_state",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "address_seen_in_train_matches_train_rows",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "label_class_present_iff_labeled",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "one_label_per_address",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "labeled_classes_are_the_chosen_classes",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "['CEX', 'DEX']"
+        },
+        {
+          "check": "no_excluded_type_in_labels",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "label_status_share_of_rows",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "{'unattributed_or_excluded_type': 0.925996, 'labeled': 0.064679, 'rare_class': 0.008404, 'label_conflict': 0.000919, 'zero_address': 1e-06}"
+        },
+        {
+          "check": "every_class_has_enough_addresses_in_every_split",
+          "scope": "daily",
+          "status": "PASS",
+          "detail": "[]"
+        }
+      ],
+      "independent_lag_samples": 200,
+      "independent_volume_conservation": true,
+      "label_summary": [
+        {
+          "split": "train",
+          "label_class": "CEX",
+          "n_rows": 23166,
+          "n_addresses": 382,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": null
+        },
+        {
+          "split": "train",
+          "label_class": "DEX",
+          "n_rows": 4303,
+          "n_addresses": 44,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": null
+        },
+        {
+          "split": "validation",
+          "label_class": "CEX",
+          "n_rows": 7727,
+          "n_addresses": 264,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9242914455804323
+        },
+        {
+          "split": "validation",
+          "label_class": "DEX",
+          "n_rows": 1224,
+          "n_addresses": 24,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9975490196078431
+        },
+        {
+          "split": "test",
+          "label_class": "CEX",
+          "n_rows": 7964,
+          "n_addresses": 225,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9055750878955299
+        },
+        {
+          "split": "test",
+          "label_class": "DEX",
+          "n_rows": 705,
+          "n_addresses": 23,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9900709219858156
+        }
+      ],
+      "unseen_test": {
+        "CEX": {
+          "rows": 752,
+          "addresses": 49
+        },
+        "DEX": {
+          "rows": 7,
+          "addresses": 6
+        }
+      },
+      "parquet_pandas_version": "3.0.6",
+      "readiness": {
+        "computation_validated": true,
+        "node_classification_ready": true,
+        "class_coverage_ok": true,
+        "n_classes": 2,
+        "pit_label_forecast": false,
+        "pit_label_forecast_note": "T07 labels are retrospective (collected 2026-10-20): no historical availability date. This table supports node classification on same-window features, not label forecasting.",
+        "split_note": "Time-ordered split with a gap; same address may appear in several splits: report metrics on all test rows and on rows with address_seen_in_train == False."
+      }
+    }
+  },
+  "published_validation_counts": {
+    "PASS": 70
+  },
+  "all_pass": true,
+  "scope": "Retrospective contemporaneous CEX/DEX classification; not PIT label forecast or individual-investor identification.",
+  "cross_version_hash_diagnosis": {
+    "weekly_features": {
+      "writer_pandas": "3.0.6",
+      "string_fields": [
+        "window_type",
+        "time_window",
+        "address",
+        "label_entity_type",
+        "label_confidence",
+        "label_class",
+        "split"
+      ],
+      "writer_dtype_header_hash": "d255566a995dacaf4ddfc5e819b2e55483409aaa8c706b1afa2c56ae7d750da8",
+      "recorded_hash": "d255566a995dacaf4ddfc5e819b2e55483409aaa8c706b1afa2c56ae7d750da8",
+      "matches_after_writer_dtype_header": true
+    },
+    "weekly_split": {
+      "writer_pandas": "3.0.6",
+      "string_fields": [
+        "time_window",
+        "split"
+      ],
+      "writer_dtype_header_hash": "d3ee7e7b07d380f9a9f080e9dd823c66dc96a69b49f5522af2f948ffc66adbde",
+      "recorded_hash": "d3ee7e7b07d380f9a9f080e9dd823c66dc96a69b49f5522af2f948ffc66adbde",
+      "matches_after_writer_dtype_header": true
+    },
+    "weekly_label_summary": {
+      "writer_pandas": "3.0.6",
+      "string_fields": [
+        "split",
+        "label_class"
+      ],
+      "writer_dtype_header_hash": "e873890b64cd0255ae32a41b3916ab9c10d9f74866ef382d997ac5736575ba8a",
+      "recorded_hash": "e873890b64cd0255ae32a41b3916ab9c10d9f74866ef382d997ac5736575ba8a",
+      "matches_after_writer_dtype_header": true
+    },
+    "daily_features": {
+      "writer_pandas": "3.0.6",
+      "string_fields": [
+        "window_type",
+        "time_window",
+        "address",
+        "label_entity_type",
+        "label_confidence",
+        "label_class",
+        "split"
+      ],
+      "writer_dtype_header_hash": "8862f80acf446a0ca2ea694fa832f50921eddd27be1a14fae1a54ff69d04a188",
+      "recorded_hash": "8862f80acf446a0ca2ea694fa832f50921eddd27be1a14fae1a54ff69d04a188",
+      "matches_after_writer_dtype_header": true
+    },
+    "daily_split": {
+      "writer_pandas": "3.0.6",
+      "string_fields": [
+        "time_window",
+        "split"
+      ],
+      "writer_dtype_header_hash": "91d30a4f2ca67efaf647167238c9d5cc59f4781ca61d9fd4a183a74184b5ff76",
+      "recorded_hash": "91d30a4f2ca67efaf647167238c9d5cc59f4781ca61d9fd4a183a74184b5ff76",
+      "matches_after_writer_dtype_header": true
+    },
+    "daily_label_summary": {
+      "writer_pandas": "3.0.6",
+      "string_fields": [
+        "split",
+        "label_class"
+      ],
+      "writer_dtype_header_hash": "a8329c073ac85cf62ca3a5094828b3a86524cb6578b1a66be5a283d93f4b31f9",
+      "recorded_hash": "a8329c073ac85cf62ca3a5094828b3a86524cb6578b1a66be5a283d93f4b31f9",
+      "matches_after_writer_dtype_header": true
+    }
+  },
+  "reader_pandas_version": "2.2.3"
+}

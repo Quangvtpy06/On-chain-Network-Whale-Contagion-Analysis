@@ -1,0 +1,166 @@
+{
+  "stage": "stage4_graph_ml",
+  "date": "2026-10-27",
+  "protocols": {
+    "t19": "t19_v1",
+    "t20_t22": "graph_ml_stage4_v1",
+    "t23": "t23_temporal_graph_anomaly_v1"
+  },
+  "code_git_base_commit": "f402d166b2db2faca22f963c4cee66ac2fad07b3",
+  "code_git_commit": null,
+  "t19_published_hf_revision": "25becf91d38a38ef7998d26b3b148e4109ef1f05",
+  "source_contract": {
+    "byte_sha_checked_against_local_t19_summary": true,
+    "cross_release_binding": "table_value_sha256(column_names + values)",
+    "t19_features_values_sha256": "4bb6b50bb79e4349992cb882d48a764f6282c62eb74f65d8e41dc4a822487992",
+    "t19_split_values_sha256": "5f62d81bcd9b7537bf53eca91f36523f0bd83f44b41e3962d7b919b230740910",
+    "t19_dictionary_values_sha256": "d248cd95b8dbf56cc9e0e68e9bf05eec9a15c409997a1804e65cee4f89bd691d",
+    "source_edges_sha256": "c16ddd27bf26ff20c61b78de3328d96b4957a637123ee76cedbdd4116044d945",
+    "stage4_config_sha256": "a8d7ff7b4008689b625d677f0a8658ea4cf88b7d0be13e84f673d2f44597f912",
+    "t23_config_sha256": "2185eb203ead4067c33c9c905b40091ad08510a8b6b91854ee2b20377a29ca12",
+    "external_stress_sha256": "837f17049e9358a421caf0845b24817c599e9197a8909aef4bc09cb2698c22bb"
+  },
+  "source_config_sha256": {
+    "T19_Graph_ML_Features.py": "0139df738685ed36039563c1306665709878d97e4b473a0a47003ec6ed277675",
+    "T20_Tabular_Node2Vec.py": "f588bdbd3b5909f8d1dd2f4feb245c77c89c1c827fc4f60a2e7e4fdd93c9f7a5",
+    "T21_GCN_GraphSAGE.py": "3068d7cb2668d86b71c872cd9bc39c968699c6c0b8a8984cd4429e7ef6023430",
+    "T22_GAT_RQ5_Comparison.py": "6efa90b5cc920143cf6d953f0ad713b6160909919776224b593a59d31fdbcd98",
+    "T23_Temporal_Graph_Anomaly.py": "8a44ca3ab9598f4ee1196493df3b14746e888ca68886884734008c346ed07f80",
+    "src/stage4_common.py": "44e3fe10f9914ca2ba11be62bab4542386e51ce9e66e0ed03f29584016ad80de",
+    "src/stage4_gnn.py": "ff610d7363d8f4a82431cd6e61472e439eb1060a4c6e3461578e4a7e35a75e6b",
+    "scripts/validate_stage4_mandatory.py": "75b152b021d6146a8c21438adc229965c2b284fe9b6b9f507947cb950472f9c8",
+    "scripts/validate_t23_extension.py": "0943f535d117d1c8a7e27a250a063bd028d2f469a0f97def8502ceb4a8ee3feb",
+    "config/graph_ml_stage4.yaml": "a8d7ff7b4008689b625d677f0a8658ea4cf88b7d0be13e84f673d2f44597f912",
+    "config/t23.yaml": "2185eb203ead4067c33c9c905b40091ad08510a8b6b91854ee2b20377a29ca12",
+    "requirements-stage4.txt": "d86a15560f787d8157681cdf6e8bc4353b43ed3d18c7c91739ac54b23d1234f0"
+  },
+  "environment": {
+    "python": "3.12.5",
+    "torch": "2.14.1+cpu",
+    "torch_geometric": "2.8.1",
+    "scikit_learn": "1.9.1",
+    "gensim": "4.4.0",
+    "pandas": "2.2.3",
+    "numpy": "2.1.2",
+    "cuda": false
+  },
+  "rq5": {
+    "selected_gnn": "graphsage",
+    "test_delta_macro_f1_vs_tabular_mlp": 0.12976061767001967,
+    "address_cluster_bootstrap_95pct_ci": [0.0688280002472019, 0.2027051361746037],
+    "sensitivity_week_block_95pct_ci": [0.08120831780585083, 0.17885101723111568],
+    "evidence_gnn_better_at_5pct": true,
+    "test_rows": 2199,
+    "test_new_dex_addresses": 6
+  },
+  "t23": {
+    "test_primary_scored_weeks": 17,
+    "test_primary_anomaly_weeks": 1,
+    "test_primary_anomalies_with_same_week_stress": 0,
+    "primary_test_anomaly_week": "2026-W40"
+  },
+  "validators": {
+    "stage4_mandatory_checks": 112,
+    "stage4_mandatory_all_pass": true,
+    "t23_extension_checks": 567,
+    "t23_extension_all_pass": true
+  },
+  "reproduction": {
+    "prior_t20_t22_pythonhashseeds": [73, 137],
+    "prior_t20_t22_artifacts_matched": "17/17",
+    "final_pythonhashseed": 211,
+    "final_artifacts_compared": 18,
+    "final_artifacts_matched": 18,
+    "all_match": true,
+    "tables": [
+      {
+        "file": "data/processed/t20/t20_train_node2vec_anchors.parquet",
+        "sha256": "359ae167b0a327c0e66c2e25739e73ce39fe4ea3d59b1513a8193d3812f9a1b6"
+      },
+      {
+        "file": "data/processed/t20/t20_predictions.parquet",
+        "sha256": "fe4538e8ea057ccfc72dfd7733af69d083ed06342d1dd59d5b25734cae7de29a"
+      },
+      {
+        "file": "data/processed/t20/t20_metrics.parquet",
+        "sha256": "e072222e87265983341f99842bd52a3ac8f3be6d65e42c58ee0d3fbed54fc11a"
+      },
+      {
+        "file": "data/processed/t20/t20_preprocessing.json",
+        "sha256": "b9fbfc4cdf369c62b846145dbb4b72fe4ff713f84a00ee66903ffa5628895afb"
+      },
+      {
+        "file": "data/processed/t21/t21_predictions.parquet",
+        "sha256": "6a00addf222285f08fe28dacb5025d8c565d7f45c6a4d8463010d70bd4eadae6"
+      },
+      {
+        "file": "data/processed/t21/t21_metrics.parquet",
+        "sha256": "c5d323eded4f16f83245675576ca1dee976a23e99c0a5c2cd50619e455a8c222"
+      },
+      {
+        "file": "data/processed/t21/t21_snapshot_embeddings.parquet",
+        "sha256": "77f0b99d175fd30506fdb23685be6171c12bd1f90aed173c85ec980dfc2c37d8"
+      },
+      {
+        "file": "data/processed/t22/t22_predictions.parquet",
+        "sha256": "d7db58ee540d182ef6211f8de575652889a5a2989ae52572951ec07f213cdead"
+      },
+      {
+        "file": "data/processed/t22/t22_metrics.parquet",
+        "sha256": "56ec29fd79ad2709057d9f6122f1a549172ae7bbe3864a33f549e684e0388d38"
+      },
+      {
+        "file": "data/processed/t22/t22_snapshot_embeddings.parquet",
+        "sha256": "4291e830dedc19635de36b12f4b112cde865fcaaad955427e411dc94f0bb0ba8"
+      },
+      {
+        "file": "data/processed/t22/t22_model_comparison.parquet",
+        "sha256": "4786e4265a4093869fcc9ae91067f1d9088add9821b98bc0c4f6668b5b592358"
+      },
+      {
+        "file": "data/processed/t22/t22_bootstrap.parquet",
+        "sha256": "bae3f812a395954ae8201cc721e3df61d074560c4c1d75b3584dce28113491a6"
+      },
+      {
+        "file": "data/processed/t22/t22_week_block_sensitivity.parquet",
+        "sha256": "b758c8c87f78170376ef162dd5bedb1f5b201f8b28a08b31f67246e0e03e72bb"
+      },
+      {
+        "file": "data/processed/t23/t23_temporal_features.parquet",
+        "sha256": "d6dd610ee9de745d1d55a430adaaaef73a570d28f22b6fe39829612689203c80"
+      },
+      {
+        "file": "data/processed/t23/t23_anomaly_scores.parquet",
+        "sha256": "9e2f8b28a9cf501bd71c99a807957cbae976bed9d3205b1fefe3405a85c1778c"
+      },
+      {
+        "file": "data/processed/t23/t23_events.parquet",
+        "sha256": "2d95051b160fbdcb62ff6fc11888c8cca56c1c6d1a8d5f24363c641737c16a3a"
+      },
+      {
+        "file": "data/processed/t23/t23_validation.parquet",
+        "sha256": "b2d83d0997965bc9b5893322211478bc8166c0f9417596b61f3a6be2cdefb322"
+      },
+      {
+        "file": "data/processed/t23/t23_timeline.png",
+        "sha256": "25edd131329079d60fb3456ecd575f10c2df2f36865291599dfc1827d8acca4a"
+      }
+    ]
+  },
+  "independent_review_sha256": {
+    "data/processed/t22/t22_independent_review.json": "0d165e628290e3121626309d7944a0b4b7563923be867c3ec86b6cb8cb435384",
+    "data/processed/t23/t23_independent_review.json": "86ec37f878a43040d06813d8ee4546daa39645982bca0c7ddc6528b8834ba8d6"
+  },
+  "summary_sha256": {
+    "data/processed/t20/t20_summary.json": "75e9c38c09d53d987d315ccf1b68388706cc2b58c2722e100002c1f94e94b07c",
+    "data/processed/t21/t21_summary.json": "033e1f891595f92c29ad836ab47d855b97d56fb14ec3846d3f768eba2023350d",
+    "data/processed/t22/t22_summary.json": "7a0b1191f71dc865d96cba35a130ddd2b65c23c8ade97ab8c294f81e1c828cb5",
+    "data/processed/t23/t23_summary.json": "366072eb498c6380e99bae9be855dfa8d2e40a48937a7bb385803cbed1ac3e4f"
+  },
+  "scope_limits": [
+    "retrospective CEX/DEX labels from T07; not point-in-time label forecasting",
+    "Node2Vec near-perfect scores interpreted cautiously due to repeated addresses and only 6 new DEX test addresses",
+    "T23 flags structural/embedding change; not a stress forecast",
+    "USDT whale-transfer subgraph only; no cross-token claim"
+  ]
+}

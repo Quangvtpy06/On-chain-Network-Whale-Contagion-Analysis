@@ -1,54 +1,55 @@
-# T17 — robustness và sensitivity của T15/T16
+# T17 — Robustness và sensitivity v2
 
-Protocol `t17_robustness_v1`, cấu hình `config/t17.yaml`, mã `src/robustness.py` và `T17_Robustness.py`. Mọi giá trị trong cấu hình được đóng băng trước lượt chạy; không chọn kịch bản theo dấu hệ số, p-value hay độ lớn phản ứng. Mọi kịch bản đều được báo cáo.
+Protocol `t17_usdt_daily_weekly_v2`, cấu hình `config/t17.yaml`. Chủ dự án chấp thuận ngày 26/10/2026 trước lượt chạy v2: **USDT; graph windows ngày và tuần ISO**. Chưa kiểm tra khả năng khái quát sang token khác. Trục token được loại khỏi phạm vi nghiệm thu theo quyết định này; không được ghi là thử nghiệm đa token đã đạt. Cấu hình token khác bị từ chối. Mở rộng phạm vi phải có protocol mới.
 
-## Điều T17 không làm
+Các quy tắc dưới đây cố định trước chạy v2. V2 được xây sau review v1, không phải đăng ký trước khi nhìn thấy mọi kết quả v1. Không chọn lại tham số theo dấu hệ số, p-value hay độ lớn phản ứng.
 
-- Không sửa T14, T15, T16 hay cờ RQ3. Đọc release T14 qua cùng `load_t14` (kiểm hash, policy, readiness) như T15/T16.
-- Là liên hệ trong mẫu. Không phải hiệu ứng nhân quả, không phải kiểm định dự báo ngoài mẫu (T18), `rq3_answered = false`.
-- **Trục token chưa chạy**: không có dữ liệu T04–T14 nào ngoài USDT. Output ghi `token_axis.status = not_run` kèm lý do. Muốn chạy phải tải token khác từ BigQuery và chạy lại T05–T16.
+## Nguồn và điều kiện chạy
 
-## Điều kiện chạy: tái tạo bản nghiệm thu trước
+- T14 qua validator release đầy đủ; policy observed approved CEX subset / unidentified high-activity cohort. Không suy danh tính nhà đầu tư cá nhân.
+- T15/T16: kiểm tra computation, independent review, hash summary, mọi artifact, source/config/input lineage, content hashes hai lần chạy và policy. Chỉ đọc, không sửa output upstream.
+- T11 ngày/tuần và T08 đúng hash tái lập và lineage T14/T11. Tuần đủ 7 ngày mới sử dụng.
+- Tái tạo **chỉ base trước grid**: T15 khớp n_obs, R² baseline/full, hệ số, p và tập ngày; T16 khớp selection và ứng viên theo `(event_type,date)`, candidate, signal_available, threshold. Dừng trước grid khi không khớp.
 
-Kịch bản gốc (base) phải khớp đúng kết quả đã nghiệm thu, nếu không T17 báo FAIL và không dùng grid:
-- Hash cấu hình: `config/t15.yaml` và `config/t16.yaml` khớp chính xác `source_config_sha256` của bản nghiệm thu `t15_summary.json` và `t16_summary.json`.
-- Xác minh T11 tuần: `snapshot_metrics_weekly.parquet` khớp hash tái lập trong `t11_reproducibility.json`, số lượng tuần và giá trị trung bình CCI khớp `t11_summary.json`.
-- T15: cùng `n_obs`, `R²` (baseline và primary), hệ số và p thô cho 2 nhánh × h = 1/3/7, sai số ≤ `tolerance`. Tập ngày kịch bản gốc khớp chính xác 100% tập ngày đã chọn trong `t15_sample_membership.parquet`.
-- T16: cùng tập ngày sự kiện được chọn (mọi loại và chính sách) và cùng số ứng viên.
-- z-score flow `k=1` khớp cột T14; mục tiêu single-day tính lại khớp cột `target_log_rv_h*` của T14; `large_transfer_count` ở percentile gốc khớp T14.
+## Các trục
 
-## Bốn trục
-
-| Trục | Kịch bản | Ghi chú |
+| Trục | Kịch bản | Ý nghĩa |
 |---|---|---|
-| Horizon (T15) | single-day h ∈ {1,2,3,5,7,10,14}; **cộng dồn** `sum_days` h ∈ {1,3,7,14} | Hai định nghĩa không bao giờ trộn trong một kịch bản. Target luôn bắt đầu tại D+1 00:00 UTC. h=1 của hai định nghĩa trùng nhau (kiểm tra). |
-| Cửa sổ dòng tiền (T15) | tổng dòng tiền ròng k = 3, 7 ngày liên tiếp (k=1 là gốc), chuẩn hóa lại chỉ bằng quá khứ `[D−L, D)` | Là tổng các ngày đã net, **không** phải đồ thị k ngày được net lại. Một ngày NaN trong cửa sổ làm cả tổng NaN, không bao giờ thành 0. |
-| Ngưỡng (T16) | quantile large transfer 0,90/0,99; quantile concentration 0,85/0,95; ngưỡng z của hai sự kiện dòng tiền ròng 1,5/2,5; **percentile cạnh lớn của T14** 0,90/0,99 | Đổi một tham số một lần, các tham số khác giữ giá trị gốc. Percentile cạnh lớn dùng đúng hàm T14 trên cạnh theo ngày (hash khớp lineage T14/T11). |
-| Cửa sổ đồ thị (T16) | chỉ số concentration theo **tuần ISO** của T11 thay cho theo ngày | Chỉ số tuần chỉ đặt vào ngày Chủ nhật kết thúc tuần đầy đủ (khả dụng đúng lúc kết thúc tuần); ngày khác là tín hiệu không khả dụng, không nhân bản. Tuần lẻ bị loại. |
+| Horizon single-day | h=1,2,3,5,7,10,14 | log RV của đúng ngày D+h |
+| Horizon cumulative | h=1,3,7,14 | log tổng RV D+1..D+h, khác estimand single-day |
+| Flow window | k=1,3,7; h=1,3,7 | Tổng raw net flow k ngày, chuẩn hóa lại theo quá khứ |
+| Flow window cùng mẫu | k=1,3,7; h=1,3,7 | Giao ngày hợp lệ theo branch/horizon để so cửa sổ |
+| Ngưỡng event | quantile large count 0,90/0,99; CCI 0,85/0,95; flow z 1,5/2,5; percentile cạnh lớn 0,90/0,99 | Mỗi lần đổi một tham số, giữ và đối chiếu base |
+| Graph window | CCI ngày / tuần ISO T11 | Tuần đặt tại Chủ nhật kết thúc tuần đầy đủ, khả dụng D+1 00:00 UTC |
 
-## Mẫu, mô hình, đa kiểm định
+Graph window không gồm 30 ngày hay 8 tuần. `weekly_minimum_history_values=8` là số quan sát tuần tối thiểu trong cửa sổ lịch sử threshold 90 ngày. Flow k ngày là tổng flow ngày đã net, không phải dựng lại đồ thị k ngày.
 
-Mỗi kịch bản T15 ước lượng hai mô hình trên **cùng các ngày**: controls; controls + flow. OLS có intercept, Newey–West Bartlett HAC theo công thức cố định của T15 (`fit_hac` gốc). Mẫu = cờ `predictors_ready_*` của T14 ∩ flow hữu hạn ∩ target hữu hạn. Ngày thuộc nhánh nào dùng nhánh đó, không trộn CEX và cohort. Holm áp dụng **trong từng trục** (mọi nhánh và kịch bản của trục là một họ); báo cả p thô. Không dùng nhánh hồi cứu làm bằng chứng.
+## Công thức và mẫu
 
-Sự kiện: mỗi kịch bản chạy lại `events.compute` của T16 với tham số đổi. Báo số ứng viên, số sự kiện chọn, Jaccard với tập sự kiện gốc, và hiệu trung bình `log RV` / `log volume` (tau = 0..k trừ tau = −k..−1) theo từng sự kiện, kèm khoảng tin cậy bootstrap block theo sự kiện (block 3, 2.000 lần, seed ổn định theo SHA-256) chỉ khi đủ số sự kiện. Đây là phản ứng mô tả, không phải abnormal response so với phản thực.
+`raw_k(D)=sum(raw(D-k+1)..raw(D))`, đủ k ngày hữu hạn. `z_k(D)` chuẩn hóa raw_k bằng mean/std(ddof=1) lịch sử `[D-L,D)` theo config T14. Raw thiếu làm tổng liên quan thiếu, không thay NaN bằng 0. Volume dùng cho scaled flow T14; không tham gia trực tiếp z-score raw flow T17. NaN volume đơn lẻ không tự làm z-score thiếu.
 
-## Kiểm định
+Mẫu = readiness branch ∩ controls hữu hạn ∩ z_k hữu hạn ∩ target hữu hạn. Không ép tập con hoặc mất k−1 ngày đầu. Validator dựng ngày kỳ vọng cho từng scenario rồi so đúng thứ tự, số lượng và giới hạn ngày; lưu membership Parquet. Common_sample thêm giao điều kiện hợp lệ k=1,3,7. HAC từ chối mẫu có khoảng trống lịch; không nén khoảng trống thành ngày liên tiếp.
 
-- Tái tạo T15/T16 (trên).
-- Giải ngoài: tính lại beta và SE HAC của vài kịch bản bằng đại số ma trận, so với `fit_hac`.
-- Truncation và mutation của flow cửa sổ k ngày tại nhiều điểm cắt: giá trị trước điểm cắt không đổi khi bỏ hoặc sửa tương lai.
-- Mọi kịch bản ước lượng thành công; Holm không nhỏ hơn p thô.
-- **Đối chiếu tập ngày mẫu lồng**: kiểm tra tập hợp ngày thực tế $S_k \subset S_{\text{base}}$ với mọi kịch bản $k \in \{3, 7\}$; tập ngày bị giảm $S_{\text{base}} \setminus S_k$ chính xác là $k-1$ ngày đầu tiên của mẫu cơ sở; không có ngày ngoại lai hay khoảng trống bất thường.
-- Chạy hai lần, so hash nội dung các bảng; hash nguồn/config/input kiểm lại sau khi tính.
+Mỗi scenario: controls và controls+flow cùng ngày, OLS có intercept, HAC Bartlett/Newey–West T15. Holm trong từng trục gồm hai branch; báo p thô. Không coi các trục là một họ kiểm định toàn cục để chọn kết quả thuận lợi.
 
-## Sản phẩm (`data/processed/t17/`)
+T16 giữ event PIT của release, hai chính sách nonoverlap/all_events_sensitivity. Báo n, Jaccard, post−pre log RV/log volume và CI bootstrap block theo sự kiện (2.000 lần, block 3, seed ổn định); chỉ có CI khi đủ sự kiện. Là mô tả, không nhân quả/abnormal response. Kịch bản được phép trùng ngày sự kiện/hệ số; không ép khác nhau để PASS.
 
-`t17_regression_robustness.parquet`, `t17_regression_summary.parquet`, `t17_event_robustness.parquet`, `t17_scenario_plan.parquet`, `t17_validation.parquet`, `t17_report.md`, `t17_regression_robustness.png`, `t17_summary.json` (boolean thật, hash đầy đủ).
+## Nghiệm thu
+
+1. Phạm vi USDT/ngày/tuần được chấp thuận và thực thi; token ngoài scope bị từ chối.
+2. Upstream/base xác minh trước grid; tất cả scenario hoàn thành, ngày mẫu đúng kỳ vọng, k=1/target gốc khớp T14.
+3. Mutation/truncation không thay quá khứ; beta/SE HAC khớp ma trận; Holm không nhỏ hơn p thô.
+4. Hai lần tính trong CLI và hai tiến trình CLI riêng khớp hash artifact. Validator riêng tái tạo output và xác minh source/input/output/report.
+5. Validator riêng tính z bằng lát cắt lịch sử NumPy, target bằng lookup ngày tương lai, membership và beta/SE cho toàn bộ 58 dòng hồi quy.
+6. Ca kiểm soát: thiếu raw giữa kỳ, readiness muộn, thiếu volume; ngày mẫu sai/thừa/thiếu/trùng; candidate đổi ngày/threshold; artifact/config/review thay đổi; token không hỗ trợ; base sai dừng trước grid. Theo quy ước dự án, xóa mã/dữ liệu test giả sau đạt, giữ bằng chứng lịch sử và validator dữ liệu thật.
+
+`computation_validated` xác nhận tính toán; `task_complete_within_approved_scope` xác nhận phạm vi đã chốt; independent review phải đạt riêng. Không cờ nào chứng nhận đa token, nhân quả hoặc hoàn tất RQ3. Transfer giới hạn từ 500.000 USDT nên mạng/số giao dịch chỉ mô tả mạng con giao dịch lớn. T17 không thay T18 hoặc untouched out-of-sample theo blueprint.
 
 ## Chạy
 
 ```text
 python T17_Robustness.py
+python scripts/validate_t17_release.py
 ```
 
-Cần đã có đúng bản nghiệm thu: `data/processed/t14`, `t15`, `t16`, `t11` (kể cả `snapshot_metrics_weekly.parquet`), `data/processed/graphs/dynamic_edges_daily.parquet` và các gate T07/T12 mà `scripts/validate_t14_release.py` yêu cầu.
+Output `data/processed/t17/`: `t17_regression_robustness.parquet`, `t17_regression_summary.parquet`, `t17_event_robustness.parquet`, `t17_scenario_plan.parquet`, `t17_sample_membership.parquet`, `t17_validation.parquet`, `t17_report.md`, `t17_regression_robustness.png`, `t17_summary.json`, `t17_independent_review.json`. Không CSV. Source/config/input/output có SHA-256; thay nguồn phải chạy/nghiệm thu lại. Không tự upload GitHub/HF.

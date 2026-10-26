@@ -74,3 +74,14 @@ python -m src.visualize_t11
 
 Không lưu mã/bản test giả sau khi kiểm tra; giữ validator dữ liệu thật và bằng chứng Parquet/JSON.
 Xem [đặc tả](T11_community_concentration_specification.md) và [kết quả xử lý review](T11_review_report.md).
+
+## Bổ sung kiểm tra RQ4 với stress thị trường (26/10/2026)
+
+T11 ban đầu chỉ đối chiếu trước ngày volume giao dịch lớn. Phân tích RQ4 riêng nay dùng
+nhãn stress RV P90 của T13 và HHI/CCI từ T11 ở 1–3 ngày trước onset stress. Có 23
+đợt stress và 434 mốc đối chứng yên bình. HHI/CCI trước stress cao hơn trung bình,
+nhưng p Holm kiểm định tăng của cả hai chỉ số bằng 0,2603; chưa có bằng chứng
+đủ ở mức 5%. Độ nhạy ghép đối chứng cùng thứ trong tuần cho p Holm 0,0580,
+cũng chưa đạt 5%. T11 output và hash ở trên không thay đổi. Xem
+[đặc tả mới](RQ4_stress_lead_specification.md) và
+[báo cáo kết quả](RQ4_stress_lead_completion_report.md).

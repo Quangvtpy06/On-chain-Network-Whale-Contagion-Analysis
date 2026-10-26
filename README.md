@@ -278,4 +278,89 @@ Output chỉ Parquet, cùng biểu đồ/report/JSON tại `data/processed/t18`;
 Xem [đặc tả](docs/T18_specification.md) và [báo cáo hoàn thành](docs/T18_completion_report.md).
 T18 đã phát hành trên main/HF và tải lại xác minh 17/17 file khớp; xem [biên nhận/revision](docs/T18_release_receipt.md).
 
+### T17 — sensitivity trong phạm vi USDT, protocol v2
 
+```bash
+python T17_Robustness.py
+python scripts/validate_t17_release.py
+python scripts/prepare_t17_release.py
+```
+
+Phạm vi được chủ dự án chốt: USDT, graph windows ngày/tuần ISO; chưa kiểm tra khả năng
+khái quát sang token khác. V2 xác minh release T15/T16 và tái tạo base trước grid, kiểm tra
+đúng tập ngày mỗi kịch bản, bổ sung flow k=1/3/7 trên cùng mẫu. Validator riêng kiểm tra
+lại z-score, target, ngày mẫu và HAC. Output Parquet/PNG/MD/JSON tại `data/processed/t17`.
+Prepare chỉ tạo manifest, không upload. Đây là robustness trong mẫu, không tự hoàn tất RQ3.
+Xem [đặc tả T17](docs/T17_specification.md) và [báo cáo hoàn thành](docs/T17_completion_report.md).
+
+### RQ4 — HHI/CCI cộng đồng trước stress thị trường
+
+```bash
+python RQ4_Stress_Lead.py
+python scripts/validate_rq4_stress_lead.py
+```
+
+Dùng ngày stress RV P90 của T13 làm mốc và chỉ số HHI/CCI ngày của T11 ở 1–3 ngày trước.
+Gộp các ngày stress gần nhau thành đợt, so với mốc yên bình, bootstrap theo khối lịch
+và báo độ nhạy đối chứng cùng thứ trong tuần. Xem [đặc tả](docs/RQ4_stress_lead_specification.md)
+và [kết quả](docs/RQ4_stress_lead_completion_report.md). Output Parquet/PNG/JSON/Markdown tại
+`data/processed/rq4_stress_lead/`; đây là phép đối chiếu hồi cứu, không chứng nhận dự báo ngoài mẫu.
+
+### Giai đoạn 4 — T19 đến T23 (Graph ML / RQ5)
+
+Cài phụ thuộc ML riêng nếu môi trường hiện tại chưa có PyTorch/PyG:
+
+```bash
+pip install -r requirements-stage4.txt
+python T19_Graph_ML_Features.py
+python T20_Tabular_Node2Vec.py
+python T21_GCN_GraphSAGE.py
+python T22_GAT_RQ5_Comparison.py
+python scripts/validate_stage4_mandatory.py
+python T23_Temporal_Graph_Anomaly.py
+python scripts/validate_t23_extension.py
+```
+
+T19 đóng băng 41 feature tuần và split CEX/DEX hồi cứu. T20–T22 so MLP, Node2Vec, GCN,
+GraphSAGE, GAT trên cùng mẫu; chọn GNN bằng validation rồi so với tabular MLP (RQ5).
+T23 chỉ chạy sau gate 112 kiểm tra bắt buộc: bất thường chuỗi không giám sát, stress T13
+chỉ để đối chiếu mô tả. Loader chấp nhận T19 HF/local cùng nội dung bảng dù khác byte Parquet.
+Xem [đặc tả T20–T22](docs/T20_T22_graph_ml_specification.md),
+[báo cáo T20–T22](docs/T20_T22_completion_report.md),
+[đặc tả T23](docs/T23_temporal_anomaly_specification.md),
+[báo cáo T23](docs/T23_completion_report.md) và
+[biên bản giai đoạn 4](docs/Stage4_T19_T23_completion_report.md).
+
+### Giai đoạn 5 — T24 đến T27 (On-chain Explorer)
+
+Ứng dụng Streamlit đọc Parquet local nếu có; nếu thiếu, tự tải đúng từng file
+cần dùng từ dataset Hugging Face public và cache theo revision đã ghim. Không cần
+tải toàn bộ dataset hoặc cấu hình token HF cho demo hiện tại.
+
+```bash
+pip install -r demo/requirements.txt
+streamlit run app.py --server.address 127.0.0.1
+```
+
+Để tạo demo online trên Streamlit Community Cloud:
+
+1. Đẩy code lên GitHub, bảo đảm có `app.py`, `demo/app.py`,
+   `demo/requirements.txt` và `.streamlit/config.toml`.
+2. Trong Streamlit Community Cloud, chọn **Create app**, repository/branch vừa
+   đẩy và đặt **Main file path** là `demo/app.py`.
+3. Chọn Python 3.12 trong **Advanced settings**, sau đó deploy. Entry point này
+   dùng bộ dependency tối giản trong `demo/requirements.txt`;
+   không cài PyTorch/PyG của các pipeline nghiên cứu. Dataset hiện public nên
+   không cần khai báo Secrets hoặc HF token.
+
+Dashboard dùng dữ liệu đã nghiệm thu: đồ thị giao dịch đầy đủ theo cửa sổ,
+CEX/whale flow, realized volatility, community map, event-time plots và tab trả lời
+RQ1–RQ5. Chuỗi thời gian có các preset 30/90/180 ngày hoặc toàn bộ đến ngày đã
+chọn; biểu đồ hỗ trợ zoom bằng con lăn, pan bằng kéo và thanh chọn phạm vi. Đồ thị
+mạng/cộng đồng có bộ chọn Top-N hoặc tất cả; bảng giữ trọn dữ liệu, có ô tìm kiếm
+và CSV xuất theo kết quả lọc. Giao diện dùng theme sáng cố định. Tệp thiếu được tải on-demand từ revision
+`3bfb61848e1ac9bcfb0809d3aef334d1885a84a1`; để cập nhật dataset, đổi
+`HF_DATASET_REVISION` trong `app.py` sang commit HF đã kiểm tra. Ứng dụng hỗ trợ
+ngày/tuần và USDT (tài sản duy nhất hiện có); các địa chỉ ví luôn được ẩn danh.
+Số liệu mô tả trong mẫu, không nhận diện chủ ví, không chứng minh quan hệ nhân quả
+và không phải khuyến nghị đầu tư. Xem [báo cáo hoàn thành T24–T27](docs/T24_T27_completion_report.md).

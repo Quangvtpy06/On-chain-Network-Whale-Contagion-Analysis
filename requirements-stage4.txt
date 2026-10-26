@@ -1,0 +1,13 @@
+# Windows/Python 3.12.5 environment used for the accepted T19–T23 outputs.
+# Install into a separate project venv if an existing environment has conflicting pins.
+numpy==2.1.2
+pandas==2.2.3
+pyarrow==25.0.1
+scipy==1.14.1
+matplotlib==3.9.2
+PyYAML==6.0.2
+scikit-learn==1.9.1
+torch==2.14.1
+torch-geometric==2.8.1
+gensim==4.4.0
+networkx==3.7

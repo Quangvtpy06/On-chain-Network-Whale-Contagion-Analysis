@@ -1,0 +1,516 @@
+{
+  "t14_shape": [
+    655,
+    70
+  ],
+  "t15_models": {
+    "n": {
+      "(1, 'har_baseline')": 624,
+      "(1, 'pit_whaleflow')": 594,
+      "(1, 'retro_whaleflow_ROBUSTNESS_NOT_MAIN')": 594,
+      "(3, 'har_baseline')": 622,
+      "(3, 'pit_whaleflow')": 592,
+      "(3, 'retro_whaleflow_ROBUSTNESS_NOT_MAIN')": 592,
+      "(7, 'har_baseline')": 618,
+      "(7, 'pit_whaleflow')": 588,
+      "(7, 'retro_whaleflow_ROBUSTNESS_NOT_MAIN')": 588
+    },
+    "r2": {
+      "(1, 'har_baseline')": 0.4402270453,
+      "(1, 'pit_whaleflow')": 0.4493319796,
+      "(1, 'retro_whaleflow_ROBUSTNESS_NOT_MAIN')": 0.4492186236,
+      "(3, 'har_baseline')": 0.2191617888,
+      "(3, 'pit_whaleflow')": 0.234060903,
+      "(3, 'retro_whaleflow_ROBUSTNESS_NOT_MAIN')": 0.2373393184,
+      "(7, 'har_baseline')": 0.3008535277,
+      "(7, 'pit_whaleflow')": 0.2932625062,
+      "(7, 'retro_whaleflow_ROBUSTNESS_NOT_MAIN')": 0.2953866407
+    }
+  },
+  "t19_missing": [],
+  "t15_main": "PASS with correct project root and isolated output",
+  "t15_matched_sample": [
+    {
+      "h": 1,
+      "n": 594,
+      "common_baseline_r2": 0.44824167564117967,
+      "common_full_r2": 0.44933197955121906
+    },
+    {
+      "h": 3,
+      "n": 592,
+      "common_baseline_r2": 0.23319392539724149,
+      "common_full_r2": 0.23406090299395843
+    },
+    {
+      "h": 7,
+      "n": 588,
+      "common_baseline_r2": 0.29284616584598533,
+      "common_full_r2": 0.2932625061949302
+    }
+  ],
+  "t16_default_loader": "FileNotFoundError: T11 parquet not found at: D:\\PyCharm 2024.2.3\\code python\\crypto\\data\\market_data\\data\\processed\\t11\\snapshot_metrics_daily.parquet",
+  "t16_main_with_path_override": "PASS",
+  "t16_event_counts": {
+    "concentration": 74,
+    "large_transfer": 42,
+    "whale_inflow": 16
+  },
+  "t16_signal_mismatch": {
+    "cex_events": 16,
+    "cohort_events": 8,
+    "different_dates": 16
+  },
+  "t16_overlapping_events": {
+    "concentration": 56,
+    "large_transfer": 30,
+    "whale_inflow": 4
+  },
+  "t16_calendar_gap_example": [
+    {
+      "event_date": "2025-01-01",
+      "tau": "0",
+      "log_rv": "1.0"
+    },
+    {
+      "event_date": "2025-01-01",
+      "tau": "1",
+      "log_rv": "3.0"
+    }
+  ],
+  "t16_repro_separate_processes": [
+    {
+      "tau": {
+        "0": 0
+      },
+      "variable": {
+        "0": "log_rv"
+      },
+      "mean": {
+        "0": 17.1428571429
+      },
+      "median": {
+        "0": 4.0
+      },
+      "ci_lower": {
+        "0": 3.1392857143
+      },
+      "ci_upper": {
+        "0": 38.2892857143
+      },
+      "n_observations": {
+        "0": 7
+      },
+      "n_events_at_tau": {
+        "0": 7
+      }
+    },
+    {
+      "tau": {
+        "0": 0
+      },
+      "variable": {
+        "0": "log_rv"
+      },
+      "mean": {
+        "0": 17.1428571429
+      },
+      "median": {
+        "0": 4.0
+      },
+      "ci_lower": {
+        "0": 3.1392857143
+      },
+      "ci_upper": {
+        "0": 39.2857142857
+      },
+      "n_observations": {
+        "0": 7
+      },
+      "n_events_at_tau": {
+        "0": 7
+      }
+    }
+  ],
+  "t16_repro_equal": false,
+  "t14_validator": {
+    "contract_version": "t14_inputs_v1",
+    "artifacts_verified": 9,
+    "forecast_inputs_ready_cex": true,
+    "forecast_inputs_ready_activity_cohort": true,
+    "policy": {
+      "cex_scope": "observed_approved_cex_subset",
+      "cohort_scope": "unidentified_high_activity_addresses",
+      "endpoint_information_policy": "approved_public_history_asof_day_start",
+      "cohort_information_policy": "t12_v2_research_knowledge",
+      "boundary_policy": "keep_membership_cohort_side_W_minus_C",
+      "individual_ownership_inference": false,
+      "selection_policy": "frozen_without_regression_outcomes"
+    },
+    "publication_state": "prepared_for_hf_upload"
+  },
+  "t19_summary": {
+    "protocol_id": "t19_v1",
+    "generated_at": "2026-10-24T14:11:07Z",
+    "primary_window_type": "weekly",
+    "windows": {
+      "weekly": {
+        "readiness": {
+          "computation_validated": true,
+          "node_classification_ready": true,
+          "class_coverage_ok": true,
+          "n_classes": 2,
+          "pit_label_forecast": false,
+          "pit_label_forecast_note": "T07 labels are retrospective (collected 2026-10-20): no historical availability date. This table supports node classification on same-window features, not label forecasting.",
+          "split_note": "Time-ordered split with a gap; same address may appear in several splits: report metrics on all test rows and on rows with address_seen_in_train == False."
+        },
+        "classes": [
+          "CEX",
+          "DEX"
+        ],
+        "n_rows": 388557,
+        "n_features": 41,
+        "n_windows": 94,
+        "split_counts": {
+          "excluded_partial_window": {
+            "rows": 6125,
+            "addresses": 5850
+          },
+          "gap": {
+            "rows": 9367,
+            "addresses": 8198
+          },
+          "test": {
+            "rows": 69016,
+            "addresses": 28075
+          },
+          "train": {
+            "rows": 229887,
+            "addresses": 75407
+          },
+          "validation": {
+            "rows": 74162,
+            "addresses": 29283
+          }
+        },
+        "label_status_rows": {
+          "unattributed_or_excluded_type": 374750,
+          "labeled": 11985,
+          "rare_class": 1727,
+          "label_conflict": 94,
+          "zero_address": 1
+        },
+        "label_status_addresses": {
+          "label_conflict": 1,
+          "labeled": 518,
+          "rare_class": 74,
+          "unattributed_or_excluded_type": 114346,
+          "zero_address": 1
+        },
+        "classes_below_min": [],
+        "gap_windows": 1
+      },
+      "daily": {
+        "readiness": {
+          "computation_validated": true,
+          "node_classification_ready": true,
+          "class_coverage_ok": true,
+          "n_classes": 2,
+          "pit_label_forecast": false,
+          "pit_label_forecast_note": "T07 labels are retrospective (collected 2026-10-20): no historical availability date. This table supports node classification on same-window features, not label forecasting.",
+          "split_note": "Time-ordered split with a gap; same address may appear in several splits: report metrics on all test rows and on rows with address_seen_in_train == False."
+        },
+        "classes": [
+          "CEX",
+          "DEX"
+        ],
+        "n_rows": 712519,
+        "n_features": 41,
+        "n_windows": 655,
+        "split_counts": {
+          "gap": {
+            "rows": 16671,
+            "addresses": 7890
+          },
+          "test": {
+            "rows": 130563,
+            "addresses": 28270
+          },
+          "train": {
+            "rows": 424491,
+            "addresses": 76191
+          },
+          "validation": {
+            "rows": 140794,
+            "addresses": 30043
+          }
+        },
+        "label_status_rows": {
+          "unattributed_or_excluded_type": 659790,
+          "labeled": 46085,
+          "rare_class": 5988,
+          "label_conflict": 655,
+          "zero_address": 1
+        },
+        "label_status_addresses": {
+          "label_conflict": 1,
+          "labeled": 518,
+          "rare_class": 74,
+          "unattributed_or_excluded_type": 114346,
+          "zero_address": 1
+        },
+        "classes_below_min": [],
+        "gap_windows": 7
+      }
+    },
+    "failed_checks": [],
+    "label_policy": "retrospective_static_t07_labels_not_point_in_time",
+    "config_sha256": "5d88f1a59a7145a7c612fc8d416629ab0b8ce9702904dae4fe38c4e532e52ee7",
+    "input_sha256": {
+      "weekly": {
+        "t07_labels": "4bf112d171d080c739c2709d67fcf79dbbe0e922bd5727ca5770ca97dad7e00f",
+        "t09_nodes": "30cc211730f8f0a650c03c81124d7eb9a48aea40e13362b7212101776d1235b2",
+        "t09_snapshot": "2f784e48a5c2b5228e9f253509ce72a37583d485a8894e7a0ebe4ad2469ce110",
+        "t10_nodes": "83d0e49f6354f79766cc6bfd63bdc53db753fa2ce903986472ba752c8c22f8fa",
+        "t11_nodes": "950bc0d927ba1205d5f8ba694cfeda4fb1b16b422a385a4012462465eced4f58",
+        "t11_snapshot": "acd4230742a022c8b9c2a4f5449f400faeecf0182e64d2a8667357a5bc8137a4"
+      },
+      "daily": {
+        "t07_labels": "4bf112d171d080c739c2709d67fcf79dbbe0e922bd5727ca5770ca97dad7e00f",
+        "t09_nodes": "47d23888bb06c66165345d98f2673ce6e0d172f4f5eceb41d34166481a6f341c",
+        "t09_snapshot": "562a7a84a7966d8fed58d902c0a0ccee8ce13de12388ca973be8a0c1ce87625a",
+        "t10_nodes": "786d8ee1e5190955017edbfd20656c1653025aac7013dcc02a232d68cb9bcd83",
+        "t11_nodes": "7bb18cb01b4f8cba675fcbddbeccc6a2196f70fdfee8dea1e55d976a92090eea",
+        "t11_snapshot": "0b79d6750588025ed4750347a9915a2bfe1f0fcc7d885e1b666b8302ab613ed4"
+      }
+    },
+    "output_file_sha256": {
+      "t19_node_features_weekly.parquet": "b2068fb3829f42a35a721267107df968a60a29434e56ccffa5fbc715467df003",
+      "t19_split_windows_weekly.parquet": "6788bea8a1c9f0f8c40052314490d1517a43917255c975e5a57727227c1ad655",
+      "t19_label_summary_weekly.parquet": "3287cd9095d6ef556d3e15fd0a2eca0faed98dd5361055b500aa64c69f6ffe5f",
+      "t19_node_features_daily.parquet": "bd118b35fdd4aea7c7ffd0e692da395e9dce4feacb10610f4e6ee0a7001a7dec",
+      "t19_split_windows_daily.parquet": "ffa39082efc8c888214eaf549b86cf39c3f6b0509141e06ab6a39d43e268f98f",
+      "t19_label_summary_daily.parquet": "22dee1cb81d13a20d1ad5a6e07937ba09d55f164dd8dcca576e17094b8035243"
+    }
+  },
+  "t19_check_counts": {
+    "PASS": 70
+  },
+  "t19_independent": {
+    "weekly": {
+      "rows": 388557,
+      "features": 41,
+      "node_volume_equals_twice_edge_volume": true,
+      "lag_lookup_200_samples_pass": true,
+      "dictionary_label_id_leaks": [],
+      "label_summary": [
+        {
+          "split": "train",
+          "label_class": "CEX",
+          "n_rows": 6091,
+          "n_addresses": 377,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": null
+        },
+        {
+          "split": "train",
+          "label_class": "DEX",
+          "n_rows": 937,
+          "n_addresses": 44,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": null
+        },
+        {
+          "split": "validation",
+          "label_class": "CEX",
+          "n_rows": 2039,
+          "n_addresses": 261,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9038744482589505
+        },
+        {
+          "split": "validation",
+          "label_class": "DEX",
+          "n_rows": 255,
+          "n_addresses": 24,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9882352941176471
+        },
+        {
+          "split": "test",
+          "label_class": "CEX",
+          "n_rows": 2017,
+          "n_addresses": 224,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.8745661874070402
+        },
+        {
+          "split": "test",
+          "label_class": "DEX",
+          "n_rows": 182,
+          "n_addresses": 24,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.967032967032967
+        }
+      ],
+      "n_labelled": 11985,
+      "duplicate_keys": 0,
+      "parquet_count": 8
+    },
+    "daily": {
+      "rows": 712519,
+      "features": 41,
+      "node_volume_equals_twice_edge_volume": true,
+      "lag_lookup_200_samples_pass": true,
+      "dictionary_label_id_leaks": [],
+      "label_summary": [
+        {
+          "split": "train",
+          "label_class": "CEX",
+          "n_rows": 23166,
+          "n_addresses": 382,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": null
+        },
+        {
+          "split": "train",
+          "label_class": "DEX",
+          "n_rows": 4303,
+          "n_addresses": 44,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": null
+        },
+        {
+          "split": "validation",
+          "label_class": "CEX",
+          "n_rows": 7727,
+          "n_addresses": 264,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9242914455804323
+        },
+        {
+          "split": "validation",
+          "label_class": "DEX",
+          "n_rows": 1224,
+          "n_addresses": 24,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9975490196078431
+        },
+        {
+          "split": "test",
+          "label_class": "CEX",
+          "n_rows": 7964,
+          "n_addresses": 225,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9055750878955299
+        },
+        {
+          "split": "test",
+          "label_class": "DEX",
+          "n_rows": 705,
+          "n_addresses": 23,
+          "meets_min_addresses": true,
+          "share_rows_address_seen_in_train": 0.9900709219858156
+        }
+      ],
+      "n_labelled": 46085,
+      "duplicate_keys": 0,
+      "parquet_count": 8
+    }
+  },
+  "reviewed_commits": {
+    "main": "b59985d305c9492f2d00cf5bf70c2f1f7de2a864",
+    "t15_t16": "182cea78f9a55efde63cce708094610287d750b8"
+  },
+  "review_setup": {
+    "t15": "Unmodified source bytes from feature branch; canonical T14 input and isolated output directory bound at runtime.",
+    "t16": "Default T11 loader reproduced failure; full execution then used canonical T14/T11 paths and isolated output.",
+    "t19": "Unmodified source/config except output_dir changed to isolated cache; both configured windows executed twice plus built-in leakage checks."
+  },
+  "source_sha256": {
+    "T19_Graph_ML_Features.py": "0139df738685ed36039563c1306665709878d97e4b473a0a47003ec6ed277675",
+    "src\\graph_ml_features.py": "83df16b4bcc42e9db32db7927fc0b2a4cf8b792426fbf3b16c1bebe4b70962dc",
+    "config\\t19.yaml": "73323c3c676e572f1b55b2a03c1dea00640d55370e6cf8754e90d862a36c6154",
+    ".cache\\review_t15_t16_t19\\T15_Volatility_Regression.py": "f982b68dad2f40ca994d2ee39744a9c219c945d041dc24cae14d528d99e2a677",
+    ".cache\\review_t15_t16_t19\\T16_Event_Study.py": "4c065646194886e2e32bc8b9fbcbd85bd2cf8a8c878ba84e6cade72eb8c26b6b"
+  },
+  "t15_metadata_boolean_types": {
+    "h1": {
+      "value": "False",
+      "type": "str"
+    },
+    "h3": {
+      "value": "False",
+      "type": "str"
+    },
+    "h7": {
+      "value": "False",
+      "type": "str"
+    }
+  },
+  "review_date": "2026-10-24",
+  "verdict": {
+    "t15": "changes_required",
+    "t16": "changes_required",
+    "t19": "computation_pass_retrospective_cex_dex_classification_only"
+  },
+  "temporary_artifacts_deleted_after_review": true,
+  "review_artifacts": {
+    "t15_output\\t15_volatility_regression_results.parquet": {
+      "bytes": 11427,
+      "sha256": "153fa6eb8c79330081709f2ea0d8d511a613a589c34b0325b3d5b67c42572804"
+    },
+    "t16_output\\t16_event_list.parquet": {
+      "bytes": 4595,
+      "sha256": "3474cd833135ad466d90f172042ee3d598f96d4cdc922d7add2760106e1ebdc9"
+    },
+    "t16_output\\t16_event_study_results.parquet": {
+      "bytes": 10771,
+      "sha256": "b767499d8e8aa3987d54b08960ddb368516c206260871a3ea2b58f3c08d0f96b"
+    },
+    "t19_output\\t19_feature_dictionary.parquet": {
+      "bytes": 3447,
+      "sha256": "2a72c01dc489c9a4c1f7dbbb899f5bc67db729b475f5d634d39d640388c40628"
+    },
+    "t19_output\\t19_label_summary_daily.parquet": {
+      "bytes": 4240,
+      "sha256": "22dee1cb81d13a20d1ad5a6e07937ba09d55f164dd8dcca576e17094b8035243"
+    },
+    "t19_output\\t19_label_summary_weekly.parquet": {
+      "bytes": 4235,
+      "sha256": "3287cd9095d6ef556d3e15fd0a2eca0faed98dd5361055b500aa64c69f6ffe5f"
+    },
+    "t19_output\\t19_node_features_daily.parquet": {
+      "bytes": 122078958,
+      "sha256": "bd118b35fdd4aea7c7ffd0e692da395e9dce4feacb10610f4e6ee0a7001a7dec"
+    },
+    "t19_output\\t19_node_features_weekly.parquet": {
+      "bytes": 71326065,
+      "sha256": "b2068fb3829f42a35a721267107df968a60a29434e56ccffa5fbc715467df003"
+    },
+    "t19_output\\t19_split_windows_daily.parquet": {
+      "bytes": 23747,
+      "sha256": "ffa39082efc8c888214eaf549b86cf39c3f6b0509141e06ab6a39d43e268f98f"
+    },
+    "t19_output\\t19_split_windows_weekly.parquet": {
+      "bytes": 8072,
+      "sha256": "6788bea8a1c9f0f8c40052314490d1517a43917255c975e5a57727227c1ad655"
+    },
+    "t19_output\\t19_validation.parquet": {
+      "bytes": 4278,
+      "sha256": "b73042ffe2d134cd1d33127bcb8f2af53715b5d09833ca0bee24c15bee6fa225"
+    },
+    "t16_output\\figures\\t16_concentration_response.png": {
+      "bytes": 223009,
+      "sha256": "e4f47b32160cc6dbe4c2ed2129009eb3b7a31e11090b8c4b612d18cd1623fa47"
+    },
+    "t16_output\\figures\\t16_large_transfer_response.png": {
+      "bytes": 204060,
+      "sha256": "a57187bc9bbf7c924ff4929becf2210b0ef0616fb49537b95f5c49d44b370b62"
+    },
+    "t16_output\\figures\\t16_whale_inflow_response.png": {
+      "bytes": 211768,
+      "sha256": "e0f0a4a87c2d98d64cb8e136b3744619ba8a4c313d9467a1939df1e4124aab4e"
+    }
+  }
+}

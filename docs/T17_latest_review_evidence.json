@@ -1,0 +1,1190 @@
+{
+  "commit": "f402d166b2db2faca22f963c4cee66ac2fad07b3",
+  "checks": [
+    {
+      "check": "internal_missing_flow_invalidates_k_minus_one_rule",
+      "injected_date": "2025-10-28 00:00:00+00:00",
+      "failed_checks": [
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h1:k3",
+          "status": "FAIL",
+          "detail": "n_k=589,n_base=593,dropped=4"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h1:k7",
+          "status": "FAIL",
+          "detail": "n_k=581,n_base=593,dropped=12"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h3:k3",
+          "status": "FAIL",
+          "detail": "n_k=587,n_base=591,dropped=4"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h3:k7",
+          "status": "FAIL",
+          "detail": "n_k=579,n_base=591,dropped=12"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h7:k3",
+          "status": "FAIL",
+          "detail": "n_k=583,n_base=587,dropped=4"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h7:k7",
+          "status": "FAIL",
+          "detail": "n_k=575,n_base=587,dropped=12"
+        }
+      ],
+      "extra_dropped_days": [
+        "2025-10-29 00:00:00+00:00",
+        "2025-10-30 00:00:00+00:00"
+      ]
+    },
+    {
+      "check": "late_eligibility_start",
+      "failures": [
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h1:k3",
+          "status": "FAIL",
+          "detail": "n_k=454,n_base=454,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h1:k7",
+          "status": "FAIL",
+          "detail": "n_k=454,n_base=454,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h3:k3",
+          "status": "FAIL",
+          "detail": "n_k=452,n_base=452,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h3:k7",
+          "status": "FAIL",
+          "detail": "n_k=452,n_base=452,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h7:k3",
+          "status": "FAIL",
+          "detail": "n_k=448,n_base=448,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "activity_cohort:h7:k7",
+          "status": "FAIL",
+          "detail": "n_k=448,n_base=448,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "cex:h1:k3",
+          "status": "FAIL",
+          "detail": "n_k=454,n_base=454,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "cex:h1:k7",
+          "status": "FAIL",
+          "detail": "n_k=454,n_base=454,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "cex:h3:k3",
+          "status": "FAIL",
+          "detail": "n_k=452,n_base=452,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "cex:h3:k7",
+          "status": "FAIL",
+          "detail": "n_k=452,n_base=452,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "cex:h7:k3",
+          "status": "FAIL",
+          "detail": "n_k=448,n_base=448,dropped=0"
+        },
+        {
+          "check": "flow_window_sample_strictly_nested_in_base",
+          "scope": "cex:h7:k7",
+          "status": "FAIL",
+          "detail": "n_k=448,n_base=448,dropped=0"
+        }
+      ]
+    },
+    {
+      "check": "missing_volume_effect_on_flow_z",
+      "all_z_scores_identical": true,
+      "z_at_missing_volume": -0.3752679716546378
+    },
+    {
+      "check": "weekly_tamper_rejected",
+      "rejected": true,
+      "error": "T11 weekly snapshot differs from reproduced artifact hash: 8048be0115adedf081783e8f06fa093f5651353436265cfb12ab7a4da8b69a39 vs acd4230742a022c8b9c2a4f5449f400faeecf0182e64d2a8667357a5bc8137a4"
+    },
+    {
+      "check": "config_tamper_rejected",
+      "rejected": true,
+      "error": "config/t15.yaml hash dae6970bbf2174e9d006ab8822a4a94b64d3b0ec25adee380bea59d3d71af416 mismatch with accepted T15 release (88c030cda5f2f2060862ef61a9b50d94d83f138d2e5fe51e00504e697b0fa882)"
+    },
+    {
+      "check": "t16_modified_artifact_provenance",
+      "loader_accepted": true,
+      "reconciliation": [
+        {
+          "check": "base_scenario_reproduces_accepted_t16_selection",
+          "scope": "t16",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "base_scenario_reproduces_accepted_t16_candidates",
+          "scope": "t16",
+          "status": "PASS",
+          "detail": ""
+        }
+      ],
+      "changed_threshold": [
+        151.2,
+        12496.2
+      ],
+      "actual_sha256": "94074d1d360f68208d4f4b5c9a54a4cb1947afb36e057d37d7d47b78404f4a64",
+      "expected_sha256": "229b1cd983badddd29f323d850615facecec7b08048e54c0705be6f0da236d8a"
+    },
+    {
+      "check": "candidate_dates_changed_same_count",
+      "checks": [
+        {
+          "check": "base_scenario_reproduces_accepted_t16_selection",
+          "scope": "t16",
+          "status": "PASS",
+          "detail": ""
+        },
+        {
+          "check": "base_scenario_reproduces_accepted_t16_candidates",
+          "scope": "t16",
+          "status": "PASS",
+          "detail": ""
+        }
+      ],
+      "swapped_rows": [
+        111,
+        0
+      ]
+    },
+    {
+      "check": "token_config_is_not_executed",
+      "configured_tokens": [
+        "USDC"
+      ],
+      "regression_scenarios": 20,
+      "same_as_empty_token_plan": true
+    },
+    {
+      "check": "production_inputs_preserved",
+      "hashes": {
+        "data/processed/t14/t14_features_daily.parquet": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195",
+        "data/processed/t14/t14_sample_eligibility_daily.parquet": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+        "data/processed/t14/t14_summary.json": "5c1e8c4813d05d864bc725bdd6cbf5f3a10299b480aa8602bdde70ef970917f2",
+        "data/processed/t14/t14_downstream_gate.json": "583d10de4da96c1df5a59d994e52c4e94c5c6fb9e41f8d87c6161d54d932b767",
+        "data/processed/t14/t14_release_manifest.json": "80976aab91a0f6214c78d3467b857f43718c8947dfb09c822d216159b4c5af46",
+        "config/t15.yaml": "88c030cda5f2f2060862ef61a9b50d94d83f138d2e5fe51e00504e697b0fa882",
+        "config/t16.yaml": "2e6e69d7b3d45aaacf4f787040f726830e843a74844cd7f036767c53423e76fc",
+        "data/processed/t15/t15_summary.json": "fe431f6178441afe2acc3658d94e5defa6eed545191edc44b5efe4fcce78e11a",
+        "data/processed/t15/t15_volatility_regression_summary.parquet": "37ae3b541073e5eccd311fb1fd8728ffbe574f3656a62ff730635c6fa3df5a5d",
+        "data/processed/t15/t15_sample_membership.parquet": "5ddd3cb12b23c86fb6ea671d88d3575a3e3bec052046fd2e99a2276eefdbe9f6",
+        "data/processed/t16/t16_summary.json": "85d1866c98f5175b725fd5ad8e202b404b2003a1beff5a734b65e6c44f85d041",
+        "data/processed/t16/t16_event_selection.parquet": "22ae02460bda49fe3ef47b7ad6eb170945aa285a7a5b38c61251b681f60058fe",
+        "data/processed/t16/t16_event_candidates.parquet": "229b1cd983badddd29f323d850615facecec7b08048e54c0705be6f0da236d8a",
+        "data/processed/t11/snapshot_metrics_weekly.parquet": "acd4230742a022c8b9c2a4f5449f400faeecf0182e64d2a8667357a5bc8137a4",
+        "data/processed/t11/t11_summary.json": "2de05cda9f02473c43cec283b92772c09cd86c5c30591a9f22a32c8088834510",
+        "data/processed/graphs/dynamic_edges_daily.parquet": "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979",
+        "data/processed/t11/snapshot_metrics_daily.parquet": "0b79d6750588025ed4750347a9915a2bfe1f0fcc7d885e1b666b8302ab613ed4",
+        "data/processed/t11/t11_reproducibility.json": "86eb56ad72ed1202ca166d690b2967be1e2a752c0d252b2d90862ab8b1f46309"
+      }
+    }
+  ],
+  "review_date": "2026-10-26",
+  "verdict": "requires_changes_before_full_acceptance",
+  "runs": {
+    "t17_event_robustness.parquet": {
+      "run1_sha256": "ad89108a4b2f60db78341fb58dc19f8b7fd4033ecd59e8149fcc0d85b0061da6",
+      "run2_sha256": "ad89108a4b2f60db78341fb58dc19f8b7fd4033ecd59e8149fcc0d85b0061da6",
+      "identical": true
+    },
+    "t17_regression_robustness.parquet": {
+      "run1_sha256": "b2ca3e2ef147c1f3b214f492cefa64db2ec68e7123cba37cfa70ed6e63ca294c",
+      "run2_sha256": "b2ca3e2ef147c1f3b214f492cefa64db2ec68e7123cba37cfa70ed6e63ca294c",
+      "identical": true
+    },
+    "t17_regression_robustness.png": {
+      "run1_sha256": "2661e8e1ee1fc28831831271fb87890942320a245bfcf1f2eb9facf93ef54dd8",
+      "run2_sha256": "2661e8e1ee1fc28831831271fb87890942320a245bfcf1f2eb9facf93ef54dd8",
+      "identical": true
+    },
+    "t17_regression_summary.parquet": {
+      "run1_sha256": "defa6ef2552678f0826994a4f1e5cb13f2ee791bb6643bbb84bd7c7c66707f71",
+      "run2_sha256": "defa6ef2552678f0826994a4f1e5cb13f2ee791bb6643bbb84bd7c7c66707f71",
+      "identical": true
+    },
+    "t17_report.md": {
+      "run1_sha256": "1a791306cb69649f632f0f7ce7d5466bba90fe096735f82585f2aa67467f479e",
+      "run2_sha256": "1a791306cb69649f632f0f7ce7d5466bba90fe096735f82585f2aa67467f479e",
+      "identical": true
+    },
+    "t17_scenario_plan.parquet": {
+      "run1_sha256": "54e53af1cdec2ccf5ee84fce63e8e2e90bf0804a5136ed0e0e87c8fdb39a1f06",
+      "run2_sha256": "54e53af1cdec2ccf5ee84fce63e8e2e90bf0804a5136ed0e0e87c8fdb39a1f06",
+      "identical": true
+    },
+    "t17_summary.json": {
+      "run1_sha256": "bf340054736990fae3d3604a71708ca9e16799afd9819a4968abf1abf54761ef",
+      "run2_sha256": "bf340054736990fae3d3604a71708ca9e16799afd9819a4968abf1abf54761ef",
+      "identical": true
+    },
+    "t17_validation.parquet": {
+      "run1_sha256": "0f75c1398ae138e9fb5091469e281eeaad9aaf1e000efe328767027c48466938",
+      "run2_sha256": "0f75c1398ae138e9fb5091469e281eeaad9aaf1e000efe328767027c48466938",
+      "identical": true
+    }
+  },
+  "pipeline_summary": {
+    "protocol_id": "t17_robustness_v1",
+    "contract_version": "t14_inputs_v1",
+    "task": "t17",
+    "computation_validated": true,
+    "independent_review_required": true,
+    "upload_performed": false,
+    "rq3_answered": false,
+    "causal_claim": false,
+    "out_of_sample_claim": false,
+    "token_axis": {
+      "status": "not_run",
+      "other_tokens": [],
+      "reason": "No data for tokens other than USDT in T04-T14."
+    },
+    "scenario_counts": {
+      "regression": 40,
+      "event_rows": 30
+    },
+    "failed_checks": [],
+    "source_config_sha256": {
+      "src/forecast_inputs.py": "30b4cd70a1cd301279baee5dab14e0a424f74529f70abd2dd1dd9de782651652",
+      "src/robustness.py": "795bd481231d665a8139c77354234ce2afb7fcf6977da22e991e970dc6be141f",
+      "T17_Robustness.py": "6e6a71055e74320a8a0790766bf5fd882b4c5cf68940519d4c2c2f152713541d",
+      "src/volatility_regression.py": "7f3e65f6ced77adb3bd883565da56b283a3382da36755dfe7af95841deaf653e",
+      "src/event_study.py": "7d7a66612ff709b40965ae82013abe1063d5d2cd655d8968fa354d62c271742b",
+      "src/flow_volatility.py": "2129f5a26cc8b2c198ead2eb232d41809c2a403c00c7397c2e32c2343d7a7733",
+      "src/graph_ml_features.py": "83df16b4bcc42e9db32db7927fc0b2a4cf8b792426fbf3b16c1bebe4b70962dc",
+      "src/analysis_release.py": "ffa6a41ed9047ab6a829eb27bae5096cb93502e269a0a20e4f453bdf3f647d96",
+      "config/t15.yaml": "88c030cda5f2f2060862ef61a9b50d94d83f138d2e5fe51e00504e697b0fa882",
+      "config/t16.yaml": "2e6e69d7b3d45aaacf4f787040f726830e843a74844cd7f036767c53423e76fc",
+      "config/t17.yaml": "b9235ee99480833e476f69f6d46d980ba48b9607b99add371ee8df216e7ed1f0"
+    },
+    "input_sha256": {
+      "data/processed/t14/t14_features_daily.parquet": "472ddebae198277896d30a48e55b6b6b419c2c5ee53a9eb96a365738f25d8195",
+      "data/processed/t14/t14_sample_eligibility_daily.parquet": "c30e233900efe4b42ade4ff9836a3bb7a87166b9103042d13992e6e6817ab6eb",
+      "data/processed/t14/t14_summary.json": "5c1e8c4813d05d864bc725bdd6cbf5f3a10299b480aa8602bdde70ef970917f2",
+      "data/processed/t14/t14_downstream_gate.json": "583d10de4da96c1df5a59d994e52c4e94c5c6fb9e41f8d87c6161d54d932b767",
+      "data/processed/t14/t14_release_manifest.json": "80976aab91a0f6214c78d3467b857f43718c8947dfb09c822d216159b4c5af46",
+      "config/t15.yaml": "88c030cda5f2f2060862ef61a9b50d94d83f138d2e5fe51e00504e697b0fa882",
+      "config/t16.yaml": "2e6e69d7b3d45aaacf4f787040f726830e843a74844cd7f036767c53423e76fc",
+      "data/processed/t15/t15_summary.json": "fe431f6178441afe2acc3658d94e5defa6eed545191edc44b5efe4fcce78e11a",
+      "data/processed/t15/t15_volatility_regression_summary.parquet": "37ae3b541073e5eccd311fb1fd8728ffbe574f3656a62ff730635c6fa3df5a5d",
+      "data/processed/t15/t15_sample_membership.parquet": "5ddd3cb12b23c86fb6ea671d88d3575a3e3bec052046fd2e99a2276eefdbe9f6",
+      "data/processed/t16/t16_summary.json": "85d1866c98f5175b725fd5ad8e202b404b2003a1beff5a734b65e6c44f85d041",
+      "data/processed/t16/t16_event_selection.parquet": "22ae02460bda49fe3ef47b7ad6eb170945aa285a7a5b38c61251b681f60058fe",
+      "data/processed/t16/t16_event_candidates.parquet": "229b1cd983badddd29f323d850615facecec7b08048e54c0705be6f0da236d8a",
+      "data/processed/t11/snapshot_metrics_weekly.parquet": "acd4230742a022c8b9c2a4f5449f400faeecf0182e64d2a8667357a5bc8137a4",
+      "data/processed/t11/t11_summary.json": "2de05cda9f02473c43cec283b92772c09cd86c5c30591a9f22a32c8088834510",
+      "data/processed/graphs/dynamic_edges_daily.parquet": "8ff1c8a0082f8416c074f89146d2b5c112184fbca25c10c71e5246ffc6bf2979",
+      "data/processed/t11/snapshot_metrics_daily.parquet": "0b79d6750588025ed4750347a9915a2bfe1f0fcc7d885e1b666b8302ab613ed4",
+      "data/processed/t11/t11_reproducibility.json": "86eb56ad72ed1202ca166d690b2967be1e2a752c0d252b2d90862ab8b1f46309"
+    },
+    "parameters": {
+      "protocol_id": "t17_robustness_v1",
+      "output_dir": "data/processed/t17",
+      "t14_dir": "data/processed/t14",
+      "contract_version": "t14_inputs_v1",
+      "t15_config": "config/t15.yaml",
+      "t16_config": "config/t16.yaml",
+      "t15_results_dir": "data/processed/t15",
+      "t16_results_dir": "data/processed/t16",
+      "t11_weekly_snapshot": "data/processed/t11/snapshot_metrics_weekly.parquet",
+      "t11_summary": "data/processed/t11/t11_summary.json",
+      "daily_edges_parquet": "data/processed/graphs/dynamic_edges_daily.parquet",
+      "horizon": {
+        "extra_single_day": [
+          2,
+          5,
+          10,
+          14
+        ],
+        "cumulative": [
+          1,
+          3,
+          7,
+          14
+        ]
+      },
+      "flow_window": {
+        "trailing_days": [
+          3,
+          7
+        ]
+      },
+      "events": {
+        "large_transfer_quantile": [
+          0.9,
+          0.99
+        ],
+        "concentration_quantile": [
+          0.85,
+          0.95
+        ],
+        "flow_z_threshold": [
+          1.5,
+          2.5
+        ],
+        "large_edge_percentile": [
+          0.9,
+          0.99
+        ],
+        "weekly_concentration": true,
+        "weekly_minimum_history_values": 8
+      },
+      "token": {
+        "other_tokens": []
+      },
+      "tolerance": 1e-09,
+      "leakage_cut_fractions": [
+        0.3,
+        0.6,
+        0.9
+      ]
+    },
+    "versions": {
+      "numpy": "2.1.2",
+      "pandas": "2.2.3",
+      "pyarrow": "25.0.1",
+      "statsmodels": "0.15.0",
+      "matplotlib": "3.9.2"
+    },
+    "content_hashes": {
+      "t17_regression_robustness.parquet": {
+        "run1": "d6a18b77afbe96da2248d1135bd12bb69796fa79659ab48ba19f1d7e1a6600b7",
+        "run2": "d6a18b77afbe96da2248d1135bd12bb69796fa79659ab48ba19f1d7e1a6600b7"
+      },
+      "t17_regression_summary.parquet": {
+        "run1": "110ceb37c79705ee4b88085f2b97dbf06d01a2a0bc5050aac77c9f58d51c83a0",
+        "run2": "110ceb37c79705ee4b88085f2b97dbf06d01a2a0bc5050aac77c9f58d51c83a0"
+      },
+      "t17_event_robustness.parquet": {
+        "run1": "cc901aa069fecdcee4b286125cc4711536c0f127c0570c1c9eed8ed1dd0ea5e6",
+        "run2": "cc901aa069fecdcee4b286125cc4711536c0f127c0570c1c9eed8ed1dd0ea5e6"
+      },
+      "t17_scenario_plan.parquet": {
+        "run1": "3618fb1ecf37b93fd4be9823edece656366cfd8b073437175040d52e45e6c78e",
+        "run2": "3618fb1ecf37b93fd4be9823edece656366cfd8b073437175040d52e45e6c78e"
+      }
+    },
+    "output_sha256": {
+      "t17_regression_robustness.parquet": "b2ca3e2ef147c1f3b214f492cefa64db2ec68e7123cba37cfa70ed6e63ca294c",
+      "t17_regression_summary.parquet": "defa6ef2552678f0826994a4f1e5cb13f2ee791bb6643bbb84bd7c7c66707f71",
+      "t17_event_robustness.parquet": "ad89108a4b2f60db78341fb58dc19f8b7fd4033ecd59e8149fcc0d85b0061da6",
+      "t17_scenario_plan.parquet": "54e53af1cdec2ccf5ee84fce63e8e2e90bf0804a5136ed0e0e87c8fdb39a1f06",
+      "t17_validation.parquet": "0f75c1398ae138e9fb5091469e281eeaad9aaf1e000efe328767027c48466938",
+      "t17_report.md": "1a791306cb69649f632f0f7ce7d5466bba90fe096735f82585f2aa67467f479e",
+      "t17_regression_robustness.png": "2661e8e1ee1fc28831831271fb87890942320a245bfcf1f2eb9facf93ef54dd8"
+    }
+  },
+  "pipeline_validation": [
+    {
+      "check": "trailing_k1_equals_t14_z",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "activity_cohort"
+    },
+    {
+      "check": "trailing_k1_equals_t14_z",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "cex"
+    },
+    {
+      "check": "recomputed_single_day_target_equals_t14",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "h=1"
+    },
+    {
+      "check": "recomputed_single_day_target_equals_t14",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "h=3"
+    },
+    {
+      "check": "recomputed_single_day_target_equals_t14",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "h=7"
+    },
+    {
+      "check": "cumulative_h1_equals_single_day_h1",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "controls_exclude_targets_and_calendar",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "all_scenarios_estimated",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "[]"
+    },
+    {
+      "check": "holm_not_below_raw_p",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "activity_cohort:h1:k3",
+      "status": "PASS",
+      "detail": "n_k=592,n_base=594,dropped=2"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "activity_cohort:h1:k7",
+      "status": "PASS",
+      "detail": "n_k=588,n_base=594,dropped=6"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "activity_cohort:h3:k3",
+      "status": "PASS",
+      "detail": "n_k=590,n_base=592,dropped=2"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "activity_cohort:h3:k7",
+      "status": "PASS",
+      "detail": "n_k=586,n_base=592,dropped=6"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "activity_cohort:h7:k3",
+      "status": "PASS",
+      "detail": "n_k=586,n_base=588,dropped=2"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "activity_cohort:h7:k7",
+      "status": "PASS",
+      "detail": "n_k=582,n_base=588,dropped=6"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "cex:h1:k3",
+      "status": "PASS",
+      "detail": "n_k=622,n_base=624,dropped=2"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "cex:h1:k7",
+      "status": "PASS",
+      "detail": "n_k=618,n_base=624,dropped=6"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "cex:h3:k3",
+      "status": "PASS",
+      "detail": "n_k=620,n_base=622,dropped=2"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "cex:h3:k7",
+      "status": "PASS",
+      "detail": "n_k=616,n_base=622,dropped=6"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "cex:h7:k3",
+      "status": "PASS",
+      "detail": "n_k=616,n_base=618,dropped=2"
+    },
+    {
+      "check": "flow_window_sample_strictly_nested_in_base",
+      "scope": "cex:h7:k7",
+      "status": "PASS",
+      "detail": "n_k=612,n_base=618,dropped=6"
+    },
+    {
+      "check": "flow_window_samples_nested_in_base_calendar",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "large_edge_base_percentile_reproduces_t14_count",
+      "scope": "events",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "statsmodels_hac_equals_matrix_algebra_beta_and_se",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "horizon_single_day|single_day|h1|k1|activity_cohort"
+    },
+    {
+      "check": "statsmodels_hac_equals_matrix_algebra_beta_and_se",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "horizon_single_day|single_day|h1|k1|cex"
+    },
+    {
+      "check": "statsmodels_hac_equals_matrix_algebra_beta_and_se",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "flow_window|single_day|h1|k3|activity_cohort"
+    },
+    {
+      "check": "statsmodels_hac_equals_matrix_algebra_beta_and_se",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "flow_window|single_day|h1|k3|cex"
+    },
+    {
+      "check": "statsmodels_hac_equals_matrix_algebra_beta_and_se",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "horizon_cumulative|sum_days|h14|k1|activity_cohort"
+    },
+    {
+      "check": "statsmodels_hac_equals_matrix_algebra_beta_and_se",
+      "scope": "regression",
+      "status": "PASS",
+      "detail": "horizon_cumulative|sum_days|h14|k1|cex"
+    },
+    {
+      "check": "base_scenario_reproduces_accepted_t15",
+      "scope": "activity_cohort:h1",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "base_scenario_dates_identical_to_t15_membership",
+      "scope": "activity_cohort:h1",
+      "status": "PASS",
+      "detail": "n_dates=594"
+    },
+    {
+      "check": "base_scenario_reproduces_accepted_t15",
+      "scope": "cex:h1",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "base_scenario_dates_identical_to_t15_membership",
+      "scope": "cex:h1",
+      "status": "PASS",
+      "detail": "n_dates=624"
+    },
+    {
+      "check": "base_scenario_reproduces_accepted_t15",
+      "scope": "activity_cohort:h3",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "base_scenario_dates_identical_to_t15_membership",
+      "scope": "activity_cohort:h3",
+      "status": "PASS",
+      "detail": "n_dates=592"
+    },
+    {
+      "check": "base_scenario_reproduces_accepted_t15",
+      "scope": "cex:h3",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "base_scenario_dates_identical_to_t15_membership",
+      "scope": "cex:h3",
+      "status": "PASS",
+      "detail": "n_dates=622"
+    },
+    {
+      "check": "base_scenario_reproduces_accepted_t15",
+      "scope": "activity_cohort:h7",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "base_scenario_dates_identical_to_t15_membership",
+      "scope": "activity_cohort:h7",
+      "status": "PASS",
+      "detail": "n_dates=588"
+    },
+    {
+      "check": "base_scenario_reproduces_accepted_t15",
+      "scope": "cex:h7",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "base_scenario_dates_identical_to_t15_membership",
+      "scope": "cex:h7",
+      "status": "PASS",
+      "detail": "n_dates=618"
+    },
+    {
+      "check": "all_base_horizon_scenarios_present",
+      "scope": "t15",
+      "status": "PASS",
+      "detail": "6"
+    },
+    {
+      "check": "base_scenario_reproduces_accepted_t16_selection",
+      "scope": "t16",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "base_scenario_reproduces_accepted_t16_candidates",
+      "scope": "t16",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "activity_cohort:k=3:cut=196",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "activity_cohort:k=3:cut=196",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "activity_cohort:k=3:cut=392",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "activity_cohort:k=3:cut=392",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "activity_cohort:k=3:cut=588",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "activity_cohort:k=3:cut=588",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "activity_cohort:k=7:cut=196",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "activity_cohort:k=7:cut=196",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "activity_cohort:k=7:cut=392",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "activity_cohort:k=7:cut=392",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "activity_cohort:k=7:cut=588",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "activity_cohort:k=7:cut=588",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "cex:k=3:cut=196",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "cex:k=3:cut=196",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "cex:k=3:cut=392",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "cex:k=3:cut=392",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "cex:k=3:cut=588",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "cex:k=3:cut=588",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "cex:k=7:cut=196",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "cex:k=7:cut=196",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "cex:k=7:cut=392",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "cex:k=7:cut=392",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_truncation",
+      "scope": "cex:k=7:cut=588",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "trailing_flow_future_mutation",
+      "scope": "cex:k=7:cut=588",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "t15_config_hash_matches_accepted_release",
+      "scope": "config",
+      "status": "PASS",
+      "detail": "88c030cda5f2f2060862ef61a9b50d94d83f138d2e5fe51e00504e697b0fa882"
+    },
+    {
+      "check": "t16_config_hash_matches_accepted_release",
+      "scope": "config",
+      "status": "PASS",
+      "detail": "2e6e69d7b3d45aaacf4f787040f726830e843a74844cd7f036767c53423e76fc"
+    },
+    {
+      "check": "t11_weekly_snapshot_matches_accepted_reproducibility",
+      "scope": "t11",
+      "status": "PASS",
+      "detail": "acd4230742a022c8b9c2a4f5449f400faeecf0182e64d2a8667357a5bc8137a4"
+    },
+    {
+      "check": "t11_weekly_concentration_matches_accepted_summary",
+      "scope": "t11",
+      "status": "PASS",
+      "detail": "mean_cci=0.08119267"
+    },
+    {
+      "check": "token_axis_not_run_and_declared",
+      "scope": "token",
+      "status": "PASS",
+      "detail": "other_tokens=[]"
+    },
+    {
+      "check": "two_runs_identical_content_hash",
+      "scope": "all",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "regression_summary": [
+    {
+      "axis": "flow_window",
+      "branch": "activity_cohort",
+      "n_scenarios": 9,
+      "n_failed": 0,
+      "coefficient_min": -0.07245621021625911,
+      "coefficient_max": 0.04398103323025827,
+      "n_p_below_005": 1,
+      "n_p_holm_axis_below_005": 0,
+      "n_same_sign_as_base_same_h": 7,
+      "n_with_base_reference": 9,
+      "delta_r2_min": 3.5137533634710394e-05,
+      "delta_r2_max": 0.009846946999795936
+    },
+    {
+      "axis": "flow_window",
+      "branch": "cex",
+      "n_scenarios": 9,
+      "n_failed": 0,
+      "coefficient_min": -0.08196077054405854,
+      "coefficient_max": 0.03685298662146283,
+      "n_p_below_005": 2,
+      "n_p_holm_axis_below_005": 0,
+      "n_same_sign_as_base_same_h": 5,
+      "n_with_base_reference": 9,
+      "delta_r2_min": 4.898286764976056e-06,
+      "delta_r2_max": 0.01020788896354674
+    },
+    {
+      "axis": "horizon_cumulative",
+      "branch": "activity_cohort",
+      "n_scenarios": 4,
+      "n_failed": 0,
+      "coefficient_min": -0.0030717043857048897,
+      "coefficient_max": 0.03475781799625155,
+      "n_p_below_005": 0,
+      "n_p_holm_axis_below_005": 0,
+      "n_same_sign_as_base_same_h": 3,
+      "n_with_base_reference": 3,
+      "delta_r2_min": 4.9743452300687885e-05,
+      "delta_r2_max": 0.0038354246123898372
+    },
+    {
+      "axis": "horizon_cumulative",
+      "branch": "cex",
+      "n_scenarios": 4,
+      "n_failed": 0,
+      "coefficient_min": -0.036895815823075676,
+      "coefficient_max": 0.03685298662146283,
+      "n_p_below_005": 0,
+      "n_p_holm_axis_below_005": 0,
+      "n_same_sign_as_base_same_h": 2,
+      "n_with_base_reference": 3,
+      "delta_r2_min": 4.2440139210619954e-05,
+      "delta_r2_max": 0.004849378481646016
+    },
+    {
+      "axis": "horizon_single_day",
+      "branch": "activity_cohort",
+      "n_scenarios": 7,
+      "n_failed": 0,
+      "coefficient_min": -0.04557305733560876,
+      "coefficient_max": 0.05677823626333012,
+      "n_p_below_005": 1,
+      "n_p_holm_axis_below_005": 0,
+      "n_same_sign_as_base_same_h": 3,
+      "n_with_base_reference": 3,
+      "delta_r2_min": 0.000416340348944777,
+      "delta_r2_max": 0.00665682495630715
+    },
+    {
+      "axis": "horizon_single_day",
+      "branch": "cex",
+      "n_scenarios": 7,
+      "n_failed": 0,
+      "coefficient_min": -0.056179245650371315,
+      "coefficient_max": 0.03685298662146283,
+      "n_p_below_005": 1,
+      "n_p_holm_axis_below_005": 0,
+      "n_same_sign_as_base_same_h": 3,
+      "n_with_base_reference": 3,
+      "delta_r2_min": 4.898286764976056e-06,
+      "delta_r2_max": 0.004735145589999101
+    }
+  ],
+  "regression_sample_sizes": [
+    {
+      "scenario_id": "horizon_single_day|single_day|h1|k1",
+      "branch": "activity_cohort",
+      "n_obs": 594,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h1|k1",
+      "branch": "cex",
+      "n_obs": 624,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h2|k1",
+      "branch": "activity_cohort",
+      "n_obs": 593,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h2|k1",
+      "branch": "cex",
+      "n_obs": 623,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h3|k1",
+      "branch": "activity_cohort",
+      "n_obs": 592,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h3|k1",
+      "branch": "cex",
+      "n_obs": 622,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h5|k1",
+      "branch": "activity_cohort",
+      "n_obs": 590,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h5|k1",
+      "branch": "cex",
+      "n_obs": 620,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h7|k1",
+      "branch": "activity_cohort",
+      "n_obs": 588,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h7|k1",
+      "branch": "cex",
+      "n_obs": 618,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h10|k1",
+      "branch": "activity_cohort",
+      "n_obs": 585,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h10|k1",
+      "branch": "cex",
+      "n_obs": 615,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h14|k1",
+      "branch": "activity_cohort",
+      "n_obs": 581,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_single_day|single_day|h14|k1",
+      "branch": "cex",
+      "n_obs": 611,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_cumulative|sum_days|h1|k1",
+      "branch": "activity_cohort",
+      "n_obs": 594,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_cumulative|sum_days|h1|k1",
+      "branch": "cex",
+      "n_obs": 624,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_cumulative|sum_days|h3|k1",
+      "branch": "activity_cohort",
+      "n_obs": 592,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_cumulative|sum_days|h3|k1",
+      "branch": "cex",
+      "n_obs": 622,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_cumulative|sum_days|h7|k1",
+      "branch": "activity_cohort",
+      "n_obs": 588,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_cumulative|sum_days|h7|k1",
+      "branch": "cex",
+      "n_obs": 618,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_cumulative|sum_days|h14|k1",
+      "branch": "activity_cohort",
+      "n_obs": 581,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "horizon_cumulative|sum_days|h14|k1",
+      "branch": "cex",
+      "n_obs": 611,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h1|k1",
+      "branch": "activity_cohort",
+      "n_obs": 594,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h1|k1",
+      "branch": "cex",
+      "n_obs": 624,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h3|k1",
+      "branch": "activity_cohort",
+      "n_obs": 592,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h3|k1",
+      "branch": "cex",
+      "n_obs": 622,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h7|k1",
+      "branch": "activity_cohort",
+      "n_obs": 588,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h7|k1",
+      "branch": "cex",
+      "n_obs": 618,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h1|k3",
+      "branch": "activity_cohort",
+      "n_obs": 592,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h1|k3",
+      "branch": "cex",
+      "n_obs": 622,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h3|k3",
+      "branch": "activity_cohort",
+      "n_obs": 590,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h3|k3",
+      "branch": "cex",
+      "n_obs": 620,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h7|k3",
+      "branch": "activity_cohort",
+      "n_obs": 586,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h7|k3",
+      "branch": "cex",
+      "n_obs": 616,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h1|k7",
+      "branch": "activity_cohort",
+      "n_obs": 588,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h1|k7",
+      "branch": "cex",
+      "n_obs": 618,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h3|k7",
+      "branch": "activity_cohort",
+      "n_obs": 586,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h3|k7",
+      "branch": "cex",
+      "n_obs": 616,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h7|k7",
+      "branch": "activity_cohort",
+      "n_obs": 582,
+      "status": "ok"
+    },
+    {
+      "scenario_id": "flow_window|single_day|h7|k7",
+      "branch": "cex",
+      "n_obs": 612,
+      "status": "ok"
+    }
+  ],
+  "original_inputs_and_sources_verified_after_tests": true,
+  "temporary_test_code_and_data_removed": true,
+  "temporary_cases_are_historical_evidence_not_a_retained_test_suite": true
+}

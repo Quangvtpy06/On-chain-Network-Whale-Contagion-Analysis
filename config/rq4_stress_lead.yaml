@@ -1,0 +1,24 @@
+# Chốt trước khi tính RQ4: stress T13, đồ thị T11, không chọn ngưỡng theo kết quả.
+protocol_id: rq4_t13_stress_t11_lead_v1
+output_dir: data/processed/rq4_stress_lead
+t13_regimes: data/processed/t13/rv_daily_regimes.parquet
+t13_manifest: docs/T13_release_manifest.json
+t11_daily: data/processed/t11/snapshot_metrics_daily.parquet
+t11_summary: data/processed/t11/t11_summary.json
+t11_review: data/processed/t11/t11_review.json
+stress_regime: Stress
+stress_cluster_gap_days: 3
+pre_days: [1, 2, 3]
+quiet_padding_days: 3
+primary_metrics: [hhi_community_volume, community_concentration_index]
+bootstrap:
+  block_calendar_days: 14
+  resamples: 5000
+  seed: 20261026
+  alpha: 0.05
+  min_event_episodes: 10
+matched_sensitivity:
+  enabled: true
+  same_weekday: true
+  max_calendar_distance_days: 60
+  block_episodes: 3

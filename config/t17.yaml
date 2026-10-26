@@ -1,7 +1,14 @@
 # T17 - robustness / sensitivity cua T15 (hoi quy) va T16 (event study).
 # Moi gia tri dong bang TRUOC khi chay. Khong chon kich ban theo dau he so, p-value hay
 # do lon phan ung. Moi kich ban duoc bao cao day du; doi gia tri sau khi co ket qua = protocol_id moi.
-protocol_id: t17_robustness_v1
+protocol_id: t17_usdt_daily_weekly_v2
+scope:
+  token: USDT
+  token_axis: excluded_by_approved_scope
+  graph_windows: [daily, iso_weekly]
+  accepted_by: project_owner
+  accepted_on: '2026-10-26'
+  cross_token_generalization_tested: false
 output_dir: data/processed/t17
 t14_dir: data/processed/t14
 contract_version: t14_inputs_v1
@@ -27,6 +34,7 @@ horizon:
 #    k=1 la co so. Day la tong cac ngay da net, KHONG phai do thi k ngay duoc net lai.
 flow_window:
   trailing_days: [3, 7]
+  matched_sample_comparison: true
 
 # 3) Nguong percentile / z cua T16 (moi lan doi mot tham so, cac tham so khac giu co so).
 events:

@@ -107,6 +107,10 @@ def regression_plan(cfg17, base_horizons):
     for k in [1] + list(cfg17['flow_window']['trailing_days']):
         for h in base_horizons:
             plan.append(dict(axis='flow_window', definition='single_day', horizon_h=h, flow_window_days=k))
+    if cfg17['flow_window'].get('matched_sample_comparison'):
+        for k in [1] + list(cfg17['flow_window']['trailing_days']):
+            for h in base_horizons:
+                plan.append(dict(axis='flow_window_common_sample', definition='single_day', horizon_h=h, flow_window_days=k))
     for i, row in enumerate(plan):
         row['scenario_id'] = f"{row['axis']}|{row['definition']}|h{row['horizon_h']}|k{row['flow_window_days']}"
     require(len({r['scenario_id'] for r in plan}) == len(plan), 'Duplicate regression scenario')
@@ -134,6 +138,10 @@ def run_regressions(features, eligibility, cfg15, cfg17, norm, fit=None, return_
             work['target'] = targets[(definition, h)].to_numpy()
             work['cutoff'] = pd.to_datetime(features.available_at, utc=True).dt.as_unit('ns')
             selected = ready & finite(work, controls + ['flow_z', 'target'])
+            if scenario['axis'] == 'flow_window_common_sample':
+                for other_k in [1] + list(cfg17['flow_window']['trailing_days']):
+                    other = trailing_flow_z(features, BRANCH_RAW[branch], other_k, norm)
+                    selected &= np.isfinite(other)
             sample = work.loc[selected]
             sample_dates[(scenario['scenario_id'], branch)] = pd.to_datetime(sample.date).dt.normalize().tolist()
             row = dict(scenario, branch=branch, n_obs=int(len(sample)), status='ok', error='',
@@ -339,18 +347,27 @@ def reconcile_t15(table, t15_summary, base_horizons, tolerance, t15_membership=N
     return rows
 
 
-def reconcile_t16(base_tables, t16_selection, t16_candidates):
+def reconcile_t16(base_tables, t16_selection, t16_candidates, tolerance=1e-9):
     def chosen(sel):
         return {(e, p): sorted(g.date) for (e, p), g in sel[sel.selected].groupby(['event_type', 'selection_policy'])}
     same_sel = chosen(base_tables['t16_event_selection.parquet']) == chosen(t16_selection)
-    cand_a = base_tables['t16_event_candidates.parquet'].groupby('event_type').candidate.sum().to_dict()
-    cand_b = t16_candidates.groupby('event_type').candidate.sum().to_dict()
+    def candidate_equal(a, b):
+        keys = ['event_type', 'date']
+        columns = keys + ['candidate', 'signal_available', 'threshold']
+        if not set(columns) <= set(a) or not set(columns) <= set(b):
+            return False
+        if a.duplicated(keys).any() or b.duplicated(keys).any():
+            return False
+        a, b = (x[columns].sort_values(keys).reset_index(drop=True) for x in (a, b))
+        return (a[keys + ['candidate', 'signal_available']].equals(b[keys + ['candidate', 'signal_available']])
+                and np.allclose(a.threshold, b.threshold, atol=tolerance, rtol=tolerance, equal_nan=True))
+    same_candidates = candidate_equal(base_tables['t16_event_candidates.parquet'], t16_candidates)
     return [dict(check='base_scenario_reproduces_accepted_t16_selection', scope='t16', status='PASS' if same_sel else 'FAIL', detail=''),
-            dict(check='base_scenario_reproduces_accepted_t16_candidates', scope='t16', status='PASS' if cand_a == cand_b else 'FAIL', detail='')]
+            dict(check='base_scenario_reproduces_accepted_t16_candidates', scope='t16', status='PASS' if same_candidates else 'FAIL', detail='keys, candidate, signal_available, threshold')]
 
 
 def structural_checks(features, table, cfg15, norm, tolerance, edge_counts=None, independent=None,
-                      sample_dates=None, cfg17=None):
+                      sample_dates=None, cfg17=None, eligibility=None):
     rows = []
 
     def add(name, ok, detail='', scope='regression'):
@@ -370,29 +387,28 @@ def structural_checks(features, table, cfg15, norm, tolerance, edge_counts=None,
     ok = table[table.status.eq('ok')]
     add('holm_not_below_raw_p', bool((ok.p_holm_axis + 1e-12 >= ok.p_value).all()))
 
-    if sample_dates is not None and cfg17 is not None:
-        all_strictly_nested = True
-        for branch in cfg15['branches']:
-            for h in cfg15['horizons']:
-                base_id = f"horizon_single_day|single_day|h{h}|k1"
-                base_dates = sample_dates.get((base_id, branch), [])
-                base_set = set(base_dates)
-                base_sorted = sorted(base_set)
-                for k in cfg17['flow_window']['trailing_days']:
-                    k_id = f"flow_window|single_day|h{h}|k{k}"
-                    k_dates = sample_dates.get((k_id, branch), [])
-                    k_set = set(k_dates)
-                    is_subset = k_set.issubset(base_set)
-                    dropped = base_set - k_set
-                    expected_dropped = set(base_sorted[:k-1])
-                    strictly_nested = is_subset and (dropped == expected_dropped)
-                    if not strictly_nested:
-                        all_strictly_nested = False
-                    add('flow_window_sample_strictly_nested_in_base', strictly_nested,
-                        f"n_k={len(k_set)},n_base={len(base_set)},dropped={len(dropped)}", scope=f'{branch}:h{h}:k{k}')
-        add('flow_window_samples_nested_in_base_calendar', all_strictly_nested)
-    else:
-        add('flow_window_samples_nested_in_base_calendar', bool(ok.sample_start.ge(features.date.min()).all()))
+    require(sample_dates is not None and cfg17 is not None and eligibility is not None, 'Missing sample audit inputs')
+    expected_keys = set()
+    for scenario in regression_plan(cfg17, cfg15['horizons']):
+        h, k = scenario['horizon_h'], scenario['flow_window_days']
+        target = fv.forward_targets(features.rv, [h], scenario['definition'])[f'target_log_rv_h{h}']
+        for branch, opts in cfg15['branches'].items():
+            key = (scenario['scenario_id'], branch)
+            expected_keys.add(key)
+            z = trailing_flow_z(features, BRANCH_RAW[branch], k, norm)
+            mask = bool_column(eligibility, f'predictors_ready_{opts["eligibility"]}') & finite(features, controls)
+            mask &= np.isfinite(z) & np.isfinite(target)
+            if scenario['axis'] == 'flow_window_common_sample':
+                for other_k in [1] + list(cfg17['flow_window']['trailing_days']):
+                    mask &= np.isfinite(trailing_flow_z(features, BRANCH_RAW[branch], other_k, norm))
+            expected = pd.to_datetime(features.loc[mask, 'date']).dt.normalize().tolist()
+            actual = sample_dates.get(key, [])
+            row = table[table.scenario_id.eq(key[0]) & table.branch.eq(branch)]
+            exact = actual == expected and len(row) == 1 and row.iloc[0].n_obs == len(expected)
+            if len(row) == 1 and expected:
+                exact = exact and row.iloc[0].sample_start == expected[0] and row.iloc[0].sample_end == expected[-1]
+            add('scenario_sample_matches_expected_dates', exact, f'n_actual={len(actual)},n_expected={len(expected)}', scope='|'.join(key))
+    add('sample_audit_has_exact_scenario_keys', set(sample_dates) == expected_keys)
 
     if edge_counts is not None:
         add('large_edge_base_percentile_reproduces_t14_count', np.allclose(

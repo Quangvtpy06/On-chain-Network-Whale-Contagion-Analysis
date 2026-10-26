@@ -8,6 +8,7 @@ The accepted T15/T16 base results are reproduced first; the grid is computed twi
 hashes compared. Output tables are Parquet; nothing is selected by sign, p-value or response size.
 """
 import argparse
+import copy
 import importlib.metadata
 import json
 
@@ -20,12 +21,14 @@ import pandas as pd
 from src import event_study as events
 from src import robustness as rb
 from src.analysis_release import frame_hash
+from src.t17_release_inputs import verify_release
 from src.forecast_inputs import (ROOT, file_hash, hash_paths, json_write, load_t14, local_path, read_config,
                                  relative_path, require, verify_hashes)
 
 SOURCE_FILES = ['src/forecast_inputs.py', 'src/robustness.py', 'T17_Robustness.py', 'src/volatility_regression.py',
                 'src/event_study.py', 'src/flow_volatility.py', 'src/graph_ml_features.py', 'src/analysis_release.py',
-                'config/t15.yaml', 'config/t16.yaml']
+                'config/t15.yaml', 'config/t16.yaml', 'src/t17_release_inputs.py',
+                'scripts/validate_t17_release.py']
 EDGES_KEY = 'data/processed/graphs/dynamic_edges_daily.parquet'
 
 
@@ -46,6 +49,12 @@ def required_files(cfg):
 
 
 def preflight(cfg):
+    require(cfg['protocol_id'] == 't17_usdt_daily_weekly_v2', 'Unsupported T17 protocol')
+    require(cfg['scope'] == dict(token='USDT', token_axis='excluded_by_approved_scope',
+                                graph_windows=['daily', 'iso_weekly'], accepted_by='project_owner',
+                                accepted_on='2026-10-26', cross_token_generalization_tested=False), 'Unapproved T17 scope')
+    require(cfg['token']['other_tokens'] == [], 'Only USDT supported by this protocol; other tokens require a new release')
+    require(cfg['events']['weekly_concentration'] is True, 'Approved graph scope requires daily/weekly comparison')
     missing = [relative_path(p) for p in required_files(cfg) if not p.is_file()]
     if missing:
         raise SystemExit('Thiếu dữ liệu đầu vào (tải đúng revision từ Hugging Face, giữ nguyên cấu trúc thư mục):\n  - ' + '\n  - '.join(missing))
@@ -55,7 +64,8 @@ def load(cfg):
     features, eligibility, summary, gate, hashes = load_t14(cfg)
     t15_cfg_path = local_path(cfg['t15_config'])
     t16_cfg_path = local_path(cfg['t16_config'])
-    cfg15, cfg16 = read_config(t15_cfg_path), read_config(t16_cfg_path)
+    cfg15, t15_summary, h15 = verify_release('t15', cfg['t15_config'], cfg['t15_results_dir'], gate, hashes)
+    cfg16, t16_summary, h16 = verify_release('t16', cfg['t16_config'], cfg['t16_results_dir'], gate, hashes)
     t14_cfg = read_config(ROOT / 'config/t14.yaml')
     files = required_files(cfg)
     before = hash_paths(files)
@@ -102,14 +112,32 @@ def load(cfg):
                    t15_membership=pd.read_parquet(local_path(cfg['t15_results_dir']) / 't15_sample_membership.parquet'),
                    t16_selection=pd.read_parquet(local_path(cfg['t16_results_dir']) / 't16_event_selection.parquet'),
                    t16_candidates=pd.read_parquet(local_path(cfg['t16_results_dir']) / 't16_event_candidates.parquet'))
-    hashes = dict(hashes, **before)
+    hashes = {**hashes, **h15, **h16, **before}
     return dict(features=features, eligibility=eligibility, gate=gate, hashes=hashes, cfg15=cfg15, cfg16=cfg16, t14_cfg=t14_cfg,
                 t15_summary=t15_summary, t16_summary=t16_summary, t11_summary=t11_summary,
                 t15_cfg_hash=t15_cfg_hash, t16_cfg_hash=t16_cfg_hash, weekly_hash=weekly_hash,
                 concentration=concentration, weekly=weekly, edges=edges, results=results)
 
 
+def validate_base(cfg, loaded):
+    """Tái tạo duy nhất base, dừng trước mọi kịch bản sensitivity nếu không khớp."""
+    base_cfg = copy.deepcopy(cfg)
+    base_cfg['horizon'] = dict(extra_single_day=[], cumulative=[])
+    base_cfg['flow_window'] = dict(trailing_days=[], matched_sample_comparison=False)
+    table, dates = rb.run_regressions(loaded['features'], loaded['eligibility'], loaded['cfg15'], base_cfg,
+                                     loaded['t14_cfg']['normalisation'], return_dates=True)
+    rows = rb.reconcile_t15(table, loaded['results']['t15'], loaded['cfg15']['horizons'], float(cfg['tolerance']),
+                            loaded['results']['t15_membership'], dates)
+    tables = events.compute(loaded['features'], loaded['eligibility'], loaded['concentration'], loaded['gate'], loaded['cfg16'])
+    rows += rb.reconcile_t16(tables, loaded['results']['t16_selection'], loaded['results']['t16_candidates'], float(cfg['tolerance']))
+    require(all(r['status'] == 'PASS' for r in rows), 'Base reconciliation failed before sensitivity grid: ' +
+            str([r for r in rows if r['status'] != 'PASS']))
+    return rows
+
+
 def compute(cfg, loaded):
+    # Hàm public cũng kiểm tra base trước grid, kể cả khi được gọi ngoài CLI.
+    base_checks = validate_base(cfg, loaded)
     f, e, gate = loaded['features'], loaded['eligibility'], loaded['gate']
     cfg15, cfg16, norm = loaded['cfg15'], loaded['cfg16'], loaded['t14_cfg']['normalisation']
     regression, sample_dates = rb.run_regressions(f, e, cfg15, cfg, norm, return_dates=True)
@@ -119,13 +147,16 @@ def compute(cfg, loaded):
     event_rows, base_tables, plan = rb.run_events(f, e, loaded['concentration'], weekly, counts, gate, cfg16, cfg)
     summary = rb.regression_summary(regression, cfg15['horizons'])
     plan_rows = [dict(task='t15', **{k: v for k, v in r.items() if k in ('scenario_id', 'axis', 'definition', 'horizon_h', 'flow_window_days')},
-                      status='planned') for r in rb.regression_plan(cfg, cfg15['horizons'])]
-    plan_rows += [dict(task='t16', scenario_id=r['scenario_id'], axis=r['axis'], status='planned') for r in plan]
-    plan_rows.append(dict(task='token', scenario_id='other_tokens', axis='token', status='not_run',
-                          reason='No T04-T14 data exists for tokens other than USDT; the axis needs new on-chain downloads and a full pipeline rerun.'))
+                      status='completed' if regression[regression.scenario_id.eq(r['scenario_id'])].status.eq('ok').all() else 'failed')
+                 for r in rb.regression_plan(cfg, cfg15['horizons'])]
+    plan_rows += [dict(task='t16', scenario_id=r['scenario_id'], axis=r['axis'], status='completed') for r in plan]
+    plan_rows.append(dict(task='token', scenario_id='other_tokens', axis='token', status='excluded_by_approved_scope',
+                          reason='Project owner approved USDT-only on 2026-10-26. Cross-token generalization has not been tested.'))
     plan_table = pd.DataFrame(plan_rows)
     plan_table['reason'] = plan_table['reason'].fillna('') if 'reason' in plan_table else ''
+    membership = pd.DataFrame([dict(scenario_id=s, branch=b, date=d) for (s, b), days in sample_dates.items() for d in days])
     return dict(regression=regression, summary=summary, events=event_rows, plan=plan_table, base_tables=base_tables,
+                membership=membership, base_checks=base_checks,
                 base_count=counts[float(loaded['t14_cfg']['large_transfer']['percentile'])],
                 sample_dates=sample_dates)
 
@@ -135,7 +166,7 @@ def validation(cfg, loaded, out):
     cfg15, norm, tol = loaded['cfg15'], loaded['t14_cfg']['normalisation'], float(cfg['tolerance'])
     independent = rb.independent_hac_checks(f, e, cfg15, norm, out['regression'])
     rows = rb.structural_checks(f, out['regression'], cfg15, norm, tol, edge_counts=out['base_count'],
-                                independent=independent, sample_dates=out.get('sample_dates'), cfg17=cfg)
+                                independent=independent, sample_dates=out.get('sample_dates'), cfg17=cfg, eligibility=e)
     rows += rb.reconcile_t15(out['regression'], loaded['results']['t15'], cfg15['horizons'], tol,
                              t15_membership=loaded['results'].get('t15_membership'),
                              sample_dates=out.get('sample_dates'))
@@ -151,7 +182,9 @@ def validation(cfg, loaded, out):
                      status='PASS', detail=loaded['weekly_hash']))
     rows.append(dict(check='t11_weekly_concentration_matches_accepted_summary', scope='t11',
                      status='PASS', detail=f"mean_cci={loaded['weekly']['community_concentration_index'].mean():.8f}"))
-    rows.append(dict(check='token_axis_not_run_and_declared', scope='token', status='PASS', detail='other_tokens=[]'))
+    rows += out['base_checks']
+    rows.append(dict(check='approved_usdt_scope_and_graph_windows', scope='scope', status='PASS', detail=str(cfg['scope'])))
+    rows.append(dict(check='upstream_releases_verified', scope='provenance', status='PASS', detail='T15/T16 source, config, input, artifact, review hashes verified before base'))
     df = pd.DataFrame(rows)
     df['detail'] = df['detail'].astype(str)
     return df
@@ -159,12 +192,12 @@ def validation(cfg, loaded, out):
 
 def figure(table, folder):
     plt.rcParams.update({'font.family': 'DejaVu Sans', 'axes.spines.top': False, 'axes.spines.right': False})
-    axes_names = ['horizon_single_day', 'horizon_cumulative', 'flow_window']
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.2), constrained_layout=True, sharey=False)
+    axes_names = ['horizon_single_day', 'horizon_cumulative', 'flow_window', 'flow_window_common_sample']
+    fig, axes = plt.subplots(1, 4, figsize=(20, 4.2), constrained_layout=True, sharey=False)
     colors = {'activity_cohort': '#117A8B', 'cex': '#DB7C26'}
     for ax, axis in zip(axes, axes_names):
         sub = table[table.axis.eq(axis) & table.status.eq('ok')].copy()
-        sub['label'] = [f'h={r.horizon_h}' if axis != 'flow_window' else f'k={r.flow_window_days},h={r.horizon_h}' for r in sub.itertuples()]
+        sub['label'] = [f'h={r.horizon_h}' if not axis.startswith('flow_window') else f'k={r.flow_window_days},h={r.horizon_h}' for r in sub.itertuples()]
         labels = list(dict.fromkeys(sub.label))
         for j, branch in enumerate(['activity_cohort', 'cex']):
             g = sub[sub.branch.eq(branch)].set_index('label').reindex(labels)
@@ -187,7 +220,10 @@ def report(cfg, out, checks):
              'Scope: robustness of T15/T16 on the verified T14 release (observed approved CEX subset; unidentified high-activity cohort).',
              'In-sample association only: no causal effect, no out-of-sample forecast evidence (T18), RQ3 not answered.',
              'Every scenario is reported; none is chosen by sign, p-value or response size. Holm is applied within each axis only.',
-             'Token axis NOT run: no data other than USDT exists in T04-T14.', '',
+             'Approved scope: USDT only; graph windows = daily / full ISO weekly. Cross-token generalization has NOT been tested.',
+             'The token axis is excluded by the project owner decision of 2026-10-26, not a completed cross-token experiment.',
+             'Graph windows of 30 days or eight weeks are outside this release. weekly_minimum_history_values=8 counts valid weekly observations in a 90-day threshold history.',
+             'Transfers are restricted to the >=500,000 USDT subnetwork. Flow counts do not represent all transactions.', '',
              '## Regression grid (flow coefficient per scenario family)', '',
              '| Axis | Branch | Scenarios | Failed | Coef min | Coef max | p<0.05 | p Holm<0.05 | Same sign as base (same h) |',
              '|---|---|---:|---:|---:|---:|---:|---:|---:|']
@@ -196,7 +232,9 @@ def report(cfg, out, checks):
                      f'{r.n_p_below_005} | {r.n_p_holm_axis_below_005} | {r.n_same_sign_as_base_same_h}/{r.n_with_base_reference} |')
     lines += ['', 'The cumulative definition (sum of daily RV over D+1..D+h) and the k-day trailing flow sums are different estimands, '
               'not replacements for the primary single-day, 1-day-flow specification. Trailing sums add up already-netted daily flows; '
-              'they are not graphs re-netted over k days.', '', '## Event grid', '',
+              'they are not graphs re-netted over k days. flow_window_common_sample fits k=1,3,7 on the same intersection of valid days per branch/horizon. '
+              'The regular flow_window family uses all valid days for each k. Missing raw flow propagates through rolling sums; volume is used for scaled flow, not the raw-flow z-score. '
+              'Internal calendar gaps are refused by the HAC fitter; no NaN is replaced with zero.', '', '## Event grid', '',
               '| Scenario | Event | Policy | Events (base) | Jaccard | log RV post−pre | CI |', '|---|---|---|---:|---:|---:|---|']
     for r in out['events'][out['events'].selection_policy.eq('nonoverlap')].itertuples():
         ci = f'[{r.log_rv_ci_lower:.4f}, {r.log_rv_ci_upper:.4f}]' if r.log_rv_ci_status == 'available_exploratory' else r.log_rv_ci_status
@@ -220,7 +258,8 @@ def run(config_path, output_dir=None):
     second = compute(cfg, load(cfg))
     checks = validation(cfg, loaded, out)
     names = {'t17_regression_robustness.parquet': 'regression', 't17_regression_summary.parquet': 'summary',
-             't17_event_robustness.parquet': 'events', 't17_scenario_plan.parquet': 'plan'}
+             't17_event_robustness.parquet': 'events', 't17_scenario_plan.parquet': 'plan',
+             't17_sample_membership.parquet': 'membership'}
     hashes = {n: {'run1': frame_hash(out[k]), 'run2': frame_hash(second[k])} for n, k in names.items()}
     repeated = all(h['run1'] == h['run2'] for h in hashes.values())
     checks = pd.concat([checks, pd.DataFrame([dict(check='two_runs_identical_content_hash', scope='all',
@@ -239,8 +278,9 @@ def run(config_path, output_dir=None):
     summary = dict(protocol_id=cfg['protocol_id'], contract_version=cfg['contract_version'], task='t17',
                    computation_validated=bool(failed.empty and repeated), independent_review_required=True, upload_performed=False,
                    rq3_answered=False, causal_claim=False, out_of_sample_claim=False,
-                   token_axis=dict(status='not_run', other_tokens=cfg['token']['other_tokens'],
-                                   reason='No data for tokens other than USDT in T04-T14.'),
+                   task_complete_within_approved_scope=bool(failed.empty and repeated), scope=cfg['scope'],
+                   token_axis=dict(status='excluded_by_approved_scope', other_tokens=[],
+                                   cross_token_generalization_tested=False, reason='USDT-only approved by project owner on 2026-10-26.'),
                    scenario_counts=dict(regression=int(len(out['regression'])), event_rows=int(len(out['events']))),
                    failed_checks=failed[['check', 'scope', 'detail']].to_dict('records'),
                    source_config_sha256=sources, input_sha256=loaded['hashes'], parameters=cfg,

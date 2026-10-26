@@ -1,0 +1,38 @@
+protocol_id: graph_ml_stage4_v1
+primary_window: weekly
+source_t19: data/processed/t19
+t19_published_hf_revision: 25becf91d38a38ef7998d26b3b148e4109ef1f05
+source_edges: data/processed/graphs/dynamic_edges_weekly.parquet
+seed: 20261026
+classes: [CEX, DEX]
+metrics: [macro_f1, precision, recall]
+preprocessing:
+  clip_standardized: 10.0
+tabular:
+  hidden: 64
+  max_epochs: 80
+  patience: 10
+  batch_size: 512
+  learning_rate: 0.001
+  weight_decay: 0.0001
+node2vec:
+  dimensions: 16
+  walk_length: 10
+  walks_per_node: 2
+  window: 5
+  p: 1.0
+  q: 1.0
+  epochs: 3
+  min_count: 1
+gnn:
+  hidden: 32
+  max_epochs: 25
+  patience: 5
+  learning_rate: 0.002
+  weight_decay: 0.0001
+  attention_heads: 2
+comparison:
+  bootstrap_replicates: 2000
+  alpha: 0.05
+  bootstrap_unit: address
+  sensitivity_week_block: 3
